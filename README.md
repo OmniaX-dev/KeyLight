@@ -1,4 +1,4 @@
-# DragonVM
+# KeyLight
 
 A Free and OpenSource MIDI Piano Visualizer
 
