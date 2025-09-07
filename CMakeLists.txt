@@ -35,6 +35,8 @@ list(APPEND SOURCE_FILES
 
 
 	${CMAKE_CURRENT_LIST_DIR}/src/main.cpp
+	${CMAKE_CURRENT_LIST_DIR}/src/MidiParser.cpp
+	${CMAKE_CURRENT_LIST_DIR}/src/Window.cpp
 )
 #-----------------------------------------------------------------------------------------
 
@@ -61,6 +63,7 @@ target_link_libraries(${MAIN_EXECUTABLE} SDL2main SDL2)
 #Linking 
 #-----------------------------------------------------------------------------------------
 target_link_libraries(${MAIN_EXECUTABLE} ostd)
+target_link_libraries(${MAIN_EXECUTABLE} ogfx)
 #-----------------------------------------------------------------------------------------
 
 add_custom_command(TARGET ${MAIN_EXECUTABLE} POST_BUILD

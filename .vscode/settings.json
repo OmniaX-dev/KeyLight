@@ -105,7 +105,9 @@
 		"__hash_table": "cpp",
 		"execution": "cpp",
 		"ios": "cpp",
-		"locale": "cpp"
+		"locale": "cpp",
+		"queue": "cpp",
+		"stack": "cpp"
 	},
 	"workbench.editorAssociations": {
 		"*.bin": "hexEditor.hexedit"
