@@ -37,6 +37,7 @@ list(APPEND SOURCE_FILES
 	${CMAKE_CURRENT_LIST_DIR}/src/main.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/MidiParser.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/Window.cpp
+	${CMAKE_CURRENT_LIST_DIR}/src/SFMLWindow.cpp
 )
 #-----------------------------------------------------------------------------------------
 
@@ -58,6 +59,7 @@ if (WIN32)
 	target_link_libraries(${MAIN_EXECUTABLE} mingw32)
 endif (WIN32)
 target_link_libraries(${MAIN_EXECUTABLE} SDL2main SDL2)
+target_link_libraries(${MAIN_EXECUTABLE} sfml-system sfml-window sfml-graphics sfml-audio)
 #-----------------------------------------------------------------------------------------
 
 #Linking 

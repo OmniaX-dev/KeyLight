@@ -13,6 +13,8 @@ class MidiParser
         int velocity;       // Attack velocity (1-127)
         int channel;        // MIDI channel (0-15)
 
+        bool hit;
+
         bool operator<(const NoteEvent& other) const
         {
             return startTime < other.startTime;

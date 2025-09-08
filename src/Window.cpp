@@ -1,10 +1,77 @@
 #include "Window.hpp"
 #include <ostd/Logger.hpp>
 
+Window::VirtualPianoData Window::VirtualPianoData::defaults(void)
+{
+	VirtualPianoData vpd;
+	vpd.whiteKeyWidth = 40;
+	vpd.whiteKeyHeight = vpd.whiteKeyWidth * 8;
+	vpd.blackKeyWidth = 22;
+	vpd.blackKeyHeight = vpd.blackKeyWidth * 9;
+	vpd.blackKeyOffset = 4;
+	vpd.whiteKeyColor = { 245, 245, 245 };
+	vpd.whiteKeyPressedColor = { 120, 120, 210 };
+	vpd.blackKeyColor = { 0, 0, 0 };
+	vpd.blackKeyPressedColor = { 20, 20, 90 };
+	vpd.virtualPiano_x =  0.0f;
+	vpd.virtualPiano_y = VirtualPianoData::base_height - vpd.whiteKeyHeight;
+	vpd.recalculateKeyOffsets();
+	return vpd;
+}
+
+void Window::VirtualPianoData::scaleFromBaseWidth(int32_t new_width, int32_t new_height)
+{
+	scaleByWindowSize(base_width, base_height, new_width, new_height);
+}
+
+void Window::VirtualPianoData::scaleByWindowSize(int32_t old_width, int32_t old_height, int32_t new_width, int32_t new_height)
+{
+	float width_ratio = (float)new_width / (float)old_width;
+	float height_ratio = (float)new_height / (float)old_height;
+
+	whiteKeyWidth *= width_ratio;
+	whiteKeyHeight *= height_ratio;
+	blackKeyWidth *= width_ratio;
+	blackKeyHeight *= height_ratio;
+	blackKeyOffset *= width_ratio;
+
+	virtualPiano_x *= width_ratio;
+	virtualPiano_y *= height_ratio;
+
+	recalculateKeyOffsets();
+}
+
+void Window::VirtualPianoData::recalculateKeyOffsets(void)
+{
+	keyOffsets.clear();
+	int whiteKeyCount = 0;
+	for (int midiNote = 21; midiNote <= 108; ++midiNote)
+	{
+		int noteInOctave = midiNote % 12;
+		int keyIndex = midiNote - 21;
+		if (MidiParser::NoteInfo::isWhiteKey(noteInOctave))
+		{
+			float x = virtualPiano_x + (whiteKeyCount * whiteKeyWidth);
+			keyOffsets[keyIndex] = x;
+			whiteKeyCount++;
+		}
+		else // black keys
+		{
+			float x = virtualPiano_x + ((whiteKeyCount - 1) * whiteKeyWidth + (whiteKeyWidth - blackKeyWidth / 2.0f)) - blackKeyOffset;
+			keyOffsets[keyIndex] = x;
+		}
+	}
+}
+
+
+
+
 void Window::onInitialize(void)	
 {
 	enableSignals();
 	connectSignal(ostd::tBuiltinSignals::KeyReleased);
+	connectSignal(NoteOnSignal);
+	connectSignal(NoteOffSignal);
 
 	enableResizable(true);
 
@@ -63,35 +130,82 @@ void Window::handleSignal(ostd::tSignal& signal)
 void Window::onRender(void)
 {
 	double currentTime = getPlayTime_s(); // in seconds
-	ostd::Color fallingNoteColor = { 100, 10, 20 };
-	ostd::Color fallingNoteOutlineColor = { 225, 225, 225 };
+
+	ostd::Color fallingWhiteNoteColor = { 100, 10, 20 };
+	ostd::Color fallingWhiteNoteOutlineColor = { 225, 225, 225 };
+	ostd::Color fallingBlackNoteColor = { 50, 10, 30 };
+	ostd::Color fallingBlackNoteOutlineColor = { 30, 30, 30 };
+
+	const double pixelsPerSecond = 250.0;
 
 	for (auto& note : m_activeFallingNotes)
 	{
 		auto noteInfo = MidiParser::getNoteInfo(note.pitch);
 		if (noteInfo.isBlackKey()) continue;
-		
-		float h = static_cast<float>(note.duration / m_fallingTime_s * (float)getWindowHeight());
-		
+
+		double h = note.duration * pixelsPerSecond;
 		double totalTravelTime = m_fallingTime_s + note.duration;
 		double elapsedSinceSpawn = (currentTime - (note.startTime - m_fallingTime_s));
-
 		double progress = elapsedSinceSpawn / totalTravelTime;
 		progress = std::clamp(progress, 0.0, 1.0);
+		double y = -h + static_cast<double>(progress) * (m_vPianoData.virtualPiano_y + h);
+		double x = m_vPianoData.keyOffsets[noteInfo.keyIndex];
 
-		// Distance from spawn point (-h) to final point (virtualPianoY)
+		if (y >= m_vPianoData.virtualPiano_y)
+		{
+			auto& key = m_pianoKeys[noteInfo.keyIndex];
+			key.pressed = false;
+			NoteEventData ned(key);
+			ned.eventType = NoteEventData::eEventType::NoteOFF;
+			ned.note = note;
+			ostd::SignalHandler::emitSignal(NoteOffSignal, ostd::tSignalPriority::RealTime, ned);
+		}
+		else if (y + h >= m_vPianoData.virtualPiano_y)
+		{
+			auto& key = m_pianoKeys[noteInfo.keyIndex];
+			key.pressed = true;
+			NoteEventData ned(key);
+			ned.eventType = NoteEventData::eEventType::NoteON;
+			ned.note = note;
+			ostd::SignalHandler::emitSignal(NoteOnSignal, ostd::tSignalPriority::RealTime, ned);
+		}
+
+		m_gfx.outlinedRect({ static_cast<float>(x), static_cast<float>(y), m_vPianoData.whiteKeyWidth, static_cast<float>(h) }, fallingWhiteNoteColor, fallingWhiteNoteOutlineColor, 1);
+	}
+
+	for (auto& note : m_activeFallingNotes)
+	{
+		auto noteInfo = MidiParser::getNoteInfo(note.pitch);
+		if (noteInfo.isWhiteKey()) continue;
+		
+		double h = note.duration * pixelsPerSecond;
+		double totalTravelTime = m_fallingTime_s + note.duration;
+		double elapsedSinceSpawn = (currentTime - (note.startTime - m_fallingTime_s));
+		double progress = elapsedSinceSpawn / totalTravelTime;
+		progress = std::clamp(progress, 0.0, 1.0);
 		float y = -h + static_cast<float>(progress) * (m_vPianoData.virtualPiano_y + h);
-
-
-		// double timeUntilHit = note.startTime - currentTime;
-		// double progress = (m_fallingTime_s - timeUntilHit) / m_fallingTime_s;
-		// progress = std::clamp(progress, 0.0, 1.0);
-		// float y = -h + static_cast<float>(progress) * (m_vPianoData.virtualPiano_y);
-
 		float x = m_vPianoData.keyOffsets[noteInfo.keyIndex];
 
-		m_gfx.outlinedRect({ x, y, m_vPianoData.whiteKeyWidth, h }, fallingNoteColor, fallingNoteOutlineColor, 1);
-		m_gfx.drawString(noteInfo.name.new_add(noteInfo.octave), { x, y }, { 255, 255, 255 }, 24);
+		if (y >= m_vPianoData.virtualPiano_y)
+		{
+			auto& key = m_pianoKeys[noteInfo.keyIndex];
+			key.pressed = false;
+			NoteEventData ned(key);
+			ned.eventType = NoteEventData::eEventType::NoteOFF;
+			ned.note = note;
+			ostd::SignalHandler::emitSignal(NoteOffSignal, ostd::tSignalPriority::RealTime, ned);
+		}
+		else if (y + h >= m_vPianoData.virtualPiano_y)
+		{
+			auto& key = m_pianoKeys[noteInfo.keyIndex];
+			key.pressed = true;
+			NoteEventData ned(key);
+			ned.eventType = NoteEventData::eEventType::NoteON;
+			ned.note = note;
+			ostd::SignalHandler::emitSignal(NoteOnSignal, ostd::tSignalPriority::RealTime, ned);
+		}
+
+		m_gfx.outlinedRect({ static_cast<float>(x), static_cast<float>(y), m_vPianoData.blackKeyWidth, static_cast<float>(h) }, fallingBlackNoteColor, fallingBlackNoteOutlineColor, 1);
 	}
 
 	drawVirtualPiano(m_vPianoData);
@@ -113,43 +227,17 @@ void Window::onUpdate(void)
 		double currentTime = getPlayTime_s(); // in seconds
 
 		// Remove notes that have ended
-		while (!m_activeNotes.empty() && m_activeNotes.front().endTime <= currentTime)
+		while (!m_activeFallingNotes.empty() && currentTime > (m_activeFallingNotes.front().endTime + 1))
 		{
-			auto noteInfo = MidiParser::getNoteInfo(m_activeNotes.front().pitch);
-			m_pianoKeys[noteInfo.keyIndex].pressed = false;
-			m_activeNotes.pop_front();
-		}
-
-		// Add new notes that are starting now
-		while (m_nextNoteIndex < m_midiNotes.size() && m_midiNotes[m_nextNoteIndex].startTime <= currentTime)
-		{
-			if (m_midiNotes[m_nextNoteIndex].endTime > currentTime)
-			{
-				auto noteInfo = MidiParser::getNoteInfo(m_midiNotes[m_nextNoteIndex].pitch);
-				m_pianoKeys[noteInfo.keyIndex].pressed = true;
-				m_activeNotes.push_back(m_midiNotes[m_nextNoteIndex]);
-			}
-			++m_nextNoteIndex;
-		}
-
-
-
-		// Remove notes that have ended
-		while (!m_activeFallingNotes.empty() && currentTime > m_activeFallingNotes.front().endTime)
-		{
-			// auto noteInfo = MidiParser::getNoteInfo(m_activeFallingNotes.front().pitch);
 			m_activeFallingNotes.pop_front();
 		}
 
 		// Add new notes that are starting now
 		while (m_nextFallingNoteIndex < m_midiNotes.size() && currentTime >= m_midiNotes[m_nextFallingNoteIndex].startTime - m_fallingTime_s)
 		{
-			// auto noteInfo = MidiParser::getNoteInfo(m_midiNotes[m_nextFallingNoteIndex].pitch);
 			m_activeFallingNotes.push_back(m_midiNotes[m_nextFallingNoteIndex]);
 			++m_nextFallingNoteIndex;
 		}
-
-
 	}
 }
 
@@ -157,9 +245,7 @@ void Window::play(void)
 {
 	m_playing = true;
 	m_startTimeOffset_ns = getCurrentTIme_ns();
-	m_nextNoteIndex = 0;
 	m_nextFallingNoteIndex = 0;
-	m_activeNotes.clear();
 	m_activeFallingNotes.clear();
 }
 
