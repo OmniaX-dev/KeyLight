@@ -22,7 +22,26 @@ class MidiParser
 	{
 		ostd::String name;  // e.g., "A", "C#", "F"
 		int octave;        // e.g., 4 for C4
+        int noteInOctave;    // 0-11
 		int keyIndex;      // 0-based index for 88-key piano (A0=0), -1 if out of range
+
+        bool isWhiteKey(void) const
+        {
+            return noteInOctave == 0 || noteInOctave == 2 || noteInOctave == 4 ||
+			noteInOctave == 5 || noteInOctave == 7 || noteInOctave == 9 ||
+			noteInOctave == 11;
+        }
+
+        bool isBlackKey(void) const { return !isWhiteKey(); }
+
+        static bool isWhiteKey(int32_t noteInOctave)
+        {
+            return noteInOctave == 0 || noteInOctave == 2 || noteInOctave == 4 ||
+			noteInOctave == 5 || noteInOctave == 7 || noteInOctave == 9 ||
+			noteInOctave == 11;
+        }
+
+        static bool isBlackKey(int32_t noteInOctave) { return !NoteInfo::isWhiteKey(noteInOctave); }
 	};
 
     public:

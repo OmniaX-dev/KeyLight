@@ -7,7 +7,7 @@ ostd::ConsoleOutputHandler out;
 int main(int argc, char** argv)
 {
 	Window window;
-	window.initialize(52 * 40, 720, "KeyLight");
+	window.initialize(1000, 600, "KeyLight");
 	window.setClearColor({ 0, 2	, 15 });
 	
 	while (window.isRunning())

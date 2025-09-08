@@ -55,8 +55,8 @@ MidiParser::NoteInfo MidiParser::getNoteInfo(int midiPitch)
     NoteInfo info;
 
     // Calculate name and octave
-    int noteInOctave = midiPitch % 12;
-    info.name = noteNames[noteInOctave];
+    info.noteInOctave = midiPitch % 12;
+    info.name = noteNames[info.noteInOctave];
     info.octave = (midiPitch / 12) - 1; // MIDI 0 = C-1
 
     // Calculate 88-key index (A0 = MIDI 21, C8 = MIDI 108)
