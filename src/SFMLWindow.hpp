@@ -5,6 +5,7 @@
 #include <ostd/IOHandlers.hpp>
 
 #include <SFML/Graphics.hpp>
+#include <ogfx/SDLInclude.hpp>
 
 class WindowBase : public ostd::BaseObject
 {
@@ -64,6 +65,8 @@ class WindowBase : public ostd::BaseObject
 		bool m_deagEventEnabled { false };
 		bool m_running { false };
 		bool m_initialized { false };
+
+		SDL_Window* m_sdl_window { nullptr };
 };
 class WindowResizedData : public ostd::BaseObject
 {
@@ -83,7 +86,7 @@ class WindowResizedData : public ostd::BaseObject
 };
 class MouseEventData : public ostd::BaseObject
 {
-	public: enum class eButton { None = 0, Left, Middle, Right };
+	public: enum class eButton { _None = 0, Left, Middle, Right };
 	public:
 		inline MouseEventData(WindowBase& parent, int32_t mousex, int32_t mousey, eButton btn) : parentWindow(parent), position_x(mousex), position_y(mousey), button(btn)
 		{

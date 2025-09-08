@@ -1,5 +1,6 @@
 #include "SFMLWindow.hpp"
-// #include <ogfx/SDLInclude.hpp>
+#include <ostd/Logger.hpp>
+#include <ogfx/SDLInclude.hpp>
 
 WindowBase::~WindowBase(void)
 {
@@ -15,6 +16,20 @@ void WindowBase::initialize(int32_t width, int32_t height, const ostd::String& w
 	m_window.create(sf::VideoMode({ static_cast<uint32_t>(width), static_cast<uint32_t>(height) }), windowTitle.cpp_str());
 	m_initialized = true;
 	m_running = true;
+
+	if (SDL_Init(SDL_INIT_VIDEO) != 0)	
+	{
+		printf( "SDL could not initialize! Error: %s\n", SDL_GetError() );
+		exit(1);
+	}
+	// int imgFlags = IMG_INIT_PNG;
+	// if (!(IMG_Init(imgFlags) & imgFlags))
+	// {
+	// 	printf( "SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError() );
+	// 	exit(2);
+	// }
+	m_sdl_window = SDL_CreateWindow("", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, m_windowWidth, m_windowHeight, SDL_WINDOW_HIDDEN);
+		
 
 	setTypeName("dragon::WindowBase");
 	enableSignals(true);
@@ -75,7 +90,7 @@ void WindowBase::handleEvents(void)
 		bool leftPressed   = sf::Mouse::isButtonPressed(sf::Mouse::Button::Left);
 		bool rightPressed  = sf::Mouse::isButtonPressed(sf::Mouse::Button::Right);
 		bool middlePressed  = sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle);
-		MouseEventData::eButton button = MouseEventData::eButton::None;
+		MouseEventData::eButton button = MouseEventData::eButton::_None;
 		if (middlePressed) button = MouseEventData::eButton::Middle;
 		if (leftPressed) button = MouseEventData::eButton::Left;
 		if (rightPressed) button = MouseEventData::eButton::Right;
@@ -93,8 +108,10 @@ void WindowBase::handleEvents(void)
 		else if (event->is<sf::Event::Resized>())
 		{
 			WindowResizedData wrd(*this, m_windowWidth, m_windowHeight, 0, 0);
+			OX_INFO("OLD SIZE: %d,%d", m_windowWidth, m_windowHeight);
 			m_windowWidth = m_window.getSize().x;
 			m_windowHeight = m_window.getSize().y;
+			OX_INFO("NEW SIZE: %d,%d\n", m_windowWidth, m_windowHeight);
 			wrd.new_width = m_windowWidth;
 			wrd.new_height = m_windowHeight;
 			ostd::SignalHandler::emitSignal(ostd::tBuiltinSignals::WindowResized, ostd::tSignalPriority::RealTime, wrd);
@@ -102,7 +119,7 @@ void WindowBase::handleEvents(void)
 		else if (event->is<sf::Event::MouseMoved>())
 		{
 			MouseEventData mmd = l_getMouseState();
-			if (isMouseDragEventEnabled() && mmd.button != MouseEventData::eButton::None)
+			if (isMouseDragEventEnabled() && mmd.button != MouseEventData::eButton::_None)
 				ostd::SignalHandler::emitSignal(ostd::tBuiltinSignals::MouseDragged, ostd::tSignalPriority::RealTime, mmd);
 			else
 				ostd::SignalHandler::emitSignal(ostd::tBuiltinSignals::MouseMoved, ostd::tSignalPriority::RealTime, mmd);

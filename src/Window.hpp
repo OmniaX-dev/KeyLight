@@ -1,13 +1,14 @@
 #pragma once
 
-#include <ogfx/WindowBase.hpp>
-#include <ogfx/BasicRenderer.hpp>
+// #include <ogfx/WindowBase.hpp>
+#include "SFMLWindow.hpp"
+// #include <ogfx/BasicRenderer.hpp>
 #include <ostd/Signals.hpp>
 #include <ostd/Utils.hpp>
 #include <deque>
 #include "MidiParser.hpp"
 
-class Window : public ogfx::WindowBase
+class Window : public WindowBase
 {
 	public: struct PianoKey
 	{
@@ -57,6 +58,8 @@ class Window : public ogfx::WindowBase
 		void onFixedUpdate(void) override;
 		void onUpdate(void) override;
 
+		void outlinedRect(const ostd::Rectangle& rect, const ostd::Color& fillColor, const ostd::Color& outlineColor, int32_t outlineThickness = -1);
+
 		void play(void);
 		double getCurrentTIme_ns(void);
 		double getPlayTime_s(void);
@@ -68,7 +71,7 @@ class Window : public ogfx::WindowBase
 		inline static const uint64_t NoteOnSignal = ostd::SignalHandler::newCustomSignal(5000);
 		inline static const uint64_t NoteOffSignal = ostd::SignalHandler::newCustomSignal(5001);
 
-		ogfx::BasicRenderer2D m_gfx;
+		// ogfx::BasicRenderer2D m_gfx;
 		std::vector<PianoKey> m_pianoKeys;
 		VirtualPianoData m_vPianoData;
 		bool m_playing;
@@ -80,4 +83,6 @@ class Window : public ogfx::WindowBase
 		double m_fallingTime_s { 4.5 };
 		std::deque<MidiParser::NoteEvent> m_activeFallingNotes;
 		int32_t m_nextFallingNoteIndex { 0 };
+
+		sf::RectangleShape m_sf_rect;
 };

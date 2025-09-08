@@ -1,6 +1,8 @@
 #include "Window.hpp"
 #include <ostd/Logger.hpp>
 
+#define sf_color(ostd_color) sf::Color { ostd_color.r, ostd_color.g, ostd_color.b, ostd_color.a }
+
 Window::VirtualPianoData Window::VirtualPianoData::defaults(void)
 {
 	VirtualPianoData vpd;
@@ -72,15 +74,9 @@ void Window::onInitialize(void)
 	connectSignal(ostd::tBuiltinSignals::KeyReleased);
 	connectSignal(NoteOnSignal);
 	connectSignal(NoteOffSignal);
-
-	enableResizable(true);
-
-	SDL_SetWindowMinimumSize(m_window, 1, 1);
-	SDL_SetWindowPosition(m_window, 30, 30);
-	SDL_MaximizeWindow(m_window);
-
-	m_gfx.init(*this);
-	m_gfx.setFont("res/ttf/Courier Prime.ttf");
+	sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
+	m_window.create(desktop, getTitle().cpp_str(), sf::Style::Default);
+	m_window.setPosition({ 30, 30 });
 
 	m_vPianoData = VirtualPianoData::defaults();
 	m_vPianoData.scaleFromBaseWidth(getWindowWidth(), getWindowHeight());
@@ -111,10 +107,10 @@ void Window::handleSignal(ostd::tSignal& signal)
 {
 	if (signal.ID == ostd::tBuiltinSignals::KeyReleased)
 	{
-		auto& evtData = (ogfx::KeyEventData&)signal.userData;
-		if (evtData.keyCode == SDLK_ESCAPE)
+		auto& evtData = (KeyEventData&)signal.userData;
+		if (evtData.keyCode == (int32_t)sf::Keyboard::Key::Escape)
 			close();
-		if (evtData.keyCode == SDLK_SPACE)
+		if (evtData.keyCode == (int32_t)sf::Keyboard::Key::Space)
 		{
 			if (!m_playing)
 				play();
@@ -122,7 +118,7 @@ void Window::handleSignal(ostd::tSignal& signal)
 	}
 	else if (signal.ID == ostd::tBuiltinSignals::WindowResized)
 	{
-		auto& evtData = (ogfx::WindowResizedData&)signal.userData;
+		auto& evtData = (WindowResizedData&)signal.userData;
 		m_vPianoData.scaleByWindowSize(evtData.old_width, evtData.old_height, evtData.new_width, evtData.new_height);
 	}
 }
@@ -170,7 +166,8 @@ void Window::onRender(void)
 			ostd::SignalHandler::emitSignal(NoteOnSignal, ostd::tSignalPriority::RealTime, ned);
 		}
 
-		m_gfx.outlinedRect({ static_cast<float>(x), static_cast<float>(y), m_vPianoData.whiteKeyWidth, static_cast<float>(h) }, fallingWhiteNoteColor, fallingWhiteNoteOutlineColor, 1);
+		// m_gfx.outlinedRect({ static_cast<float>(x), static_cast<float>(y), m_vPianoData.whiteKeyWidth, static_cast<float>(h) }, fallingWhiteNoteColor, fallingWhiteNoteOutlineColor, 1);
+		outlinedRect({ static_cast<float>(x), static_cast<float>(y), m_vPianoData.whiteKeyWidth, static_cast<float>(h) }, fallingWhiteNoteColor, fallingWhiteNoteOutlineColor, 1);
 	}
 
 	for (auto& note : m_activeFallingNotes)
@@ -205,14 +202,15 @@ void Window::onRender(void)
 			ostd::SignalHandler::emitSignal(NoteOnSignal, ostd::tSignalPriority::RealTime, ned);
 		}
 
-		m_gfx.outlinedRect({ static_cast<float>(x), static_cast<float>(y), m_vPianoData.blackKeyWidth, static_cast<float>(h) }, fallingBlackNoteColor, fallingBlackNoteOutlineColor, 1);
+		// m_gfx.outlinedRect({ static_cast<float>(x), static_cast<float>(y), m_vPianoData.blackKeyWidth, static_cast<float>(h) }, fallingBlackNoteColor, fallingBlackNoteOutlineColor, 1);
+		outlinedRect({ static_cast<float>(x), static_cast<float>(y), m_vPianoData.blackKeyWidth, static_cast<float>(h) }, fallingBlackNoteColor, fallingBlackNoteOutlineColor, 1);
 	}
 
 	drawVirtualPiano(m_vPianoData);
 
 	ostd::String fps_text = "FPS: ";
 	fps_text.add(getFPS());
-	m_gfx.drawString(fps_text, { 10, 10 }, { 220, 170, 0 }, 16);
+	// m_gfx.drawString(fps_text, { 10, 10 }, { 220, 170, 0 }, 16);
 }
 
 void Window::onFixedUpdate(void)
@@ -241,6 +239,16 @@ void Window::onUpdate(void)
 	}
 }
 
+void Window::outlinedRect(const ostd::Rectangle& rect, const ostd::Color& fillColor, const ostd::Color& outlineColor, int32_t outlineThickness)
+{
+	m_sf_rect.setSize({ rect.w, rect.h });
+	m_sf_rect.setPosition({ rect.x, rect.y });
+	m_sf_rect.setFillColor(sf_color(fillColor));
+	m_sf_rect.setOutlineColor(sf_color(outlineColor));
+	m_sf_rect.setOutlineThickness(outlineThickness);
+	m_window.draw(m_sf_rect);
+}
+
 void Window::play(void)
 {
 	m_playing = true;
@@ -255,6 +263,7 @@ double Window::getCurrentTIme_ns(void)
 }
 
 double Window::getPlayTime_s(void)
+
 {
 	double playTime = getCurrentTIme_ns() - m_startTimeOffset_ns;
 	return playTime * 1e-9;
@@ -273,7 +282,8 @@ void Window::drawVirtualPiano(const VirtualPianoData& vpd)
 			ostd::Color keyColor = (pk.pressed ? vpd.whiteKeyPressedColor : vpd.whiteKeyColor);
 			float x = vpd.virtualPiano_x + (whiteKeyCount * vpd.whiteKeyWidth);
 			float y = vpd.virtualPiano_y;
-			m_gfx.outlinedRect({ x, y, vpd.whiteKeyWidth, vpd.whiteKeyHeight }, keyColor, { 0, 0, 0 }, 1 );
+			outlinedRect({ x, y, vpd.whiteKeyWidth, vpd.whiteKeyHeight }, keyColor, { 0, 0, 0 }, 1 );
+			// m_gfx.outlinedRect({ x, y, vpd.whiteKeyWidth, vpd.whiteKeyHeight }, keyColor, { 0, 0, 0 }, 1 );
 			whiteKeyCount++;
 		}
 	}
@@ -292,7 +302,8 @@ void Window::drawVirtualPiano(const VirtualPianoData& vpd)
 			ostd::Color keyColor = (pk.pressed ? vpd.blackKeyPressedColor : vpd.blackKeyColor);
 			float x = vpd.virtualPiano_x + ((whiteKeyCount - 1) * vpd.whiteKeyWidth + (vpd.whiteKeyWidth - vpd.blackKeyWidth / 2.0f)) - vpd.blackKeyOffset;
 			float y = vpd.virtualPiano_y;
-			m_gfx.outlinedRect({ x, y, vpd.blackKeyWidth, vpd.blackKeyHeight }, keyColor, { 0, 0, 0 }, 1);
+			outlinedRect({ x, y, vpd.blackKeyWidth, vpd.blackKeyHeight }, keyColor, { 0, 0, 0 }, 1);
+			// m_gfx.outlinedRect({ x, y, vpd.blackKeyWidth, vpd.blackKeyHeight }, keyColor, { 0, 0, 0 }, 1);
 		}
 	}
 }
