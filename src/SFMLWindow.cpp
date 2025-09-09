@@ -74,6 +74,12 @@ void WindowBase::setSize(int32_t width, int32_t height)
 	ostd::SignalHandler::emitSignal(ostd::tBuiltinSignals::WindowResized, ostd::tSignalPriority::RealTime);
 }
 
+void WindowBase::syncWindowSize(void)
+{
+	m_windowWidth = m_window.getSize().x;
+	m_windowHeight = m_window.getSize().y;
+}
+
 void WindowBase::setTitle(const ostd::String& title)
 {
 	if (!isInitialized()) return;
@@ -107,11 +113,12 @@ void WindowBase::handleEvents(void)
 		}
 		else if (event->is<sf::Event::Resized>())
 		{
+			const auto* resized = event->getIf<sf::Event::Resized>();
 			WindowResizedData wrd(*this, m_windowWidth, m_windowHeight, 0, 0);
-			OX_INFO("OLD SIZE: %d,%d", m_windowWidth, m_windowHeight);
-			m_windowWidth = m_window.getSize().x;
-			m_windowHeight = m_window.getSize().y;
-			OX_INFO("NEW SIZE: %d,%d\n", m_windowWidth, m_windowHeight);
+			// OX_INFO("OLD SIZE: %d,%d", m_windowWidth, m_windowHeight);
+			m_windowWidth = resized->size.x;
+			m_windowHeight = resized->size.y;
+			// OX_INFO("NEW SIZE: %d,%d\n", m_windowWidth, m_windowHeight);
 			wrd.new_width = m_windowWidth;
 			wrd.new_height = m_windowHeight;
 			ostd::SignalHandler::emitSignal(ostd::tBuiltinSignals::WindowResized, ostd::tSignalPriority::RealTime, wrd);
@@ -131,15 +138,7 @@ void WindowBase::handleEvents(void)
 		}
 		else if (event->is<sf::Event::MouseButtonReleased>())
 		{
-			// const auto* mousePressed = event->getIf<sf::Event::MouseButtonPressed>();
 			MouseEventData mmd = l_getMouseState();
-			// switch (mousePressed->button)
-			// {
-			// 	case sf::Mouse::Button::Left: mmd.button = MouseEventData::eButton::Left; break;
-			// 	case sf::Mouse::Button::Middle: mmd.button = MouseEventData::eButton::Middle; break;
-			// 	case sf::Mouse::Button::Right: mmd.button = MouseEventData::eButton::Right; break;
-			// 	default: mmd.button = MouseEventData::eButton::None; break;
-			// }
 			ostd::SignalHandler::emitSignal(ostd::tBuiltinSignals::MouseReleased, ostd::tSignalPriority::RealTime, mmd);
 		}
 		else if (event->is<sf::Event::KeyPressed>())

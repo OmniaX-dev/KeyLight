@@ -1,51 +1,29 @@
 #include "Window.hpp"
 #include <ostd/Logger.hpp>
+#include "Common.hpp"
 
-#define sf_color(ostd_color) sf::Color { ostd_color.r, ostd_color.g, ostd_color.b, ostd_color.a }
-
-Window::VirtualPianoData Window::VirtualPianoData::defaults(void)
+Window::VirtualPianoData::VirtualPianoData(void)
 {
-	VirtualPianoData vpd;
-	vpd.whiteKeyWidth = 40;
-	vpd.whiteKeyHeight = vpd.whiteKeyWidth * 8;
-	vpd.blackKeyWidth = 22;
-	vpd.blackKeyHeight = vpd.blackKeyWidth * 9;
-	vpd.blackKeyOffset = 4;
-	vpd.whiteKeyColor = { 245, 245, 245 };
-	vpd.whiteKeyPressedColor = { 120, 120, 210 };
-	vpd.blackKeyColor = { 0, 0, 0 };
-	vpd.blackKeyPressedColor = { 20, 20, 90 };
-	vpd.virtualPiano_x =  0.0f;
-	vpd.virtualPiano_y = VirtualPianoData::base_height - vpd.whiteKeyHeight;
-	vpd.recalculateKeyOffsets();
-	return vpd;
-}
-
-void Window::VirtualPianoData::scaleFromBaseWidth(int32_t new_width, int32_t new_height)
-{
-	scaleByWindowSize(base_width, base_height, new_width, new_height);
-}
-
-void Window::VirtualPianoData::scaleByWindowSize(int32_t old_width, int32_t old_height, int32_t new_width, int32_t new_height)
-{
-	float width_ratio = (float)new_width / (float)old_width;
-	float height_ratio = (float)new_height / (float)old_height;
-
-	whiteKeyWidth *= width_ratio;
-	whiteKeyHeight *= height_ratio;
-	blackKeyWidth *= width_ratio;
-	blackKeyHeight *= height_ratio;
-	blackKeyOffset *= width_ratio;
-
-	virtualPiano_x *= width_ratio;
-	virtualPiano_y *= height_ratio;
-
+	whiteKeyWidth = 40;
+	whiteKeyHeight = whiteKeyWidth * 8;
+	blackKeyWidth = 22;
+	blackKeyHeight = blackKeyWidth * 9;
+	blackKeyOffset = 4;
+	whiteKeyColor = { 245, 245, 245 };
+	whiteKeyPressedColor = { 120, 120, 210 };
+	blackKeyColor = { 0, 0, 0 };
+	blackKeyPressedColor = { 20, 20, 90 };
+	virtualPiano_x =  0.0f;
+	pixelsPerSecond  = 250;
+	virtualPiano_y = VirtualPianoData::base_height - whiteKeyHeight;
+	scale_x = 1.0f;
+	scale_y = 1.0f;
 	recalculateKeyOffsets();
 }
 
 void Window::VirtualPianoData::recalculateKeyOffsets(void)
 {
-	keyOffsets.clear();
+	_keyOffsets.clear();
 	int whiteKeyCount = 0;
 	for (int midiNote = 21; midiNote <= 108; ++midiNote)
 	{
@@ -53,18 +31,23 @@ void Window::VirtualPianoData::recalculateKeyOffsets(void)
 		int keyIndex = midiNote - 21;
 		if (MidiParser::NoteInfo::isWhiteKey(noteInOctave))
 		{
-			float x = virtualPiano_x + (whiteKeyCount * whiteKeyWidth);
-			keyOffsets[keyIndex] = x;
+			float x = vpx() + (whiteKeyCount * whiteKey_w());
+			_keyOffsets[keyIndex] = x;
 			whiteKeyCount++;
 		}
 		else // black keys
 		{
-			float x = virtualPiano_x + ((whiteKeyCount - 1) * whiteKeyWidth + (whiteKeyWidth - blackKeyWidth / 2.0f)) - blackKeyOffset;
-			keyOffsets[keyIndex] = x;
+			float x = vpx() + ((whiteKeyCount - 1) * whiteKey_w() + (whiteKey_w() - blackKey_w() / 2.0f)) - blackKey_offset();
+			_keyOffsets[keyIndex] = x;
 		}
 	}
 }
 
+void Window::VirtualPianoData::updateScale(int32_t width, int32_t height)
+{
+	scale_x = (float)width / (float)base_width;
+	scale_y = (float)height / (float)base_height;
+}
 
 
 
@@ -74,12 +57,11 @@ void Window::onInitialize(void)
 	connectSignal(ostd::tBuiltinSignals::KeyReleased);
 	connectSignal(NoteOnSignal);
 	connectSignal(NoteOffSignal);
-	sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
-	m_window.create(desktop, getTitle().cpp_str(), sf::Style::Default);
+	connectSignal(ostd::tBuiltinSignals::WindowResized);
 	m_window.setPosition({ 30, 30 });
+	m_windowSizeBeforeFullscreen = { (float)getWindowWidth(), (float)getWindowHeight() };
 
-	m_vPianoData = VirtualPianoData::defaults();
-	m_vPianoData.scaleFromBaseWidth(getWindowWidth(), getWindowHeight());
+	enableFullscreen(true);
 
 	loadMidiFile("res/midi/testMidiFile3.mid");
 	for (auto& note : m_midiNotes)
@@ -100,7 +82,6 @@ void Window::onInitialize(void)
 		m_pianoKeys.push_back(pk);
 	}
 
-	connectSignal(ostd::tBuiltinSignals::WindowResized);
 }
 	
 void Window::handleSignal(ostd::tSignal& signal)
@@ -115,11 +96,19 @@ void Window::handleSignal(ostd::tSignal& signal)
 			if (!m_playing)
 				play();
 		}
+		else if (evtData.keyCode == (int32_t)sf::Keyboard::Key::F11)
+		{
+			enableFullscreen(!m_isFullscreen);
+		}
 	}
 	else if (signal.ID == ostd::tBuiltinSignals::WindowResized)
 	{
 		auto& evtData = (WindowResizedData&)signal.userData;
-		m_vPianoData.scaleByWindowSize(evtData.old_width, evtData.old_height, evtData.new_width, evtData.new_height);
+		sf::View view = m_window.getView();
+		view.setSize({ static_cast<float>(evtData.new_width), static_cast<float>(evtData.new_height) });
+		view.setCenter({ evtData.new_width / 2.f, evtData.new_height / 2.f });
+		m_window.setView(view);
+		m_vPianoData.updateScale(evtData.new_width, evtData.new_height);
 	}
 }
 
@@ -132,22 +121,20 @@ void Window::onRender(void)
 	ostd::Color fallingBlackNoteColor = { 50, 10, 30 };
 	ostd::Color fallingBlackNoteOutlineColor = { 30, 30, 30 };
 
-	const double pixelsPerSecond = 250.0;
-
 	for (auto& note : m_activeFallingNotes)
 	{
 		auto noteInfo = MidiParser::getNoteInfo(note.pitch);
 		if (noteInfo.isBlackKey()) continue;
 
-		double h = note.duration * pixelsPerSecond;
+		double h = note.duration * m_vPianoData.pps();
 		double totalTravelTime = m_fallingTime_s + note.duration;
 		double elapsedSinceSpawn = (currentTime - (note.startTime - m_fallingTime_s));
 		double progress = elapsedSinceSpawn / totalTravelTime;
 		progress = std::clamp(progress, 0.0, 1.0);
-		double y = -h + static_cast<double>(progress) * (m_vPianoData.virtualPiano_y + h);
-		double x = m_vPianoData.keyOffsets[noteInfo.keyIndex];
+		double y = -h + static_cast<double>(progress) * (m_vPianoData.vpy() + h);
+		double x = m_vPianoData.keyOffsets()[noteInfo.keyIndex];
 
-		if (y >= m_vPianoData.virtualPiano_y)
+		if (y >= m_vPianoData.vpy())
 		{
 			auto& key = m_pianoKeys[noteInfo.keyIndex];
 			key.pressed = false;
@@ -156,7 +143,7 @@ void Window::onRender(void)
 			ned.note = note;
 			ostd::SignalHandler::emitSignal(NoteOffSignal, ostd::tSignalPriority::RealTime, ned);
 		}
-		else if (y + h >= m_vPianoData.virtualPiano_y)
+		else if (y + h >= m_vPianoData.vpy())
 		{
 			auto& key = m_pianoKeys[noteInfo.keyIndex];
 			key.pressed = true;
@@ -167,7 +154,7 @@ void Window::onRender(void)
 		}
 
 		// m_gfx.outlinedRect({ static_cast<float>(x), static_cast<float>(y), m_vPianoData.whiteKeyWidth, static_cast<float>(h) }, fallingWhiteNoteColor, fallingWhiteNoteOutlineColor, 1);
-		outlinedRect({ static_cast<float>(x), static_cast<float>(y), m_vPianoData.whiteKeyWidth, static_cast<float>(h) }, fallingWhiteNoteColor, fallingWhiteNoteOutlineColor, 1);
+		outlinedRect({ static_cast<float>(x), static_cast<float>(y), m_vPianoData.whiteKey_w(), static_cast<float>(h) }, fallingWhiteNoteColor, fallingWhiteNoteOutlineColor, 1);
 	}
 
 	for (auto& note : m_activeFallingNotes)
@@ -175,15 +162,15 @@ void Window::onRender(void)
 		auto noteInfo = MidiParser::getNoteInfo(note.pitch);
 		if (noteInfo.isWhiteKey()) continue;
 		
-		double h = note.duration * pixelsPerSecond;
+		double h = note.duration * m_vPianoData.pps();
 		double totalTravelTime = m_fallingTime_s + note.duration;
 		double elapsedSinceSpawn = (currentTime - (note.startTime - m_fallingTime_s));
 		double progress = elapsedSinceSpawn / totalTravelTime;
 		progress = std::clamp(progress, 0.0, 1.0);
-		float y = -h + static_cast<float>(progress) * (m_vPianoData.virtualPiano_y + h);
-		float x = m_vPianoData.keyOffsets[noteInfo.keyIndex];
+		float y = -h + static_cast<float>(progress) * (m_vPianoData.vpy() + h);
+		float x = m_vPianoData.keyOffsets()[noteInfo.keyIndex];
 
-		if (y >= m_vPianoData.virtualPiano_y)
+		if (y >= m_vPianoData.vpy())
 		{
 			auto& key = m_pianoKeys[noteInfo.keyIndex];
 			key.pressed = false;
@@ -192,7 +179,7 @@ void Window::onRender(void)
 			ned.note = note;
 			ostd::SignalHandler::emitSignal(NoteOffSignal, ostd::tSignalPriority::RealTime, ned);
 		}
-		else if (y + h >= m_vPianoData.virtualPiano_y)
+		else if (y + h >= m_vPianoData.vpy())
 		{
 			auto& key = m_pianoKeys[noteInfo.keyIndex];
 			key.pressed = true;
@@ -203,7 +190,7 @@ void Window::onRender(void)
 		}
 
 		// m_gfx.outlinedRect({ static_cast<float>(x), static_cast<float>(y), m_vPianoData.blackKeyWidth, static_cast<float>(h) }, fallingBlackNoteColor, fallingBlackNoteOutlineColor, 1);
-		outlinedRect({ static_cast<float>(x), static_cast<float>(y), m_vPianoData.blackKeyWidth, static_cast<float>(h) }, fallingBlackNoteColor, fallingBlackNoteOutlineColor, 1);
+		outlinedRect({ static_cast<float>(x), static_cast<float>(y), m_vPianoData.blackKey_w(), static_cast<float>(h) }, fallingBlackNoteColor, fallingBlackNoteOutlineColor, 1);
 	}
 
 	drawVirtualPiano(m_vPianoData);
@@ -237,6 +224,25 @@ void Window::onUpdate(void)
 			++m_nextFallingNoteIndex;
 		}
 	}
+}
+
+void Window::enableFullscreen(bool enable)
+{
+	auto old_size = m_window.getSize();
+	if (enable)
+	{
+		m_windowSizeBeforeFullscreen = { (float)old_size.x, (float)old_size.y };
+		m_window.create(sf::VideoMode::getDesktopMode(), getTitle().cpp_str(), sf::Style::None);
+		m_isFullscreen = true;
+	}
+	else
+	{
+		m_window.create(sf::VideoMode({ (uint32_t)m_windowSizeBeforeFullscreen.x, (uint32_t)m_windowSizeBeforeFullscreen.y }), getTitle().cpp_str(), sf::Style::Default);
+		m_isFullscreen = false;
+	}
+	auto new_size = m_window.getSize();
+	WindowResizedData wrd(*this, old_size.x, old_size.y, new_size.x, new_size.y);
+	ostd::SignalHandler::emitSignal(ostd::tBuiltinSignals::WindowResized, ostd::tSignalPriority::RealTime, wrd);
 }
 
 void Window::outlinedRect(const ostd::Rectangle& rect, const ostd::Color& fillColor, const ostd::Color& outlineColor, int32_t outlineThickness)
@@ -280,9 +286,9 @@ void Window::drawVirtualPiano(const VirtualPianoData& vpd)
 			auto info = MidiParser::getNoteInfo(midiNote);
 			PianoKey pk = m_pianoKeys[info.keyIndex];
 			ostd::Color keyColor = (pk.pressed ? vpd.whiteKeyPressedColor : vpd.whiteKeyColor);
-			float x = vpd.virtualPiano_x + (whiteKeyCount * vpd.whiteKeyWidth);
-			float y = vpd.virtualPiano_y;
-			outlinedRect({ x, y, vpd.whiteKeyWidth, vpd.whiteKeyHeight }, keyColor, { 0, 0, 0 }, 1 );
+			float x = vpd.vpx() + (whiteKeyCount * vpd.whiteKey_w());
+			float y = vpd.vpy();
+			outlinedRect({ x, y, vpd.whiteKey_w(), vpd.whiteKey_h() }, keyColor, { 0, 0, 0 }, 1 );
 			// m_gfx.outlinedRect({ x, y, vpd.whiteKeyWidth, vpd.whiteKeyHeight }, keyColor, { 0, 0, 0 }, 1 );
 			whiteKeyCount++;
 		}
@@ -300,9 +306,9 @@ void Window::drawVirtualPiano(const VirtualPianoData& vpd)
 			auto info = MidiParser::getNoteInfo(midiNote);
 			PianoKey pk = m_pianoKeys[info.keyIndex];
 			ostd::Color keyColor = (pk.pressed ? vpd.blackKeyPressedColor : vpd.blackKeyColor);
-			float x = vpd.virtualPiano_x + ((whiteKeyCount - 1) * vpd.whiteKeyWidth + (vpd.whiteKeyWidth - vpd.blackKeyWidth / 2.0f)) - vpd.blackKeyOffset;
-			float y = vpd.virtualPiano_y;
-			outlinedRect({ x, y, vpd.blackKeyWidth, vpd.blackKeyHeight }, keyColor, { 0, 0, 0 }, 1);
+			float x = vpd.vpx() + ((whiteKeyCount - 1) * vpd.whiteKey_w() + (vpd.whiteKey_w() - vpd.blackKey_w() / 2.0f)) - vpd.blackKey_offset();
+			float y = vpd.vpy();
+			outlinedRect({ x, y, vpd.blackKey_w(), vpd.blackKey_h() }, keyColor, { 0, 0, 0 }, 1);
 			// m_gfx.outlinedRect({ x, y, vpd.blackKeyWidth, vpd.blackKeyHeight }, keyColor, { 0, 0, 0 }, 1);
 		}
 	}

@@ -18,6 +18,7 @@ class WindowBase : public ostd::BaseObject
 
 		void update(void);
 		void setSize(int32_t width, int32_t height);
+		void syncWindowSize(void);
 		void setTitle(const ostd::String& title);
 
 		inline virtual void onRender(void) {  }

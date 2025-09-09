@@ -7,7 +7,7 @@ ostd::ConsoleOutputHandler out;
 int main(int argc, char** argv)
 {
 	Window window;
-	window.initialize(1000, 600, "KeyLight");
+	window.initialize(Window::VirtualPianoData::base_width, Window::VirtualPianoData::base_height, "KeyLight");
 	window.setClearColor({ 0, 2	, 15 });
 	
 	while (window.isRunning())
