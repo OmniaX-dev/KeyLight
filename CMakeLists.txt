@@ -38,6 +38,8 @@ list(APPEND SOURCE_FILES
 	${CMAKE_CURRENT_LIST_DIR}/src/MidiParser.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/Window.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/SFMLWindow.cpp
+	${CMAKE_CURRENT_LIST_DIR}/src/Common.cpp
+	${CMAKE_CURRENT_LIST_DIR}/src/VirtualPiano.cpp
 )
 #-----------------------------------------------------------------------------------------
 
