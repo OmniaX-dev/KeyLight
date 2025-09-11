@@ -5,6 +5,8 @@
 #include <deque>
 #include "MidiParser.hpp"
 #include <ostd/Geometry.hpp>
+#include <SFML/Audio.hpp>
+#include <SFML/Graphics.hpp>
 
 class Window;
 class VirtualPiano
@@ -74,14 +76,22 @@ class VirtualPiano
 		void stop(void);
 		
 		bool loadMidiFile(const ostd::String& filePath);
+		bool loadAudioFile(const ostd::String& filePath);
 		double getPlayTime_s(void);
 		void update(void);
 
 		void renderVirtualKeyboard(void);
 		void renderFallingNotes(void);
 
+		float scanMusicStartPoint(const ostd::String& filePath, float thresholdPercent = 0.02f, float minDuration = 0.05f);
+
 		inline VirtualPianoData& vPianoData(void) { return m_vPianoData; }
+		inline sf::Music& getAudioFile(void) { return m_audioFile; }
+		inline float getAutoSoundStart(void) { return m_autoSoundStart; }
+		inline bool hasAudioFile(void) { return m_hasAudioFile; }
 		inline bool isPlaying(void) { return m_playing; }
+
+		static sf::VertexArray getMusicWaveForm(const ostd::String& filePath, int32_t windowHeight);
 
 	private:
 		Window& m_parentWindow;
@@ -89,14 +99,22 @@ class VirtualPiano
 		VirtualPianoData m_vPianoData;
 		bool m_playing;
 		bool m_paused;
+		bool m_firstNotePlayed;
+		bool m_hasAudioFile;
 		double m_startTimeOffset_ns { 0.0 };
 		std::vector<MidiParser::NoteEvent> m_midiNotes;
 		double m_fallingTime_s { 4.5 };
 		std::deque<MidiParser::NoteEvent> m_activeFallingNotes;
 		int32_t m_nextFallingNoteIndex { 0 };
+		sf::Music m_audioFile;
+		float m_autoSoundStart { 0.0f };
+	
+	public:
+		sf::Shader noteShader;
 
 	public:
 		inline static const uint64_t NoteOnSignal = ostd::SignalHandler::newCustomSignal(5000);
 		inline static const uint64_t NoteOffSignal = ostd::SignalHandler::newCustomSignal(5001);
+		inline static const uint64_t MidiStartSignal = ostd::SignalHandler::newCustomSignal(5002);
 
 };

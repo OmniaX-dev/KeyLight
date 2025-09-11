@@ -66,8 +66,6 @@ class WindowBase : public ostd::BaseObject
 		bool m_deagEventEnabled { false };
 		bool m_running { false };
 		bool m_initialized { false };
-
-		SDL_Window* m_sdl_window { nullptr };
 };
 class WindowResizedData : public ostd::BaseObject
 {

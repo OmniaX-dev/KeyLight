@@ -1,6 +1,5 @@
 #include "SFMLWindow.hpp"
 #include <ostd/Logger.hpp>
-#include <ogfx/SDLInclude.hpp>
 
 WindowBase::~WindowBase(void)
 {
@@ -16,20 +15,6 @@ void WindowBase::initialize(int32_t width, int32_t height, const ostd::String& w
 	m_window.create(sf::VideoMode({ static_cast<uint32_t>(width), static_cast<uint32_t>(height) }), windowTitle.cpp_str());
 	m_initialized = true;
 	m_running = true;
-
-	if (SDL_Init(SDL_INIT_VIDEO) != 0)	
-	{
-		printf( "SDL could not initialize! Error: %s\n", SDL_GetError() );
-		exit(1);
-	}
-	// int imgFlags = IMG_INIT_PNG;
-	// if (!(IMG_Init(imgFlags) & imgFlags))
-	// {
-	// 	printf( "SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError() );
-	// 	exit(2);
-	// }
-	m_sdl_window = SDL_CreateWindow("", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, m_windowWidth, m_windowHeight, SDL_WINDOW_HIDDEN);
-		
 
 	setTypeName("dragon::WindowBase");
 	enableSignals(true);

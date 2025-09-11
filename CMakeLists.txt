@@ -54,7 +54,7 @@ target_compile_definitions(${MAIN_EXECUTABLE} PUBLIC  BUILD_NR=${BUILD_NUMBER} M
 #TODO: Different flags for Release/Debug
 add_compile_options(-O3 -m32 -MMD -MP -Wall -ggdb)
 if (UNIX)
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,'$ORIGIN',-rpath,/usr/lib"					)
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,'$ORIGIN',-rpath,/usr/lib")
 	target_link_libraries(${MAIN_EXECUTABLE} xcb xcb-randr boost_regex)
 endif (UNIX)
 if (WIN32)
