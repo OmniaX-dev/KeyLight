@@ -67,7 +67,7 @@ void Window::handleSignal(ostd::tSignal& signal)
 void Window::onRender(void)
 {
 	m_window.clear({ 10, 10, 10 });
-	// m_currentShader = &m_vpiano.noteShader;
+	m_currentShader = &m_vpiano.noteShader;
 	m_vpiano.renderFallingNotes();
 	m_currentShader = nullptr;
 	m_vpiano.renderVirtualKeyboard();

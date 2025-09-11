@@ -65,7 +65,7 @@ void VirtualPiano::init(void)
 		pk.pressed = false;
 		m_pianoKeys.push_back(pk);
 	}
-	if (!noteShader.loadFromFile("shaders/note.frag", sf::Shader::Type::Fragment))
+	if (!noteShader.loadFromFile("shaders/note.vert", "shaders/note.frag"))
 		OX_ERROR("Failed to load shader");
 }
 
@@ -251,26 +251,18 @@ void VirtualPiano::renderFallingNotes(void)
 				m_firstNotePlayed = true;
 			}
 		}
-		// constexpr float minAlpha = 30.f;
-    	// constexpr float maxAlpha = 255.f;
-		// float alpha = minAlpha + (note.velocity / 127.f) * (maxAlpha - minAlpha);
-		// fallingWhiteNoteColor.a = (uint8_t)alpha;
-		// fallingWhiteNoteOutlineColor.a = (uint8_t)alpha;
-
-
-
 		ostd::Color glowColor { 200, 80, 120, 255 }; 
 
-		noteShader.setUniform("u_size", sf::Vector2f(m_vPianoData.whiteKey_w() - shrinkWhiteKey, h));
-		noteShader.setUniform("u_radius", 10);
+		const sf::Vector2f size = { m_vPianoData.whiteKey_w() - shrinkWhiteKey, static_cast<float>(h) };
+		sf::FloatRect radii = { { 10.0f, 10.0f }, { 10.0f, 10.0f } };
+
+		const auto c = sf_color(fallingWhiteNoteColor);
+		noteShader.setUniform("u_size", sf::Glsl::Vec2(size));
+		noteShader.setUniform("u_radii", sf::Glsl::Vec4(radii.position.x , radii.position.y, radii.size.x, radii.size.y));
 		noteShader.setUniform("u_fillColor", sf::Glsl::Vec4(
-			glowColor.r / 255.f,
-			glowColor.g / 255.f,
-			glowColor.b / 255.f,
-			glowColor.a / 255.f
-		));
-		noteShader.setUniform("u_glowSize", 8.f); // glow thickness in px
-		noteShader.setUniform("u_position", sf::Vector2f((float)x, (float)y));
+			c.r / 255.f, c.g / 255.f, c.b / 255.f, c.a / 255.f));
+		noteShader.setUniform("u_edgeSoftness", 1.0f);
+		noteShader.setUniform("u_glowSize", 8.0f);    
 
 		m_parentWindow.outlinedRoundedRect({ static_cast<float>(x), static_cast<float>(y), m_vPianoData.whiteKey_w() - shrinkWhiteKey, static_cast<float>(h) }, fallingWhiteNoteColor, fallingWhiteNoteOutlineColor, { 10, 10, 10, 10 }, 1);
 	}
@@ -311,26 +303,19 @@ void VirtualPiano::renderFallingNotes(void)
 				m_firstNotePlayed = true;
 			}
 		}
-		// constexpr float minAlpha = 30.f;
-    	// constexpr float maxAlpha = 255.f;
-		// float alpha = minAlpha + (note.velocity / 127.f) * (maxAlpha - minAlpha);
-		// fallingBlackNoteColor.a = (uint8_t)alpha;
-		// fallingBlackNoteOutlineColor.a = (uint8_t)alpha;
+		ostd::Color glowColor { 200, 80, 120, 255 }; 
 
+		const sf::Vector2f size = { m_vPianoData.blackKey_w(), static_cast<float>(h) };
+		sf::FloatRect radii = { { 10.0f, 10.0f }, { 10.0f, 10.0f } };
 
-
-		ostd::Color glowColor { 200, 80, 120 }; 
-
-		noteShader.setUniform("u_size", sf::Vector2f(m_vPianoData.blackKey_w(), h));
-		noteShader.setUniform("u_radius", 10);
+		const auto c = sf_color(fallingBlackNoteColor);
+		noteShader.setUniform("u_size", sf::Glsl::Vec2(size));
+		noteShader.setUniform("u_radii", sf::Glsl::Vec4(radii.position.x , radii.position.y, radii.size.x, radii.size.y));
 		noteShader.setUniform("u_fillColor", sf::Glsl::Vec4(
-			glowColor.r / 255.f,
-			glowColor.g / 255.f,
-			glowColor.b / 255.f,
-			glowColor.a / 255.f
-		));
-		noteShader.setUniform("u_glowSize", 8.f); // glow thickness in px
-		noteShader.setUniform("u_position", sf::Vector2f((float)x, (float)y));
+			c.r / 255.f, c.g / 255.f, c.b / 255.f, c.a / 255.f));
+		noteShader.setUniform("u_edgeSoftness", 1.0f);
+		noteShader.setUniform("u_glowSize", 8.0f);    
+
 		m_parentWindow.outlinedRoundedRect({ static_cast<float>(x), static_cast<float>(y), m_vPianoData.blackKey_w(), static_cast<float>(h) }, fallingBlackNoteColor, fallingBlackNoteOutlineColor, { 10, 10, 10, 10 }, 1);
 	}
 }
