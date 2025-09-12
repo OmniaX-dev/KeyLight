@@ -16,8 +16,8 @@ void Window::onInitialize(void)
 	m_windowPositionBeforeFullscreen = { (float)m_window.getPosition().x, (float)m_window.getPosition().y };
 	enableFullscreen(true);
 	m_vpiano.init();
-	m_vpiano.loadMidiFile("res/midi/noct20.mid");
-	m_vpiano.loadAudioFile("res/music/noct20.mp3");
+	m_vpiano.loadMidiFile("res/midi/claire.mid");
+	m_vpiano.loadAudioFile("res/music/claire.mp3");
 	if (!m_font.openFromFile("res/ttf/Courier Prime.ttf"))
 		OX_ERROR("Invalid font file:");
 }
