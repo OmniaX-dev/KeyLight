@@ -111,6 +111,7 @@ class VirtualPiano
 	
 	public:
 		sf::Shader noteShader;
+		sf::Texture noteTexture;
 
 	public:
 		inline static const uint64_t NoteOnSignal = ostd::SignalHandler::newCustomSignal(5000);

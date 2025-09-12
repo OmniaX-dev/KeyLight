@@ -66,7 +66,11 @@ void VirtualPiano::init(void)
 		m_pianoKeys.push_back(pk);
 	}
 	if (!noteShader.loadFromFile("shaders/note.vert", "shaders/note.frag"))
+	// if (!noteShader.loadFromFile("shaders/note.frag", sf::Shader::Type::Fragment))
 		OX_ERROR("Failed to load shader");
+	if (!noteTexture.loadFromFile("res/tex/note.jpg"))
+		OX_ERROR("Failed to load texture");
+	// noteTexture.setRepeated(true);
 }
 
 void VirtualPiano::play(void)
@@ -149,14 +153,30 @@ void VirtualPiano::update(void)
 		double currentTime = getPlayTime_s(); // in seconds
 
 		// Remove notes that have ended
-		while (!m_activeFallingNotes.empty() && currentTime > (m_activeFallingNotes.front().endTime + 1))
+		while (!m_activeFallingNotes.empty() && currentTime > (m_activeFallingNotes.front().endTime + 0.05))
 		{
+			auto info = MidiParser::getNoteInfo(m_activeFallingNotes.front().pitch);
+			m_pianoKeys[info.keyIndex].pressed = false;
+			// if (info.name.new_add(info.octave) == "A5")
+			// {
+			// 	std::cout << "\n\n===================================STOP===================================\n";
+			// 	std::cout << m_activeFallingNotes.front().toString();
+			// 	std::cout << info.toString() << "\n";
+			// }
 			m_activeFallingNotes.pop_front();
 		}
 
 		// Add new notes that are starting now
 		while (m_nextFallingNoteIndex < m_midiNotes.size() && currentTime >= m_midiNotes[m_nextFallingNoteIndex].startTime - m_fallingTime_s)
 		{
+			// auto info = MidiParser::getNoteInfo(m_midiNotes[m_nextFallingNoteIndex].pitch);
+			// if (info.name.new_add(info.octave) == "A5")
+			// {
+			// 	std::cout << "\n\n===================================START===================================\n";
+			// 	std::cout << m_midiNotes[m_nextFallingNoteIndex].toString();
+			// 	std::cout << info.toString() << "\n";
+			// }
+
 			m_activeFallingNotes.push_back(m_midiNotes[m_nextFallingNoteIndex]);
 			++m_nextFallingNoteIndex;
 		}
@@ -231,6 +251,8 @@ void VirtualPiano::renderFallingNotes(void)
 		if (y >= m_vPianoData.vpy())
 		{
 			auto& key = m_pianoKeys[noteInfo.keyIndex];
+			// if (noteInfo.name.new_add(noteInfo.octave) == "A5" && key.pressed)
+			// 	std::cout << "STOP\n";
 			key.pressed = false;
 			NoteEventData ned(key);
 			ned.eventType = NoteEventData::eEventType::NoteOFF;
@@ -251,18 +273,19 @@ void VirtualPiano::renderFallingNotes(void)
 				m_firstNotePlayed = true;
 			}
 		}
-		ostd::Color glowColor { 200, 80, 120, 255 }; 
+		// noteShader.setUniform("u_texture", noteTexture);
+		// ostd::Color glowColor { 200, 80, 120, 255 }; 
 
-		const sf::Vector2f size = { m_vPianoData.whiteKey_w() - shrinkWhiteKey, static_cast<float>(h) };
-		sf::FloatRect radii = { { 10.0f, 10.0f }, { 10.0f, 10.0f } };
+		// const sf::Vector2f size = { m_vPianoData.whiteKey_w() - shrinkWhiteKey, static_cast<float>(h) };
+		// sf::FloatRect radii = { { 10.0f, 10.0f }, { 10.0f, 10.0f } };
 
-		const auto c = sf_color(fallingWhiteNoteColor);
-		noteShader.setUniform("u_size", sf::Glsl::Vec2(size));
-		noteShader.setUniform("u_radii", sf::Glsl::Vec4(radii.position.x , radii.position.y, radii.size.x, radii.size.y));
-		noteShader.setUniform("u_fillColor", sf::Glsl::Vec4(
-			c.r / 255.f, c.g / 255.f, c.b / 255.f, c.a / 255.f));
-		noteShader.setUniform("u_edgeSoftness", 1.0f);
-		noteShader.setUniform("u_glowSize", 8.0f);    
+		// const auto c = sf_color(fallingWhiteNoteColor);
+		// noteShader.setUniform("u_size", sf::Glsl::Vec2(size));
+		// noteShader.setUniform("u_radii", sf::Glsl::Vec4(radii.position.x , radii.position.y, radii.size.x, radii.size.y));
+		// noteShader.setUniform("u_fillColor", sf::Glsl::Vec4(
+		// 	c.r / 255.f, c.g / 255.f, c.b / 255.f, c.a / 255.f));
+		// noteShader.setUniform("u_edgeSoftness", 1.0f);
+		// noteShader.setUniform("u_glowSize", 8.0f);    
 
 		m_parentWindow.outlinedRoundedRect({ static_cast<float>(x), static_cast<float>(y), m_vPianoData.whiteKey_w() - shrinkWhiteKey, static_cast<float>(h) }, fallingWhiteNoteColor, fallingWhiteNoteOutlineColor, { 10, 10, 10, 10 }, 1);
 	}
@@ -303,18 +326,19 @@ void VirtualPiano::renderFallingNotes(void)
 				m_firstNotePlayed = true;
 			}
 		}
-		ostd::Color glowColor { 200, 80, 120, 255 }; 
+		// noteShader.setUniform("u_texture", noteTexture);
+		// ostd::Color glowColor { 200, 80, 120, 255 }; 
 
-		const sf::Vector2f size = { m_vPianoData.blackKey_w(), static_cast<float>(h) };
-		sf::FloatRect radii = { { 10.0f, 10.0f }, { 10.0f, 10.0f } };
+		// const sf::Vector2f size = { m_vPianoData.blackKey_w(), static_cast<float>(h) };
+		// sf::FloatRect radii = { { 10.0f, 10.0f }, { 10.0f, 10.0f } };
 
-		const auto c = sf_color(fallingBlackNoteColor);
-		noteShader.setUniform("u_size", sf::Glsl::Vec2(size));
-		noteShader.setUniform("u_radii", sf::Glsl::Vec4(radii.position.x , radii.position.y, radii.size.x, radii.size.y));
-		noteShader.setUniform("u_fillColor", sf::Glsl::Vec4(
-			c.r / 255.f, c.g / 255.f, c.b / 255.f, c.a / 255.f));
-		noteShader.setUniform("u_edgeSoftness", 1.0f);
-		noteShader.setUniform("u_glowSize", 8.0f);    
+		// const auto c = sf_color(fallingBlackNoteColor);
+		// noteShader.setUniform("u_size", sf::Glsl::Vec2(size));
+		// noteShader.setUniform("u_radii", sf::Glsl::Vec4(radii.position.x , radii.position.y, radii.size.x, radii.size.y));
+		// noteShader.setUniform("u_fillColor", sf::Glsl::Vec4(
+		// 	c.r / 255.f, c.g / 255.f, c.b / 255.f, c.a / 255.f));
+		// noteShader.setUniform("u_edgeSoftness", 1.0f);
+		// noteShader.setUniform("u_glowSize", 8.0f);    
 
 		m_parentWindow.outlinedRoundedRect({ static_cast<float>(x), static_cast<float>(y), m_vPianoData.blackKey_w(), static_cast<float>(h) }, fallingBlackNoteColor, fallingBlackNoteOutlineColor, { 10, 10, 10, 10 }, 1);
 	}

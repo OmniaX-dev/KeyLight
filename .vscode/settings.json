@@ -182,6 +182,9 @@
 	"workbench.colorTheme": "Aramok's GLX Black",
 
 	"window.titleBarStyle": "custom",
-	"window.customTitleBarVisibility": "never"
+	"window.customTitleBarVisibility": "never",
+
+	"C_Cpp.intelliSenseEngine": "default",
+	"C_Cpp.intelliSenseCacheSize": 1024
 }
 
