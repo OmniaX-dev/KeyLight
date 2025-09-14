@@ -40,6 +40,8 @@ list(APPEND SOURCE_FILES
 	${CMAKE_CURRENT_LIST_DIR}/src/SFMLWindow.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/Common.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/VirtualPiano.cpp
+	${CMAKE_CURRENT_LIST_DIR}/src/BloomManager.cpp
+	${CMAKE_CURRENT_LIST_DIR}/src/Renderer.cpp
 )
 #-----------------------------------------------------------------------------------------
 

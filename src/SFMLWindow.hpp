@@ -41,6 +41,8 @@ class WindowBase : public ostd::BaseObject
 		inline void enableMouseDragEvent(bool enable = true) { m_deagEventEnabled = enable; }
 		inline ostd::Color getClearColor(void) const { return m_clearColor; }
 		inline void setClearColor(const ostd::Color& color) { m_clearColor = color; }
+		inline sf::RenderWindow& sfWindow(void) { return m_window; }
+
 	private:
 		void handleEvents(void);
 

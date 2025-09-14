@@ -7,6 +7,7 @@
 #include <ostd/Geometry.hpp>
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
+#include "RoundedRectangleShape.hpp"
 
 class Window;
 class VirtualPiano
@@ -80,8 +81,9 @@ class VirtualPiano
 		double getPlayTime_s(void);
 		void update(void);
 
-		void renderVirtualKeyboard(void);
+		void renderVirtualKeyboard(sf::RenderTarget& renderTarget);
 		void renderFallingNotes(void);
+		void drawFallingNote(const ostd::Rectangle& rect, const ostd::Color& fillColor, const ostd::Color& outlineColor, const sf::Texture& texture, int32_t outlineThickness = -1, float cornerRadius = 10);
 
 		float scanMusicStartPoint(const ostd::String& filePath, float thresholdPercent = 0.02f, float minDuration = 0.05f);
 
@@ -111,7 +113,9 @@ class VirtualPiano
 	
 	public:
 		sf::Shader noteShader;
+		sf::Shader noteGlowShader;
 		sf::Texture noteTexture;
+		RoundedRectangleShape keyRoundedRect;
 
 	public:
 		inline static const uint64_t NoteOnSignal = ostd::SignalHandler::newCustomSignal(5000);

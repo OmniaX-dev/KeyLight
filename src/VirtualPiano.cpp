@@ -66,11 +66,12 @@ void VirtualPiano::init(void)
 		m_pianoKeys.push_back(pk);
 	}
 	if (!noteShader.loadFromFile("shaders/note.vert", "shaders/note.frag"))
-	// if (!noteShader.loadFromFile("shaders/note.frag", sf::Shader::Type::Fragment))
+		OX_ERROR("Failed to load shader");
+	if (!noteGlowShader.loadFromFile("shaders/note.vert", "shaders/glow.frag"))
 		OX_ERROR("Failed to load shader");
 	if (!noteTexture.loadFromFile("res/tex/note.jpg"))
 		OX_ERROR("Failed to load texture");
-	// noteTexture.setRepeated(true);
+	noteTexture.setRepeated(true);
 }
 
 void VirtualPiano::play(void)
@@ -183,7 +184,7 @@ void VirtualPiano::update(void)
 	}
 }
 
-void VirtualPiano::renderVirtualKeyboard(void)
+void VirtualPiano::renderVirtualKeyboard(sf::RenderTarget& renderTarget)
 {
 	auto& vpd = m_vPianoData;
 	int whiteKeyCount = 0;
@@ -229,11 +230,11 @@ void VirtualPiano::renderFallingNotes(void)
 	double currentTime = getPlayTime_s(); // in seconds
 
 	ostd::Color fallingWhiteNoteColor = { 60, 160, 255 };
-	ostd::Color fallingWhiteNoteOutlineColor = { 30, 80, 225 };
+	ostd::Color fallingWhiteNoteOutlineColor = { 255, 255, 225 };
 	ostd::Color fallingBlackNoteColor = { 30, 80, 150 };
 	ostd::Color fallingBlackNoteOutlineColor = { 15, 40, 100 };
 
-	float shrinkWhiteKey = 16;
+	float shrinkWhiteKey = 10;
 
 	for (auto& note : m_activeFallingNotes)
 	{
@@ -273,21 +274,17 @@ void VirtualPiano::renderFallingNotes(void)
 				m_firstNotePlayed = true;
 			}
 		}
-		// noteShader.setUniform("u_texture", noteTexture);
-		// ostd::Color glowColor { 200, 80, 120, 255 }; 
+		noteShader.setUniform("u_texture", noteTexture);
+		noteShader.setUniform("u_color", color_to_glsl(fallingWhiteNoteColor));
 
-		// const sf::Vector2f size = { m_vPianoData.whiteKey_w() - shrinkWhiteKey, static_cast<float>(h) };
-		// sf::FloatRect radii = { { 10.0f, 10.0f }, { 10.0f, 10.0f } };
+		noteGlowShader.setUniform("u_resolution", sf::Vector2f(m_parentWindow.sfWindow().getSize()));
+		noteGlowShader.setUniform("u_center", sf::Vector2f(x + ((m_vPianoData.whiteKey_w() - shrinkWhiteKey) / 2), y + (h / 2))); // center of your note
+		noteGlowShader.setUniform("u_size", sf::Vector2f((m_vPianoData.whiteKey_w() - shrinkWhiteKey) * 0.5f, h * 0.5f)); // half-size
+		noteGlowShader.setUniform("u_radius", 10.f); // corner radius
+		noteGlowShader.setUniform("u_glowWidth", 30.f); // glow thickness in pixels
+		noteGlowShader.setUniform("u_glowColor", color_to_glsl(fallingWhiteNoteOutlineColor)); // warm yellow glow
 
-		// const auto c = sf_color(fallingWhiteNoteColor);
-		// noteShader.setUniform("u_size", sf::Glsl::Vec2(size));
-		// noteShader.setUniform("u_radii", sf::Glsl::Vec4(radii.position.x , radii.position.y, radii.size.x, radii.size.y));
-		// noteShader.setUniform("u_fillColor", sf::Glsl::Vec4(
-		// 	c.r / 255.f, c.g / 255.f, c.b / 255.f, c.a / 255.f));
-		// noteShader.setUniform("u_edgeSoftness", 1.0f);
-		// noteShader.setUniform("u_glowSize", 8.0f);    
-
-		m_parentWindow.outlinedRoundedRect({ static_cast<float>(x), static_cast<float>(y), m_vPianoData.whiteKey_w() - shrinkWhiteKey, static_cast<float>(h) }, fallingWhiteNoteColor, fallingWhiteNoteOutlineColor, { 10, 10, 10, 10 }, 1);
+		drawFallingNote({ static_cast<float>(x), static_cast<float>(y), m_vPianoData.whiteKey_w() - shrinkWhiteKey, static_cast<float>(h) }, fallingWhiteNoteColor, fallingWhiteNoteOutlineColor, noteTexture, -2);
 	}
 
 	for (auto& note : m_activeFallingNotes)
@@ -326,22 +323,41 @@ void VirtualPiano::renderFallingNotes(void)
 				m_firstNotePlayed = true;
 			}
 		}
-		// noteShader.setUniform("u_texture", noteTexture);
-		// ostd::Color glowColor { 200, 80, 120, 255 }; 
+		noteShader.setUniform("u_texture", noteTexture);
+		noteShader.setUniform("u_color", color_to_glsl(fallingBlackNoteColor));
 
-		// const sf::Vector2f size = { m_vPianoData.blackKey_w(), static_cast<float>(h) };
-		// sf::FloatRect radii = { { 10.0f, 10.0f }, { 10.0f, 10.0f } };
+		noteGlowShader.setUniform("u_resolution", sf::Vector2f(m_parentWindow.sfWindow().getSize()));
+		noteGlowShader.setUniform("u_center", sf::Vector2f(x + (m_vPianoData.blackKey_w() / 2), y + (h / 2))); // center of your note
+		noteGlowShader.setUniform("u_size", sf::Vector2f((m_vPianoData.blackKey_w()) * 0.5f, h * 0.5f)); // half-size
+		noteGlowShader.setUniform("u_radius", 10.f); // corner radius
+		noteGlowShader.setUniform("u_glowWidth", 30.f); // glow thickness in pixels
+		noteGlowShader.setUniform("u_glowColor", color_to_glsl(fallingBlackNoteOutlineColor)); // warm yellow glow
 
-		// const auto c = sf_color(fallingBlackNoteColor);
-		// noteShader.setUniform("u_size", sf::Glsl::Vec2(size));
-		// noteShader.setUniform("u_radii", sf::Glsl::Vec4(radii.position.x , radii.position.y, radii.size.x, radii.size.y));
-		// noteShader.setUniform("u_fillColor", sf::Glsl::Vec4(
-		// 	c.r / 255.f, c.g / 255.f, c.b / 255.f, c.a / 255.f));
-		// noteShader.setUniform("u_edgeSoftness", 1.0f);
-		// noteShader.setUniform("u_glowSize", 8.0f);    
 
-		m_parentWindow.outlinedRoundedRect({ static_cast<float>(x), static_cast<float>(y), m_vPianoData.blackKey_w(), static_cast<float>(h) }, fallingBlackNoteColor, fallingBlackNoteOutlineColor, { 10, 10, 10, 10 }, 1);
+		drawFallingNote({ static_cast<float>(x), static_cast<float>(y), m_vPianoData.blackKey_w(), static_cast<float>(h) }, fallingBlackNoteColor, fallingBlackNoteOutlineColor, noteTexture);
 	}
+}
+
+void VirtualPiano::drawFallingNote(const ostd::Rectangle& rect, const ostd::Color& fillColor, const ostd::Color& outlineColor, const sf::Texture& texture, int32_t outlineThickness, float cornerRadius)
+{
+	keyRoundedRect.setPosition({ rect.x, rect.y });
+	keyRoundedRect.setSize({ rect.w, rect.h });
+	keyRoundedRect.setCornerRadii(cornerRadius, cornerRadius, cornerRadius, cornerRadius);
+	keyRoundedRect.setCornerPointCount(12); // smoothness of corners
+	// keyRoundedRect.setFillColor(sf_color(fillColor));
+	// keyRoundedRect.setOutlineColor(sf_color(outlineColor));
+	// keyRoundedRect.setOutlineThickness(outlineThickness);
+	keyRoundedRect.setTexture(&texture);
+	keyRoundedRect.setTextureRect(sf::IntRect({ 0, 0 }, { (int)(texture.getSize().x * 0.1), (int)texture.getSize().y * 10 }));
+	// m_parentWindow.sfWindow().draw(keyRoundedRect);
+	m_parentWindow.sfWindow().draw(keyRoundedRect, &noteShader);
+
+	
+	keyRoundedRect.setFillColor({ 0, 0, 0, 0 });
+	keyRoundedRect.setOutlineColor(sf_color(outlineColor));
+	keyRoundedRect.setOutlineThickness(outlineThickness);
+	keyRoundedRect.setTexture(nullptr);
+	m_parentWindow.sfWindow().draw(keyRoundedRect, &noteGlowShader);
 }
 
 float VirtualPiano::scanMusicStartPoint(const ostd::String& filePath, float thresholdPercent, float minDuration)
