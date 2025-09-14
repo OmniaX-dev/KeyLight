@@ -2,6 +2,7 @@
 #include "Common.hpp"
 #include <ostd/Logger.hpp>
 #include "Window.hpp"
+#include "Renderer.hpp"
 
 VirtualPiano::VirtualPianoData::VirtualPianoData(void)
 {
@@ -20,6 +21,14 @@ VirtualPiano::VirtualPianoData::VirtualPianoData(void)
 	scale_x = 1.0f;
 	scale_y = 1.0f;
 	recalculateKeyOffsets();
+
+	fallingWhiteNoteColor = { 60, 160, 255 };
+	fallingWhiteNoteOutlineColor = { 150, 150, 150 };
+	fallingBlackNoteColor = { 30, 80, 150 };
+	fallingBlackNoteOutlineColor = { 150, 150, 150 };
+
+	whiteKeyShrinkFactor = 12;
+	blackKeyShrinkFactor = 0;
 }
 
 void VirtualPiano::VirtualPianoData::recalculateKeyOffsets(void)
@@ -67,11 +76,14 @@ void VirtualPiano::init(void)
 	}
 	if (!noteShader.loadFromFile("shaders/note.vert", "shaders/note.frag"))
 		OX_ERROR("Failed to load shader");
-	if (!noteGlowShader.loadFromFile("shaders/note.vert", "shaders/glow.frag"))
-		OX_ERROR("Failed to load shader");
 	if (!noteTexture.loadFromFile("res/tex/note.jpg"))
 		OX_ERROR("Failed to load texture");
 	noteTexture.setRepeated(true);
+	
+	sf::Vector2u winSize = { m_parentWindow.sfWindow().getSize().x, m_parentWindow.sfWindow().getSize().y };
+	bloomManager.init(winSize.x, winSize.y);
+	m_nonGlow = sf::RenderTexture(winSize);
+	m_glow = sf::RenderTexture(winSize);
 }
 
 void VirtualPiano::play(void)
@@ -158,12 +170,6 @@ void VirtualPiano::update(void)
 		{
 			auto info = MidiParser::getNoteInfo(m_activeFallingNotes.front().pitch);
 			m_pianoKeys[info.keyIndex].pressed = false;
-			// if (info.name.new_add(info.octave) == "A5")
-			// {
-			// 	std::cout << "\n\n===================================STOP===================================\n";
-			// 	std::cout << m_activeFallingNotes.front().toString();
-			// 	std::cout << info.toString() << "\n";
-			// }
 			m_activeFallingNotes.pop_front();
 		}
 
@@ -171,20 +177,68 @@ void VirtualPiano::update(void)
 		while (m_nextFallingNoteIndex < m_midiNotes.size() && currentTime >= m_midiNotes[m_nextFallingNoteIndex].startTime - m_fallingTime_s)
 		{
 			// auto info = MidiParser::getNoteInfo(m_midiNotes[m_nextFallingNoteIndex].pitch);
-			// if (info.name.new_add(info.octave) == "A5")
-			// {
-			// 	std::cout << "\n\n===================================START===================================\n";
-			// 	std::cout << m_midiNotes[m_nextFallingNoteIndex].toString();
-			// 	std::cout << info.toString() << "\n";
-			// }
-
 			m_activeFallingNotes.push_back(m_midiNotes[m_nextFallingNoteIndex]);
 			++m_nextFallingNoteIndex;
 		}
+		calculateFallingNotes();
 	}
 }
 
-void VirtualPiano::renderVirtualKeyboard(sf::RenderTarget& renderTarget)
+void VirtualPiano::render(void)
+{
+	Renderer::setRenderTarget(&m_nonGlow);
+	Renderer::clear({ 10, 10, 30 });
+	m_nonGlow.display();
+
+	Renderer::setRenderTarget(&m_glow);
+	Renderer::clear({ 0, 0, 0});
+	for (const auto& note : m_fallingNoteGfx_w)
+	{
+		drawFallingNoteOutline(note);
+	}
+	for (auto& note : m_fallingNoteGfx_b)
+	{
+		drawFallingNoteOutline(note);
+	}
+	m_glow.display();
+
+	Renderer::setRenderTarget(nullptr);
+
+	bloomManager.beginGlowPass();
+	bloomManager.drawGlow(sf::Sprite(m_glow.getTexture()));
+	bloomManager.endGlowPass();
+
+	bloomManager.applyBloom(0.45f);
+	bloomManager.drawScene(m_parentWindow.sfWindow(), sf::Sprite(m_nonGlow.getTexture()));
+
+
+	for (const auto& note : m_fallingNoteGfx_w)
+	{
+		noteShader.setUniform("u_texture", noteTexture);
+		noteShader.setUniform("u_color", color_to_glsl(note.fillColor));
+		drawFallingNote(note);
+		drawFallingNoteOutline(note);
+	}
+	for (auto& note : m_fallingNoteGfx_b)
+	{
+		noteShader.setUniform("u_texture", noteTexture);
+		noteShader.setUniform("u_color", color_to_glsl(note.fillColor));
+		drawFallingNote(note);
+		drawFallingNoteOutline(note);
+	}
+	Renderer::useShader(nullptr);
+	Renderer::useTexture(nullptr);
+	renderVirtualKeyboard();
+}
+
+void VirtualPiano::onWindowResized(uint32_t width, uint32_t height)
+{
+	bloomManager.updateSize(width, height);
+	m_nonGlow = sf::RenderTexture({ width, height });
+	m_glow = sf::RenderTexture({ width, height });
+}
+
+void VirtualPiano::renderVirtualKeyboard(void)
 {
 	auto& vpd = m_vPianoData;
 	int whiteKeyCount = 0;
@@ -198,13 +252,12 @@ void VirtualPiano::renderVirtualKeyboard(sf::RenderTarget& renderTarget)
 			ostd::Color keyColor = (pk.pressed ? vpd.whiteKeyPressedColor : vpd.whiteKeyColor);
 			float x = vpd.vpx() + (whiteKeyCount * vpd.whiteKey_w());
 			float y = vpd.vpy();
-			m_parentWindow.outlinedRect({ x, y, vpd.whiteKey_w(), vpd.whiteKey_h() }, keyColor, { 0, 0, 0 }, 1 );
-			// m_gfx.outlinedRect({ x, y, vpd.whiteKeyWidth, vpd.whiteKeyHeight }, keyColor, { 0, 0, 0 }, 1 );
+			Renderer::outlineRect({ x, y, vpd.whiteKey_w(), vpd.whiteKey_h() }, keyColor, { 0, 0, 0 }, 1 );
 			whiteKeyCount++;
 		}
 	}
-	m_parentWindow.outlinedRect({ vpd.vpx(), vpd.vpy() - 2, (float)m_parentWindow.getWindowWidth(), 2 }, { 60, 10, 10 }, { 60, 0, 0 }, 1);
-	m_parentWindow.outlinedRect({ vpd.vpx(), vpd.vpy(), (float)m_parentWindow.getWindowWidth(), 5 }, { 160, 10, 10 }, { 210, 0, 0 }, 1);
+	Renderer::outlineRect({ vpd.vpx(), vpd.vpy() - 2, (float)m_parentWindow.getWindowWidth(), 2 }, { 60, 10, 10 }, { 60, 0, 0 }, 1);
+	Renderer::outlineRect({ vpd.vpx(), vpd.vpy(), (float)m_parentWindow.getWindowWidth(), 5 }, { 160, 10, 10 }, { 210, 0, 0 }, 1);
 	whiteKeyCount = 0;
 	for (int midiNote = 21; midiNote <= 108; ++midiNote)
 	{
@@ -220,22 +273,16 @@ void VirtualPiano::renderVirtualKeyboard(sf::RenderTarget& renderTarget)
 			ostd::Color keyColor = (pk.pressed ? vpd.blackKeyPressedColor : vpd.blackKeyColor);
 			float x = vpd.vpx() + ((whiteKeyCount - 1) * vpd.whiteKey_w() + (vpd.whiteKey_w() - vpd.blackKey_w() / 2.0f)) - vpd.blackKey_offset();
 			float y = vpd.vpy();
-			m_parentWindow.outlinedRoundedRect({ x, y, vpd.blackKey_w(), vpd.blackKey_h() }, keyColor, { 0, 0, 0 }, { 0, 0, 5, 5 }, 1);
+			Renderer::outlineRoundedRect({ x, y, vpd.blackKey_w(), vpd.blackKey_h() }, keyColor, { 0, 0, 0 }, { 0, 0, 5, 5 }, 1);
 		}
 	}
 }
 
-void VirtualPiano::renderFallingNotes(void)
+void VirtualPiano::calculateFallingNotes(void)
 {
 	double currentTime = getPlayTime_s(); // in seconds
-
-	ostd::Color fallingWhiteNoteColor = { 60, 160, 255 };
-	ostd::Color fallingWhiteNoteOutlineColor = { 255, 255, 225 };
-	ostd::Color fallingBlackNoteColor = { 30, 80, 150 };
-	ostd::Color fallingBlackNoteOutlineColor = { 15, 40, 100 };
-
-	float shrinkWhiteKey = 10;
-
+	m_fallingNoteGfx_w.clear();
+	m_fallingNoteGfx_b.clear();
 	for (auto& note : m_activeFallingNotes)
 	{
 		auto noteInfo = MidiParser::getNoteInfo(note.pitch);
@@ -247,13 +294,11 @@ void VirtualPiano::renderFallingNotes(void)
 		double progress = elapsedSinceSpawn / totalTravelTime;
 		progress = std::clamp(progress, 0.0, 1.0);
 		double y = -h + static_cast<double>(progress) * (m_vPianoData.vpy() + h);
-		double x = m_vPianoData.keyOffsets()[noteInfo.keyIndex] + (shrinkWhiteKey / 2.0f);
+		double x = m_vPianoData.keyOffsets()[noteInfo.keyIndex] + (m_vPianoData.whiteKey_shrink() / 2.0f);
 
 		if (y >= m_vPianoData.vpy())
 		{
 			auto& key = m_pianoKeys[noteInfo.keyIndex];
-			// if (noteInfo.name.new_add(noteInfo.octave) == "A5" && key.pressed)
-			// 	std::cout << "STOP\n";
 			key.pressed = false;
 			NoteEventData ned(key);
 			ned.eventType = NoteEventData::eEventType::NoteOFF;
@@ -274,17 +319,14 @@ void VirtualPiano::renderFallingNotes(void)
 				m_firstNotePlayed = true;
 			}
 		}
-		noteShader.setUniform("u_texture", noteTexture);
-		noteShader.setUniform("u_color", color_to_glsl(fallingWhiteNoteColor));
-
-		noteGlowShader.setUniform("u_resolution", sf::Vector2f(m_parentWindow.sfWindow().getSize()));
-		noteGlowShader.setUniform("u_center", sf::Vector2f(x + ((m_vPianoData.whiteKey_w() - shrinkWhiteKey) / 2), y + (h / 2))); // center of your note
-		noteGlowShader.setUniform("u_size", sf::Vector2f((m_vPianoData.whiteKey_w() - shrinkWhiteKey) * 0.5f, h * 0.5f)); // half-size
-		noteGlowShader.setUniform("u_radius", 10.f); // corner radius
-		noteGlowShader.setUniform("u_glowWidth", 30.f); // glow thickness in pixels
-		noteGlowShader.setUniform("u_glowColor", color_to_glsl(fallingWhiteNoteOutlineColor)); // warm yellow glow
-
-		drawFallingNote({ static_cast<float>(x), static_cast<float>(y), m_vPianoData.whiteKey_w() - shrinkWhiteKey, static_cast<float>(h) }, fallingWhiteNoteColor, fallingWhiteNoteOutlineColor, noteTexture, -2);
+		m_fallingNoteGfx_w.push_back(FallingNoteGraphicsData {
+			{ static_cast<float>(x), static_cast<float>(y), m_vPianoData.whiteKey_w() - m_vPianoData.whiteKey_shrink(), static_cast<float>(h) },
+			m_vPianoData.fallingWhiteNoteColor,
+			m_vPianoData.fallingWhiteNoteOutlineColor,
+			&noteTexture,
+			-2,
+			10
+		});
 	}
 
 	for (auto& note : m_activeFallingNotes)
@@ -298,7 +340,7 @@ void VirtualPiano::renderFallingNotes(void)
 		double progress = elapsedSinceSpawn / totalTravelTime;
 		progress = std::clamp(progress, 0.0, 1.0);
 		float y = -h + static_cast<float>(progress) * (m_vPianoData.vpy() + h);
-		float x = m_vPianoData.keyOffsets()[noteInfo.keyIndex];
+		float x = m_vPianoData.keyOffsets()[noteInfo.keyIndex] + (m_vPianoData.blackKey_shrink() / 2.0f);
 
 		if (y >= m_vPianoData.vpy())
 		{
@@ -323,41 +365,30 @@ void VirtualPiano::renderFallingNotes(void)
 				m_firstNotePlayed = true;
 			}
 		}
-		noteShader.setUniform("u_texture", noteTexture);
-		noteShader.setUniform("u_color", color_to_glsl(fallingBlackNoteColor));
-
-		noteGlowShader.setUniform("u_resolution", sf::Vector2f(m_parentWindow.sfWindow().getSize()));
-		noteGlowShader.setUniform("u_center", sf::Vector2f(x + (m_vPianoData.blackKey_w() / 2), y + (h / 2))); // center of your note
-		noteGlowShader.setUniform("u_size", sf::Vector2f((m_vPianoData.blackKey_w()) * 0.5f, h * 0.5f)); // half-size
-		noteGlowShader.setUniform("u_radius", 10.f); // corner radius
-		noteGlowShader.setUniform("u_glowWidth", 30.f); // glow thickness in pixels
-		noteGlowShader.setUniform("u_glowColor", color_to_glsl(fallingBlackNoteOutlineColor)); // warm yellow glow
-
-
-		drawFallingNote({ static_cast<float>(x), static_cast<float>(y), m_vPianoData.blackKey_w(), static_cast<float>(h) }, fallingBlackNoteColor, fallingBlackNoteOutlineColor, noteTexture);
+		m_fallingNoteGfx_b.push_back(FallingNoteGraphicsData {
+			{ static_cast<float>(x), static_cast<float>(y), m_vPianoData.blackKey_w() - m_vPianoData.blackKey_shrink(), static_cast<float>(h) },
+			m_vPianoData.fallingBlackNoteColor,
+			m_vPianoData.fallingBlackNoteOutlineColor,
+			&noteTexture,
+			-2,
+			10
+		});
 	}
 }
 
-void VirtualPiano::drawFallingNote(const ostd::Rectangle& rect, const ostd::Color& fillColor, const ostd::Color& outlineColor, const sf::Texture& texture, int32_t outlineThickness, float cornerRadius)
+void VirtualPiano::drawFallingNote(const FallingNoteGraphicsData& noteData)
 {
-	keyRoundedRect.setPosition({ rect.x, rect.y });
-	keyRoundedRect.setSize({ rect.w, rect.h });
-	keyRoundedRect.setCornerRadii(cornerRadius, cornerRadius, cornerRadius, cornerRadius);
-	keyRoundedRect.setCornerPointCount(12); // smoothness of corners
-	// keyRoundedRect.setFillColor(sf_color(fillColor));
-	// keyRoundedRect.setOutlineColor(sf_color(outlineColor));
-	// keyRoundedRect.setOutlineThickness(outlineThickness);
-	keyRoundedRect.setTexture(&texture);
-	keyRoundedRect.setTextureRect(sf::IntRect({ 0, 0 }, { (int)(texture.getSize().x * 0.1), (int)texture.getSize().y * 10 }));
-	// m_parentWindow.sfWindow().draw(keyRoundedRect);
-	m_parentWindow.sfWindow().draw(keyRoundedRect, &noteShader);
+	Renderer::useTexture(noteData.texture);
+	Renderer::setTextureRect({ 0, 0, (float)(noteData.texture->getSize().x * 0.1), (float)noteData.texture->getSize().y * 10 });
+	Renderer::useShader(&noteShader);
+	Renderer::outlineRoundedRect(noteData.rect, noteData.fillColor, noteData.outlineColor, { noteData.cornerRadius, noteData.cornerRadius, noteData.cornerRadius, noteData.cornerRadius }, noteData.outlineThickness);
+}
 
-	
-	keyRoundedRect.setFillColor({ 0, 0, 0, 0 });
-	keyRoundedRect.setOutlineColor(sf_color(outlineColor));
-	keyRoundedRect.setOutlineThickness(outlineThickness);
-	keyRoundedRect.setTexture(nullptr);
-	m_parentWindow.sfWindow().draw(keyRoundedRect, &noteGlowShader);
+void VirtualPiano::drawFallingNoteOutline(const FallingNoteGraphicsData& noteData)
+{
+	Renderer::useTexture(nullptr);
+	Renderer::useShader(nullptr);
+	Renderer::drawRoundedRect(noteData.rect, noteData.outlineColor, { noteData.cornerRadius, noteData.cornerRadius, noteData.cornerRadius, noteData.cornerRadius }, noteData.outlineThickness);
 }
 
 float VirtualPiano::scanMusicStartPoint(const ostd::String& filePath, float thresholdPercent, float minDuration)

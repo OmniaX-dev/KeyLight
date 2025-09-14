@@ -2,7 +2,7 @@
 #include <ostd/Logger.hpp>
 #include "Common.hpp"
 
-bool Renderer::init(WindowBase& window, const ostd::String& fontFilePath = "")
+bool Renderer::init(WindowBase& window, const ostd::String& fontFilePath)
 {
 	m_window = &window;
 	if (fontFilePath.new_trim() != "")
@@ -36,6 +36,8 @@ void Renderer::useFont(const ostd::String& fontFilePath)
 
 void Renderer::useTexture(sf::Texture* texture, ostd::Rectangle textureRect)
 {
+	m_texture = texture;
+	setTextureRect(textureRect);
 }
 
 void Renderer::setTextureRect(ostd::Rectangle textureRect)
@@ -43,14 +45,27 @@ void Renderer::setTextureRect(ostd::Rectangle textureRect)
 	if (textureRect.x == 0 && textureRect.y == 0 && textureRect.w == 0 && textureRect.h)
 	{
 		if (m_texture == nullptr) return;
-		m_textureRect = sf_intRect(textureRect);
+		m_textureRect = sf::IntRect({{0, 0}, { (int)m_texture->getSize().x, (int)m_texture->getSize().x } });
+		return;
 	}
-		m_textureRect = sf_intRect(textureRect);
+	m_textureRect = sf_intRect(textureRect);
+}
+
+void Renderer::clear(const ostd::Color& color)
+{
+	if (m_window == nullptr) return;
+	sf::RenderTarget& target = (m_target == nullptr ? m_window->sfWindow() : *m_target);
+	target.clear(sf_color(color));
 }
 
 void Renderer::drawString(const ostd::String& str, const ostd::Vec2& position, const ostd::Color& color, uint32_t font_size)
 {
-	if (m_text == nullptr) return;
+	if (m_text == nullptr)
+	{
+		if (m_textCreated) return;
+		m_text = new sf::Text(m_font);
+		m_textCreated = true;
+	}
 	if (m_window == nullptr) return;
 	m_text->setFont(m_font);
 	m_text->setCharacterSize(font_size);
@@ -60,7 +75,7 @@ void Renderer::drawString(const ostd::String& str, const ostd::Vec2& position, c
 	__draw_call(m_text);
 }
 
-void Renderer::drawRect(const ostd::Rectangle& rect, const ostd::Color& outlineColor, int32_t outlineThickness = -1)
+void Renderer::drawRect(const ostd::Rectangle& rect, const ostd::Color& outlineColor, int32_t outlineThickness)
 {
 	if (m_window == nullptr) return;
 	m_rect.setSize({ rect.w, rect.h });
@@ -79,10 +94,16 @@ void Renderer::fillRect(const ostd::Rectangle& rect, const ostd::Color& fillColo
 	m_rect.setFillColor(sf_color(fillColor));
 	m_rect.setOutlineColor({ 0 , 0, 0, 0 });
 	m_rect.setOutlineThickness(0);
+	m_rect.setTexture(nullptr);
+	if (m_texture != nullptr)
+	{
+		m_rect.setTexture(m_texture);
+		m_rect.setTextureRect(m_textureRect);
+	}
 	__draw_call(&m_rect);
 }
 
-void Renderer::outlineRect(const ostd::Rectangle& rect, const ostd::Color& fillColor, const ostd::Color& outlineColor, int32_t outlineThickness = -1)
+void Renderer::outlineRect(const ostd::Rectangle& rect, const ostd::Color& fillColor, const ostd::Color& outlineColor, int32_t outlineThickness)
 {
 	if (m_window == nullptr) return;
 	m_rect.setSize({ rect.w, rect.h });
@@ -90,10 +111,16 @@ void Renderer::outlineRect(const ostd::Rectangle& rect, const ostd::Color& fillC
 	m_rect.setFillColor(sf_color(fillColor));
 	m_rect.setOutlineColor(sf_color(outlineColor));
 	m_rect.setOutlineThickness(outlineThickness);
+	m_rect.setTexture(nullptr);
+	if (m_texture != nullptr)
+	{
+		m_rect.setTexture(m_texture);
+		m_rect.setTextureRect(m_textureRect);
+	}
 	__draw_call(&m_rect);
 }
 
-void Renderer::drawRoundedRect(const ostd::Rectangle& rect, const ostd::Color& outlineColor, const ostd::Rectangle& radius, int32_t outlineThickness = -1)
+void Renderer::drawRoundedRect(const ostd::Rectangle& rect, const ostd::Color& outlineColor, const ostd::Rectangle& radius, int32_t outlineThickness)
 {
 	if (m_window == nullptr) return;
 	m_roundedRect = { {rect.w, rect.h}, radius.x, radius.y, radius.w, radius.h };
@@ -105,7 +132,7 @@ void Renderer::drawRoundedRect(const ostd::Rectangle& rect, const ostd::Color& o
 	__draw_call(&m_roundedRect);
 }
 
-void Renderer::fillRoundedRect(const ostd::Rectangle& rect, const ostd::Color& fillColor, const ostd::Rectangle& radius, int32_t outlineThickness = -1)
+void Renderer::fillRoundedRect(const ostd::Rectangle& rect, const ostd::Color& fillColor, const ostd::Rectangle& radius, int32_t outlineThickness)
 {
 	if (m_window == nullptr) return;
 	m_roundedRect = { {rect.w, rect.h}, radius.x, radius.y, radius.w, radius.h };
@@ -114,9 +141,16 @@ void Renderer::fillRoundedRect(const ostd::Rectangle& rect, const ostd::Color& f
 	m_roundedRect.setFillColor(sf_color(fillColor));
 	m_roundedRect.setOutlineColor({ 0, 0, 0, 0 });
 	m_roundedRect.setOutlineThickness(0);
+	m_roundedRect.setTexture(nullptr);
+	if (m_texture != nullptr)
+	{
+		m_roundedRect.setTexture(m_texture);
+		m_roundedRect.setTextureRect(m_textureRect);
+	}
+	__draw_call(&m_roundedRect);
 }
 
-void Renderer::outlineRoundedRect(const ostd::Rectangle& rect, const ostd::Color& fillColor, const ostd::Color& outlineColor, const ostd::Rectangle& radius, int32_t outlineThickness = -1)
+void Renderer::outlineRoundedRect(const ostd::Rectangle& rect, const ostd::Color& fillColor, const ostd::Color& outlineColor, const ostd::Rectangle& radius, int32_t outlineThickness)
 {
 	if (m_window == nullptr) return;
 	m_roundedRect = { {rect.w, rect.h}, radius.x, radius.y, radius.w, radius.h };
@@ -125,6 +159,12 @@ void Renderer::outlineRoundedRect(const ostd::Rectangle& rect, const ostd::Color
 	m_roundedRect.setFillColor(sf_color(fillColor));
 	m_roundedRect.setOutlineColor(sf_color(outlineColor));
 	m_roundedRect.setOutlineThickness(outlineThickness);
+	m_roundedRect.setTexture(nullptr);
+	if (m_texture != nullptr)
+	{
+		m_roundedRect.setTexture(m_texture);
+		m_roundedRect.setTextureRect(m_textureRect);
+	}
 	__draw_call(&m_roundedRect);
 }
 

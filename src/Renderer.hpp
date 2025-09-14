@@ -13,6 +13,7 @@ class Renderer
 		static void useFont(const ostd::String& fontFilePath);
 		static void useTexture(sf::Texture* texture, ostd::Rectangle textureRect = { 0, 0, 0, 0 });
 		static void setTextureRect(ostd::Rectangle textureRect);
+		static void clear(const ostd::Color& color);
 
 		static inline sf::RenderTarget* getRenderTarget(void) { return m_target; }
 		static inline WindowBase* getWindow(void) { return m_window; }
@@ -43,6 +44,7 @@ class Renderer
 		inline static sf::Texture* m_texture { nullptr };
 
 		inline static sf::Font m_font;
+		inline static bool m_textCreated { false };
 		inline static sf::IntRect m_textureRect { };
 		inline static int32_t m_roundedRectCornerResolution { 12 };
 

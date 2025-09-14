@@ -3,7 +3,9 @@
 
 class BloomManager {
 public:
-    BloomManager(unsigned int width, unsigned int height);
+    BloomManager(); // default constructor
+    BloomManager(unsigned int width, unsigned int height); // optional immediate init
+    void init(unsigned int width, unsigned int height); // replaces old constructor logic
 
     void beginGlowPass();
     void drawGlow(const sf::Drawable& drawable, const sf::RenderStates& states = sf::RenderStates::Default);
@@ -11,6 +13,8 @@ public:
 
     void applyBloom(float threshold = 0.6f);
     void drawScene(sf::RenderTarget& target, const sf::Drawable& scene);
+
+    void updateSize(unsigned int width, unsigned int height);
 
 private:
     sf::RenderTexture glowBuffer;
@@ -24,4 +28,6 @@ private:
 
     static const std::string blurShaderCode;
     static const std::string bloomShaderCode;
+
+    bool initialized = false;
 };

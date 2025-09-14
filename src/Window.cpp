@@ -1,7 +1,6 @@
 #include "Window.hpp"
 #include <ostd/Logger.hpp>
 #include "Common.hpp"
-#include "BloomManager.hpp"
 #include "Renderer.hpp"
 
 void Window::onInitialize(void)	
@@ -23,8 +22,6 @@ void Window::onInitialize(void)
 	m_vpiano.init();
 	m_vpiano.loadMidiFile("res/midi/claire.mid");
 	m_vpiano.loadAudioFile("res/music/claire.mp3");
-	// if (!m_font.openFromFile("res/ttf/Courier Prime.ttf"))
-		// OX_ERROR("Invalid font file:");
 }
 	
 void Window::handleSignal(ostd::tSignal& signal)
@@ -58,6 +55,7 @@ void Window::handleSignal(ostd::tSignal& signal)
 		view.setCenter({ evtData.new_width / 2.f, evtData.new_height / 2.f });
 		m_window.setView(view);
 		m_vpiano.vPianoData().updateScale(evtData.new_width, evtData.new_height);
+		m_vpiano.onWindowResized((uint32_t)evtData.new_width, (uint32_t)evtData.new_height);
 	}
 	else if (signal.ID == VirtualPiano::MidiStartSignal)
 	{
@@ -71,31 +69,10 @@ void Window::handleSignal(ostd::tSignal& signal)
 
 void Window::onRender(void)
 {
-	static BloomManager bloom(m_window.getSize().x, m_window.getSize().y);
-
-	// 1. Glow pass
-	bloom.beginGlowPass();
-	// bloom.drawGlow(glowingNote, glowShader);
-	m_vpiano.renderFallingNotes();
-	bloom.endGlowPass();
-
-	// 2. Bloom blur
-	bloom.applyBloom(0.6f);
-
-	// 3. Final composite
-	m_window.clear({ 10, 10, 10 });
-	// bloom.drawScene(window, baseScene); // baseScene = background + non-glowing notes
-	// window.display();
-
-
-	// m_window.clear({ 10, 10, 10 });
-	// m_vpiano.renderFallingNotes();
-	// m_currentShader = nullptr;
-	// m_sf_roundedRect.setTexture(nullptr);
-	// m_vpiano.renderVirtualKeyboard();
+	m_window.clear({ 10, 10, 30 });
+	m_vpiano.render();
 	ostd::String fps_text = "FPS: ";
 	fps_text.add(getFPS());
-
 	Renderer::drawString(fps_text, { 10, 10 }, { 220, 170, 0 }, 24);
 }
 

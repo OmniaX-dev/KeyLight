@@ -8,6 +8,7 @@
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
 #include "RoundedRectangleShape.hpp"
+#include "BloomManager.hpp"
 
 class Window;
 class VirtualPiano
@@ -32,15 +33,24 @@ class VirtualPiano
 
 			float scale_x { 0.0f };
 			float scale_y { 0.0f };
+
+			float whiteKeyShrinkFactor { 0 };
+			float blackKeyShrinkFactor { 0 };
 		
 		public:
-			inline static constexpr int32_t base_width = 2080;
-			inline static constexpr int32_t base_height = 1400;
+			inline static constexpr int32_t base_width { 2080 };
+			inline static constexpr int32_t base_height { 1400 };
 		
-			ostd::Color whiteKeyColor = { 0, 0, 0 };
-			ostd::Color whiteKeyPressedColor = { 0, 0, 0 };
-			ostd::Color blackKeyColor = { 0, 0, 0 };
-			ostd::Color blackKeyPressedColor = { 0, 0, 0 };
+			ostd::Color whiteKeyColor { 0, 0, 0 };
+			ostd::Color whiteKeyPressedColor { 0, 0, 0 };
+			ostd::Color blackKeyColor { 0, 0, 0 };
+			ostd::Color blackKeyPressedColor { 0, 0, 0 };
+
+			ostd::Color fallingWhiteNoteColor { 0, 0, 0 };
+			ostd::Color fallingWhiteNoteOutlineColor { 0, 0, 0 };
+			ostd::Color fallingBlackNoteColor { 0, 0, 0 };
+			ostd::Color fallingBlackNoteOutlineColor { 0, 0, 0 };
+
 
 		public:
 			VirtualPianoData(void);
@@ -56,6 +66,8 @@ class VirtualPiano
 			inline float blackKey_w(void) const { return blackKeyWidth * scale_x; }
 			inline float blackKey_h(void) const { return blackKeyHeight * scale_y; }
 			inline float blackKey_offset(void) const { return blackKeyOffset * scale_x; }
+			inline float whiteKey_shrink(void) const { return whiteKeyShrinkFactor * scale_x; }
+			inline float blackKey_shrink(void) const { return blackKeyShrinkFactor * scale_x; }
 			inline std::unordered_map<int32_t, float>& keyOffsets(void) { recalculateKeyOffsets(); return _keyOffsets;}
 	};
 	public: class NoteEventData : public ostd::BaseObject
@@ -66,6 +78,15 @@ class VirtualPiano
 			PianoKey& vPianoKey;
 			MidiParser::NoteEvent note;
 			eEventType eventType;
+	};
+	public: struct FallingNoteGraphicsData
+	{
+		ostd::Rectangle rect;
+		ostd::Color fillColor;
+		ostd::Color outlineColor;
+		sf::Texture* texture;
+		int32_t outlineThickness;
+		float cornerRadius;
 	};
 
 	public:
@@ -80,10 +101,12 @@ class VirtualPiano
 		bool loadAudioFile(const ostd::String& filePath);
 		double getPlayTime_s(void);
 		void update(void);
-
-		void renderVirtualKeyboard(sf::RenderTarget& renderTarget);
-		void renderFallingNotes(void);
-		void drawFallingNote(const ostd::Rectangle& rect, const ostd::Color& fillColor, const ostd::Color& outlineColor, const sf::Texture& texture, int32_t outlineThickness = -1, float cornerRadius = 10);
+		void render(void);
+		void onWindowResized(uint32_t width, uint32_t height);
+		void renderVirtualKeyboard(void);
+		void calculateFallingNotes(void);
+		void drawFallingNote(const FallingNoteGraphicsData& noteData);
+		void drawFallingNoteOutline(const FallingNoteGraphicsData& noteData);
 
 		float scanMusicStartPoint(const ostd::String& filePath, float thresholdPercent = 0.02f, float minDuration = 0.05f);
 
@@ -110,10 +133,14 @@ class VirtualPiano
 		int32_t m_nextFallingNoteIndex { 0 };
 		sf::Music m_audioFile;
 		float m_autoSoundStart { 0.0f };
+		sf::RenderTexture m_nonGlow;
+		sf::RenderTexture m_glow;
+		BloomManager bloomManager;
+		std::vector<FallingNoteGraphicsData> m_fallingNoteGfx_w;
+		std::vector<FallingNoteGraphicsData> m_fallingNoteGfx_b;
 	
 	public:
 		sf::Shader noteShader;
-		sf::Shader noteGlowShader;
 		sf::Texture noteTexture;
 		RoundedRectangleShape keyRoundedRect;
 
