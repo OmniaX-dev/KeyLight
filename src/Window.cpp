@@ -56,6 +56,7 @@ void Window::handleSignal(ostd::tSignal& signal)
 		m_window.setView(view);
 		m_vpiano.vPianoData().updateScale(evtData.new_width, evtData.new_height);
 		m_vpiano.onWindowResized((uint32_t)evtData.new_width, (uint32_t)evtData.new_height);
+		__update_local_window_size((uint32_t)evtData.new_width, (uint32_t)evtData.new_height);
 	}
 	else if (signal.ID == VirtualPiano::MidiStartSignal)
 	{

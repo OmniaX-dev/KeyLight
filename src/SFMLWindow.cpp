@@ -147,3 +147,9 @@ void WindowBase::handleEvents(void)
 		}
 	}
 }
+
+void WindowBase::__update_local_window_size(uint32_t width, uint32_t height)
+{
+	m_windowWidth = width;
+	m_windowHeight = height;
+}

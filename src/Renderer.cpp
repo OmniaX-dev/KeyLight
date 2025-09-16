@@ -42,7 +42,7 @@ void Renderer::useTexture(sf::Texture* texture, ostd::Rectangle textureRect)
 
 void Renderer::setTextureRect(ostd::Rectangle textureRect)
 {
-	if (textureRect.x == 0 && textureRect.y == 0 && textureRect.w == 0 && textureRect.h)
+	if (textureRect.x == 0 && textureRect.y == 0 && textureRect.w == 0 && textureRect.h == 0)
 	{
 		if (m_texture == nullptr) return;
 		m_textureRect = sf::IntRect({{0, 0}, { (int)m_texture->getSize().x, (int)m_texture->getSize().x } });
@@ -73,6 +73,17 @@ void Renderer::drawString(const ostd::String& str, const ostd::Vec2& position, c
 	m_text->setPosition({ position.x, position.y });
 	m_text->setString(str.cpp_str());
 	__draw_call(m_text);
+}
+
+void Renderer::drawTexture(const sf::Texture& texture, const ostd::Rectangle& bounds)
+{
+	sf::Sprite spr(texture);
+	if (bounds.x != 0 || bounds.y != 0 || bounds.w != 0 || bounds.h != 0)
+	{
+		spr.setPosition({ bounds.x, bounds.y });
+		spr.setScale({ bounds.w / texture.getSize().x, bounds.h / texture.getSize().y });
+	}
+	__draw_call(&spr);
 }
 
 void Renderer::drawRect(const ostd::Rectangle& rect, const ostd::Color& outlineColor, int32_t outlineThickness)
@@ -132,7 +143,7 @@ void Renderer::drawRoundedRect(const ostd::Rectangle& rect, const ostd::Color& o
 	__draw_call(&m_roundedRect);
 }
 
-void Renderer::fillRoundedRect(const ostd::Rectangle& rect, const ostd::Color& fillColor, const ostd::Rectangle& radius, int32_t outlineThickness)
+void Renderer::fillRoundedRect(const ostd::Rectangle& rect, const ostd::Color& fillColor, const ostd::Rectangle& radius)
 {
 	if (m_window == nullptr) return;
 	m_roundedRect = { {rect.w, rect.h}, radius.x, radius.y, radius.w, radius.h };

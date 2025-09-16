@@ -42,6 +42,7 @@ class WindowBase : public ostd::BaseObject
 		inline ostd::Color getClearColor(void) const { return m_clearColor; }
 		inline void setClearColor(const ostd::Color& color) { m_clearColor = color; }
 		inline sf::RenderWindow& sfWindow(void) { return m_window; }
+		void __update_local_window_size(uint32_t width, uint32_t height);
 
 	private:
 		void handleEvents(void);

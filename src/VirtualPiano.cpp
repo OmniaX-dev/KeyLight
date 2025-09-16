@@ -20,12 +20,15 @@ VirtualPiano::VirtualPianoData::VirtualPianoData(void)
 	virtualPiano_y = VirtualPianoData::base_height - whiteKeyHeight;
 	scale_x = 1.0f;
 	scale_y = 1.0f;
+	glowMargins = { 4, 4, 4, 4 };
 	recalculateKeyOffsets();
 
 	fallingWhiteNoteColor = { 60, 160, 255 };
 	fallingWhiteNoteOutlineColor = { 150, 150, 150 };
+	fallingWhiteNoteGlowColor = { 150, 150, 150 };
 	fallingBlackNoteColor = { 30, 80, 150 };
 	fallingBlackNoteOutlineColor = { 150, 150, 150 };
+	fallingBlackNoteGlowColor = { 150, 150, 150 };
 
 	whiteKeyShrinkFactor = 12;
 	blackKeyShrinkFactor = 0;
@@ -76,14 +79,15 @@ void VirtualPiano::init(void)
 	}
 	if (!noteShader.loadFromFile("shaders/note.vert", "shaders/note.frag"))
 		OX_ERROR("Failed to load shader");
+	if (!blurShader.loadFromFile("shaders/note.vert", "shaders/blur.frag"))
+		OX_ERROR("Failed to load shader");
 	if (!noteTexture.loadFromFile("res/tex/note.jpg"))
 		OX_ERROR("Failed to load texture");
 	noteTexture.setRepeated(true);
 	
 	sf::Vector2u winSize = { m_parentWindow.sfWindow().getSize().x, m_parentWindow.sfWindow().getSize().y };
-	bloomManager.init(winSize.x, winSize.y);
-	m_nonGlow = sf::RenderTexture(winSize);
-	m_glow = sf::RenderTexture(winSize);
+	m_blurBuffer1 = sf::RenderTexture(winSize);
+	m_blurBuffer2 = sf::RenderTexture(winSize);
 }
 
 void VirtualPiano::play(void)
@@ -186,56 +190,66 @@ void VirtualPiano::update(void)
 
 void VirtualPiano::render(void)
 {
-	Renderer::setRenderTarget(&m_nonGlow);
-	Renderer::clear({ 10, 10, 30 });
-	m_nonGlow.display();
-
-	Renderer::setRenderTarget(&m_glow);
-	Renderer::clear({ 0, 0, 0});
+	Renderer::setRenderTarget(&m_blurBuffer1);
+	Renderer::clear({ 10, 10, 30, 0 });
 	for (const auto& note : m_fallingNoteGfx_w)
 	{
-		drawFallingNoteOutline(note);
+		drawFallingNoteGlow(note);
 	}
 	for (auto& note : m_fallingNoteGfx_b)
 	{
-		drawFallingNoteOutline(note);
+		drawFallingNoteGlow(note);
 	}
-	m_glow.display();
+	m_blurBuffer1.display();
+	Renderer::setRenderTarget(&m_blurBuffer2);
+	Renderer::clear({ 10, 10, 30, 0 });
+	Renderer::useShader(&blurShader);
+	blurShader.setUniform("texture", m_blurBuffer1.getTexture());
+	blurShader.setUniform("direction", sf::Vector2f(1.f, 0.f)); // Horizontal
+	blurShader.setUniform("resolution", (float)m_blurBuffer1.getSize().x);
+	blurShader.setUniform("radius", 150);
+	Renderer::drawTexture(m_blurBuffer1.getTexture());
+	m_blurBuffer2.display();
 
 	Renderer::setRenderTarget(nullptr);
+	Renderer::clear({ 10, 10, 30 });
 
-	bloomManager.beginGlowPass();
-	bloomManager.drawGlow(sf::Sprite(m_glow.getTexture()));
-	bloomManager.endGlowPass();
+	Renderer::useShader(&blurShader);
+	blurShader.setUniform("texture", m_blurBuffer2.getTexture());
+	blurShader.setUniform("direction", sf::Vector2f(0.f, 1.f)); // Vertical
+	blurShader.setUniform("resolution", (float)m_blurBuffer2.getSize().y);
+	blurShader.setUniform("radius", 150);
+	Renderer::drawTexture(m_blurBuffer2.getTexture());
+	Renderer::useTexture(nullptr);
+	Renderer::useShader(nullptr);
 
-	bloomManager.applyBloom(0.45f);
-	bloomManager.drawScene(m_parentWindow.sfWindow(), sf::Sprite(m_nonGlow.getTexture()));
+	// for (const auto& note : m_fallingNoteGfx_w)
+	// {
+	// 	noteShader.setUniform("u_texture", noteTexture);
+	// 	noteShader.setUniform("u_color", color_to_glsl(note.fillColor));
+	// 	drawFallingNote(note);
+	// 	drawFallingNoteOutline(note);
+	// }
+	// for (auto& note : m_fallingNoteGfx_b)
+	// {
+	// 	noteShader.setUniform("u_texture", noteTexture);
+	// 	noteShader.setUniform("u_color", color_to_glsl(note.fillColor));
+	// 	drawFallingNote(note);
+	// 	drawFallingNoteOutline(note);
+	// }
 
-
-	for (const auto& note : m_fallingNoteGfx_w)
-	{
-		noteShader.setUniform("u_texture", noteTexture);
-		noteShader.setUniform("u_color", color_to_glsl(note.fillColor));
-		drawFallingNote(note);
-		drawFallingNoteOutline(note);
-	}
-	for (auto& note : m_fallingNoteGfx_b)
-	{
-		noteShader.setUniform("u_texture", noteTexture);
-		noteShader.setUniform("u_color", color_to_glsl(note.fillColor));
-		drawFallingNote(note);
-		drawFallingNoteOutline(note);
-	}
 	Renderer::useShader(nullptr);
 	Renderer::useTexture(nullptr);
+
 	renderVirtualKeyboard();
 }
 
 void VirtualPiano::onWindowResized(uint32_t width, uint32_t height)
 {
-	bloomManager.updateSize(width, height);
-	m_nonGlow = sf::RenderTexture({ width, height });
-	m_glow = sf::RenderTexture({ width, height });
+	// bloomManager.updateSize(width, height);
+	// m_nonGlow = sf::RenderTexture({ width, height });
+	m_blurBuffer1 = sf::RenderTexture({ width, height });
+	m_blurBuffer2 = sf::RenderTexture({ width, height });
 }
 
 void VirtualPiano::renderVirtualKeyboard(void)
@@ -323,6 +337,7 @@ void VirtualPiano::calculateFallingNotes(void)
 			{ static_cast<float>(x), static_cast<float>(y), m_vPianoData.whiteKey_w() - m_vPianoData.whiteKey_shrink(), static_cast<float>(h) },
 			m_vPianoData.fallingWhiteNoteColor,
 			m_vPianoData.fallingWhiteNoteOutlineColor,
+			m_vPianoData.fallingWhiteNoteGlowColor,
 			&noteTexture,
 			-2,
 			10
@@ -369,6 +384,7 @@ void VirtualPiano::calculateFallingNotes(void)
 			{ static_cast<float>(x), static_cast<float>(y), m_vPianoData.blackKey_w() - m_vPianoData.blackKey_shrink(), static_cast<float>(h) },
 			m_vPianoData.fallingBlackNoteColor,
 			m_vPianoData.fallingBlackNoteOutlineColor,
+			m_vPianoData.fallingBlackNoteGlowColor,
 			&noteTexture,
 			-2,
 			10
@@ -382,6 +398,20 @@ void VirtualPiano::drawFallingNote(const FallingNoteGraphicsData& noteData)
 	Renderer::setTextureRect({ 0, 0, (float)(noteData.texture->getSize().x * 0.1), (float)noteData.texture->getSize().y * 10 });
 	Renderer::useShader(&noteShader);
 	Renderer::outlineRoundedRect(noteData.rect, noteData.fillColor, noteData.outlineColor, { noteData.cornerRadius, noteData.cornerRadius, noteData.cornerRadius, noteData.cornerRadius }, noteData.outlineThickness);
+}
+
+void VirtualPiano::drawFallingNoteGlow(const FallingNoteGraphicsData& noteData)
+{
+	Renderer::useTexture(nullptr);
+	Renderer::useShader(nullptr);
+	auto margins = m_vPianoData.getGlowMargins();
+	ostd::Rectangle bounds = {
+		noteData.rect.x - margins.x,
+		noteData.rect.y - margins.y,
+		noteData.rect.w + margins.x + margins.w,
+		noteData.rect.h + margins.y + margins.h
+	};
+	Renderer::fillRoundedRect(bounds, noteData.glowColor, { noteData.cornerRadius, noteData.cornerRadius, noteData.cornerRadius, noteData.cornerRadius });
 }
 
 void VirtualPiano::drawFallingNoteOutline(const FallingNoteGraphicsData& noteData)

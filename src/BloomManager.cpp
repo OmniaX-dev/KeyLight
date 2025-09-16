@@ -11,7 +11,7 @@ const std::string BloomManager::blurShaderCode = R"(
         vec4 sum = vec4(0.0);
         float weights[5] = float[](0.227, 0.194, 0.121, 0.054, 0.016);
 
-        for (int i = -4; i <= 4; ++i) {
+        for (int i = -4; i <= 12; ++i) {
             sum += texture2D(texture, uv + direction * float(i) / 512.0) * weights[abs(i)];
         }
 
@@ -21,19 +21,35 @@ const std::string BloomManager::blurShaderCode = R"(
 
 const std::string BloomManager::bloomShaderCode = R"(
     #version 130
+
     uniform sampler2D texture;
-    uniform float threshold;
-    uniform float intensity;
+    uniform float bloom_spread;
+    uniform float bloom_intensity;
 
     void main() {
-        vec2 uv = gl_TexCoord[0].xy;
-        vec4 color = texture2D(texture, uv);
-        float brightness = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
-        if (brightness > threshold) {
-            gl_FragColor = vec4(color.rgb * intensity, 1.0);
-        } else {
-            gl_FragColor = vec4(0.0);
+        vec2 tex_coord = gl_TexCoord[0].xy;
+        ivec2 size = textureSize(texture, 0);
+
+        float uv_x = tex_coord.x * size.x;
+        float uv_y = tex_coord.y * size.y;
+
+        vec4 sum = vec4(0.0);
+        for (int n = 0; n < 9; ++n) {
+            uv_y = (tex_coord.y * size.y) + (bloom_spread * float(n - 4));
+            vec4 h_sum = vec4(0.0);
+            h_sum += texelFetch(texture, ivec2(uv_x - (4.0 * bloom_spread), uv_y), 0);
+            h_sum += texelFetch(texture, ivec2(uv_x - (3.0 * bloom_spread), uv_y), 0);
+            h_sum += texelFetch(texture, ivec2(uv_x - (2.0 * bloom_spread), uv_y), 0);
+            h_sum += texelFetch(texture, ivec2(uv_x - bloom_spread, uv_y), 0);
+            h_sum += texelFetch(texture, ivec2(uv_x, uv_y), 0);
+            h_sum += texelFetch(texture, ivec2(uv_x + bloom_spread, uv_y), 0);
+            h_sum += texelFetch(texture, ivec2(uv_x + (2.0 * bloom_spread), uv_y), 0);
+            h_sum += texelFetch(texture, ivec2(uv_x + (3.0 * bloom_spread), uv_y), 0);
+            h_sum += texelFetch(texture, ivec2(uv_x + (4.0 * bloom_spread), uv_y), 0);
+            sum += h_sum / 9.0;
         }
+
+        gl_FragColor = texture(texture, tex_coord) - ((sum / 9.0) * bloom_intensity);
     }
 )";
 
@@ -82,11 +98,11 @@ void BloomManager::applyBloom(float threshold) {
     sf::Sprite sprite(glowBuffer.getTexture());
     // Extract bright areas
     bloomExtract.clear(sf::Color::Black);
-    bloomShader.setUniform("texture", glowBuffer.getTexture());
-    bloomShader.setUniform("threshold", threshold);
-    bloomShader.setUniform("intensity", 2.5f); // try between 2–5
+    // bloomShader.setUniform("texture", glowBuffer.getTexture());
+    // bloomShader.setUniform("bloom_spread", 1);
+    // bloomShader.setUniform("bloom_intensity", 2);
     sprite.setTexture(glowBuffer.getTexture(), true);
-    bloomExtract.draw(sprite, &bloomShader);
+    bloomExtract.draw(sprite/*, &bloomShader*/);
     bloomExtract.display();
 
     // Horizontal blur

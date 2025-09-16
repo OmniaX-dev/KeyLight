@@ -36,6 +36,8 @@ class VirtualPiano
 
 			float whiteKeyShrinkFactor { 0 };
 			float blackKeyShrinkFactor { 0 };
+
+			ostd::Rectangle glowMargins { 0, 0, 0, 0 };
 		
 		public:
 			inline static constexpr int32_t base_width { 2080 };
@@ -48,8 +50,10 @@ class VirtualPiano
 
 			ostd::Color fallingWhiteNoteColor { 0, 0, 0 };
 			ostd::Color fallingWhiteNoteOutlineColor { 0, 0, 0 };
+			ostd::Color fallingWhiteNoteGlowColor { 0, 0, 0 };
 			ostd::Color fallingBlackNoteColor { 0, 0, 0 };
 			ostd::Color fallingBlackNoteOutlineColor { 0, 0, 0 };
+			ostd::Color fallingBlackNoteGlowColor { 0, 0, 0 };
 
 
 		public:
@@ -68,6 +72,8 @@ class VirtualPiano
 			inline float blackKey_offset(void) const { return blackKeyOffset * scale_x; }
 			inline float whiteKey_shrink(void) const { return whiteKeyShrinkFactor * scale_x; }
 			inline float blackKey_shrink(void) const { return blackKeyShrinkFactor * scale_x; }
+			inline ostd::Rectangle getGlowMargins(void) const { return { glowMargins.x * scale_x, glowMargins.y * scale_y,
+																		 glowMargins.w * scale_x, glowMargins.h * scale_y }; }
 			inline std::unordered_map<int32_t, float>& keyOffsets(void) { recalculateKeyOffsets(); return _keyOffsets;}
 	};
 	public: class NoteEventData : public ostd::BaseObject
@@ -84,6 +90,7 @@ class VirtualPiano
 		ostd::Rectangle rect;
 		ostd::Color fillColor;
 		ostd::Color outlineColor;
+		ostd::Color glowColor;
 		sf::Texture* texture;
 		int32_t outlineThickness;
 		float cornerRadius;
@@ -107,6 +114,7 @@ class VirtualPiano
 		void calculateFallingNotes(void);
 		void drawFallingNote(const FallingNoteGraphicsData& noteData);
 		void drawFallingNoteOutline(const FallingNoteGraphicsData& noteData);
+		void drawFallingNoteGlow(const FallingNoteGraphicsData& noteData);
 
 		float scanMusicStartPoint(const ostd::String& filePath, float thresholdPercent = 0.02f, float minDuration = 0.05f);
 
@@ -133,16 +141,15 @@ class VirtualPiano
 		int32_t m_nextFallingNoteIndex { 0 };
 		sf::Music m_audioFile;
 		float m_autoSoundStart { 0.0f };
-		sf::RenderTexture m_nonGlow;
-		sf::RenderTexture m_glow;
-		BloomManager bloomManager;
+		sf::RenderTexture m_blurBuffer1;
+		sf::RenderTexture m_blurBuffer2;
 		std::vector<FallingNoteGraphicsData> m_fallingNoteGfx_w;
 		std::vector<FallingNoteGraphicsData> m_fallingNoteGfx_b;
 	
 	public:
 		sf::Shader noteShader;
+		sf::Shader blurShader;
 		sf::Texture noteTexture;
-		RoundedRectangleShape keyRoundedRect;
 
 	public:
 		inline static const uint64_t NoteOnSignal = ostd::SignalHandler::newCustomSignal(5000);
