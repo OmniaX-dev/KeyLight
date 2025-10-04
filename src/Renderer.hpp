@@ -25,7 +25,7 @@ class Renderer
 		static inline void setRoundedRectCornerResolution(int32_t res) { m_roundedRectCornerResolution = res; }
 
 		static void drawString(const ostd::String& str, const ostd::Vec2& position, const ostd::Color& color, uint32_t font_size);
-		static void drawTexture(const sf::Texture& texture, const ostd::Rectangle& bounds = { 0, 0, 0, 0 });
+		static void drawTexture(const sf::Texture& texture, const ostd::Vec2& position = { 0, 0 }, float scale = 1.0f);
 		
 		static void drawRect(const ostd::Rectangle& rect, const ostd::Color& outlineColor, int32_t outlineThickness = -1);
 		static void fillRect(const ostd::Rectangle& rect, const ostd::Color& fillColor);

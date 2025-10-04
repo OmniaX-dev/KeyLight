@@ -141,10 +141,13 @@ class VirtualPiano
 		int32_t m_nextFallingNoteIndex { 0 };
 		sf::Music m_audioFile;
 		float m_autoSoundStart { 0.0f };
-		sf::RenderTexture m_blurBuffer1;
-		sf::RenderTexture m_blurBuffer2;
 		std::vector<FallingNoteGraphicsData> m_fallingNoteGfx_w;
 		std::vector<FallingNoteGraphicsData> m_fallingNoteGfx_b;
+
+		sf::RenderTexture m_glowBuffer;
+		sf::RenderTexture m_blurBuff1;
+		sf::RenderTexture m_blurBuff2;
+		sf::View m_glowView;
 	
 	public:
 		sf::Shader noteShader;

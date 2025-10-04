@@ -23,14 +23,14 @@ VirtualPiano::VirtualPianoData::VirtualPianoData(void)
 	glowMargins = { 4, 4, 4, 4 };
 	recalculateKeyOffsets();
 
-	fallingWhiteNoteColor = { 60, 160, 255 };
-	fallingWhiteNoteOutlineColor = { 150, 150, 150 };
-	fallingWhiteNoteGlowColor = { 150, 150, 150 };
-	fallingBlackNoteColor = { 30, 80, 150 };
-	fallingBlackNoteOutlineColor = { 150, 150, 150 };
-	fallingBlackNoteGlowColor = { 150, 150, 150 };
+	fallingWhiteNoteColor = { 30, 200, 60 };
+	fallingWhiteNoteOutlineColor = { 200, 255, 200 };
+	fallingWhiteNoteGlowColor = { 200, 255, 200 };
+	fallingBlackNoteColor = { 30, 85, 40 };
+	fallingBlackNoteOutlineColor = { 110, 180, 110 };
+	fallingBlackNoteGlowColor = { 110, 180, 110 };
 
-	whiteKeyShrinkFactor = 12;
+	whiteKeyShrinkFactor = 8;
 	blackKeyShrinkFactor = 0;
 }
 
@@ -86,8 +86,14 @@ void VirtualPiano::init(void)
 	noteTexture.setRepeated(true);
 	
 	sf::Vector2u winSize = { m_parentWindow.sfWindow().getSize().x, m_parentWindow.sfWindow().getSize().y };
-	m_blurBuffer1 = sf::RenderTexture(winSize);
-	m_blurBuffer2 = sf::RenderTexture(winSize);
+	sf::Vector2u winHalfSize = { winSize.x / 2, winSize.y / 2 };
+	m_blurBuff1 = sf::RenderTexture(winHalfSize);
+	m_blurBuff2 = sf::RenderTexture(winHalfSize);
+	m_glowBuffer = sf::RenderTexture(winHalfSize);
+
+	m_glowView.setSize({ (float)winSize.x, (float)winSize.y });
+	m_glowView.setCenter({ winSize.x / 2.f, winSize.y / 2.f });
+	m_glowBuffer.setView(m_glowView);
 }
 
 void VirtualPiano::play(void)
@@ -153,7 +159,7 @@ bool VirtualPiano::loadAudioFile(const ostd::String& filePath)
 	}
 	OX_DEBUG("loaded <%s>", filePath.c_str());
 	m_hasAudioFile = true;
-	m_autoSoundStart = scanMusicStartPoint(filePath);
+	m_autoSoundStart = scanMusicStartPoint(filePath, 0.01f);
 	return true;
 }
 
@@ -190,7 +196,7 @@ void VirtualPiano::update(void)
 
 void VirtualPiano::render(void)
 {
-	Renderer::setRenderTarget(&m_blurBuffer1);
+	Renderer::setRenderTarget(&m_glowBuffer);
 	Renderer::clear({ 10, 10, 30, 0 });
 	for (const auto& note : m_fallingNoteGfx_w)
 	{
@@ -200,43 +206,46 @@ void VirtualPiano::render(void)
 	{
 		drawFallingNoteGlow(note);
 	}
-	m_blurBuffer1.display();
-	Renderer::setRenderTarget(&m_blurBuffer2);
+	m_glowBuffer.display();
+	Renderer::setRenderTarget(&m_blurBuff1);
 	Renderer::clear({ 10, 10, 30, 0 });
 	Renderer::useShader(&blurShader);
-	blurShader.setUniform("texture", m_blurBuffer1.getTexture());
-	blurShader.setUniform("direction", sf::Vector2f(1.f, 0.f)); // Horizontal
-	blurShader.setUniform("resolution", (float)m_blurBuffer1.getSize().x);
-	blurShader.setUniform("radius", 150);
-	Renderer::drawTexture(m_blurBuffer1.getTexture());
-	m_blurBuffer2.display();
+	blurShader.setUniform("texture", m_glowBuffer.getTexture());
+	blurShader.setUniform("direction", sf::Glsl::Vec2(1.f, 0.f));
+	blurShader.setUniform("resolution", (float)m_glowBuffer.getSize().x);
+	blurShader.setUniform("spread", 2.5f);
+	blurShader.setUniform("intensity", 1.0f);
+	Renderer::drawTexture(m_glowBuffer.getTexture());
+	m_blurBuff1.display();
+
+	Renderer::setRenderTarget(&m_blurBuff2);
+	Renderer::clear({ 10, 10, 30, 0 });
+	blurShader.setUniform("texture", m_blurBuff1.getTexture());
+	blurShader.setUniform("direction", sf::Glsl::Vec2(0.f, 1.f));
+	blurShader.setUniform("resolution", (float)m_blurBuff2.getSize().y);
+	Renderer::drawTexture(m_blurBuff1.getTexture());
+	m_blurBuff2.display();
 
 	Renderer::setRenderTarget(nullptr);
-	Renderer::clear({ 10, 10, 30 });
-
-	Renderer::useShader(&blurShader);
-	blurShader.setUniform("texture", m_blurBuffer2.getTexture());
-	blurShader.setUniform("direction", sf::Vector2f(0.f, 1.f)); // Vertical
-	blurShader.setUniform("resolution", (float)m_blurBuffer2.getSize().y);
-	blurShader.setUniform("radius", 150);
-	Renderer::drawTexture(m_blurBuffer2.getTexture());
 	Renderer::useTexture(nullptr);
 	Renderer::useShader(nullptr);
+	Renderer::clear({ 5, 12, 5 });
+	Renderer::drawTexture(m_blurBuff2.getTexture(), { 0, 0 }, 2);
 
-	// for (const auto& note : m_fallingNoteGfx_w)
-	// {
-	// 	noteShader.setUniform("u_texture", noteTexture);
-	// 	noteShader.setUniform("u_color", color_to_glsl(note.fillColor));
-	// 	drawFallingNote(note);
-	// 	drawFallingNoteOutline(note);
-	// }
-	// for (auto& note : m_fallingNoteGfx_b)
-	// {
-	// 	noteShader.setUniform("u_texture", noteTexture);
-	// 	noteShader.setUniform("u_color", color_to_glsl(note.fillColor));
-	// 	drawFallingNote(note);
-	// 	drawFallingNoteOutline(note);
-	// }
+	for (const auto& note : m_fallingNoteGfx_w)
+	{
+		noteShader.setUniform("u_texture", noteTexture);
+		noteShader.setUniform("u_color", color_to_glsl(note.fillColor));
+		drawFallingNote(note);
+		drawFallingNoteOutline(note);
+	}
+	for (auto& note : m_fallingNoteGfx_b)
+	{
+		noteShader.setUniform("u_texture", noteTexture);
+		noteShader.setUniform("u_color", color_to_glsl(note.fillColor));
+		drawFallingNote(note);
+		drawFallingNoteOutline(note);
+	}
 
 	Renderer::useShader(nullptr);
 	Renderer::useTexture(nullptr);
@@ -246,10 +255,13 @@ void VirtualPiano::render(void)
 
 void VirtualPiano::onWindowResized(uint32_t width, uint32_t height)
 {
-	// bloomManager.updateSize(width, height);
-	// m_nonGlow = sf::RenderTexture({ width, height });
-	m_blurBuffer1 = sf::RenderTexture({ width, height });
-	m_blurBuffer2 = sf::RenderTexture({ width, height });
+	m_blurBuff1 = sf::RenderTexture({ width / 2, height / 2 });
+	m_blurBuff2 = sf::RenderTexture({ width / 2, height / 2 });
+	m_glowBuffer = sf::RenderTexture({ width / 2, height / 2 });
+
+	m_glowView.setSize({ (float)width, (float)height });
+	m_glowView.setCenter({ width / 2.f, height / 2.f });
+	m_glowBuffer.setView(m_glowView);
 }
 
 void VirtualPiano::renderVirtualKeyboard(void)
@@ -339,7 +351,7 @@ void VirtualPiano::calculateFallingNotes(void)
 			m_vPianoData.fallingWhiteNoteOutlineColor,
 			m_vPianoData.fallingWhiteNoteGlowColor,
 			&noteTexture,
-			-2,
+			-3,
 			10
 		});
 	}
@@ -386,7 +398,7 @@ void VirtualPiano::calculateFallingNotes(void)
 			m_vPianoData.fallingBlackNoteOutlineColor,
 			m_vPianoData.fallingBlackNoteGlowColor,
 			&noteTexture,
-			-2,
+			-3,
 			10
 		});
 	}
