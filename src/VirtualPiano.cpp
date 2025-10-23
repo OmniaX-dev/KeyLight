@@ -23,12 +23,12 @@ VirtualPiano::VirtualPianoData::VirtualPianoData(void)
 	glowMargins = { 4, 4, 4, 4 };
 	recalculateKeyOffsets();
 
-	fallingWhiteNoteColor = { 30, 200, 60 };
-	fallingWhiteNoteOutlineColor = { 200, 255, 200 };
-	fallingWhiteNoteGlowColor = { 200, 255, 200 };
-	fallingBlackNoteColor = { 30, 85, 40 };
-	fallingBlackNoteOutlineColor = { 110, 180, 110 };
-	fallingBlackNoteGlowColor = { 110, 180, 110 };
+	fallingWhiteNoteColor = { 190, 20, 220 };
+	fallingWhiteNoteOutlineColor = { 230, 60, 255 };
+	fallingWhiteNoteGlowColor = { 230, 60, 255 };
+	fallingBlackNoteColor = { 66, 6, 76 };
+	fallingBlackNoteOutlineColor = { 100, 40, 110 };
+	fallingBlackNoteGlowColor = { 100, 40, 110 };
 
 	whiteKeyShrinkFactor = 8;
 	blackKeyShrinkFactor = 0;
@@ -229,7 +229,7 @@ void VirtualPiano::render(void)
 	Renderer::setRenderTarget(nullptr);
 	Renderer::useTexture(nullptr);
 	Renderer::useShader(nullptr);
-	Renderer::clear({ 5, 12, 5 });
+	Renderer::clear({ 2, 0, 2 });
 	Renderer::drawTexture(m_blurBuff2.getTexture(), { 0, 0 }, 2);
 
 	for (const auto& note : m_fallingNoteGfx_w)

@@ -20,8 +20,8 @@ void Window::onInitialize(void)
 	m_windowPositionBeforeFullscreen = { (float)m_window.getPosition().x, (float)m_window.getPosition().y };
 	enableFullscreen(true);
 	m_vpiano.init();
-	m_vpiano.loadMidiFile("res/midi/bells.mid");
-	m_vpiano.loadAudioFile("res/music/bells.mp3");
+	m_vpiano.loadMidiFile("res/midi/rach.mid");
+	m_vpiano.loadAudioFile("res/music/rach.mp3");
 }
 	
 void Window::handleSignal(ostd::tSignal& signal)
