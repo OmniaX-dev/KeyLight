@@ -8,7 +8,6 @@
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
 #include "RoundedRectangleShape.hpp"
-#include "BloomManager.hpp"
 
 class Window;
 class VirtualPiano
@@ -128,21 +127,25 @@ class VirtualPiano
 
 	private:
 		Window& m_parentWindow;
-		std::vector<PianoKey> m_pianoKeys;
 		VirtualPianoData m_vPianoData;
+		sf::Music m_audioFile;
+
+		std::vector<PianoKey> m_pianoKeys;
+		std::vector<MidiParser::NoteEvent> m_midiNotes;
+		std::deque<MidiParser::NoteEvent> m_activeFallingNotes;
+		std::vector<FallingNoteGraphicsData> m_fallingNoteGfx_w;
+		std::vector<FallingNoteGraphicsData> m_fallingNoteGfx_b;
+
 		bool m_playing;
 		bool m_paused;
 		bool m_firstNotePlayed;
 		bool m_hasAudioFile;
-		double m_startTimeOffset_ns { 0.0 };
-		std::vector<MidiParser::NoteEvent> m_midiNotes;
-		double m_fallingTime_s { 4.5 };
-		std::deque<MidiParser::NoteEvent> m_activeFallingNotes;
+
 		int32_t m_nextFallingNoteIndex { 0 };
-		sf::Music m_audioFile;
 		float m_autoSoundStart { 0.0f };
-		std::vector<FallingNoteGraphicsData> m_fallingNoteGfx_w;
-		std::vector<FallingNoteGraphicsData> m_fallingNoteGfx_b;
+
+		double m_fallingTime_s { 4.5 };
+		double m_startTimeOffset_ns { 0.0 };
 
 		sf::RenderTexture m_glowBuffer;
 		sf::RenderTexture m_blurBuff1;

@@ -8,22 +8,22 @@ class MidiParser
     public: class NoteEvent
     {
         public:
-            int pitch;          // MIDI note number (0-127)
-            double startTime;   // Start time in seconds
-            double endTime;   // Start time in seconds
-            double duration;    // Duration in seconds
-            int velocity;       // Attack velocity (1-127)
-            int channel;        // MIDI channel (0-15)
+            int32_t pitch               { 0 };          // MIDI note number (0-127)
+            double startTime            { 0.0 };        // Start time in seconds
+            double endTime              { 0.0 };        // Start time in seconds
+            double duration             { 0.0 };        // Duration in seconds
+            int32_t velocity            { 0 };          // Attack velocity (1-127)
+            int32_t channel             { 0 };          // MIDI channel (0-15)
 
-            bool hit;
+            bool hit { false };
+            bool rightHand { false };
 
         public:
-            bool operator<(const NoteEvent& other) const
+            inline bool operator<(const NoteEvent& other) const
             {
                 return startTime < other.startTime;
             }
-
-            ostd::String toString(void) const
+            inline ostd::String toString(void) const
             {
                 ostd::String str = "Pitch: ";
                 str.add(pitch);
@@ -39,29 +39,20 @@ class MidiParser
 	public: class NoteInfo
 	{
         public:
-            ostd::String name;  // e.g., "A", "C#", "F"
-            int octave;        // e.g., 4 for C4
-            int noteInOctave;    // 0-11
-            int keyIndex;      // 0-based index for 88-key piano (A0=0), -1 if out of range
+            ostd::String name               { "" };     // e.g., "A", "C#", "F"
+            int octave                      { 0 };      // e.g., 4 for C4
+            int noteInOctave                { 0 };      // 0-11
+            int keyIndex                    { 0 };      // 0-based index for 88-key piano (A0=0), -1 if out of range
 
         public:
-            bool isWhiteKey(void) const
+            inline bool isWhiteKey(void) const
             {
                 return noteInOctave == 0 || noteInOctave == 2 || noteInOctave == 4 ||
                 noteInOctave == 5 || noteInOctave == 7 || noteInOctave == 9 ||
                 noteInOctave == 11;
             }
-
-            bool isBlackKey(void) const { return !isWhiteKey(); }
-
-            static bool isWhiteKey(int32_t noteInOctave)
-            {
-                return noteInOctave == 0 || noteInOctave == 2 || noteInOctave == 4 ||
-                noteInOctave == 5 || noteInOctave == 7 || noteInOctave == 9 ||
-                noteInOctave == 11;
-            }
-
-            ostd::String toString(void) const
+            inline bool isBlackKey(void) const { return !isWhiteKey(); }
+            inline ostd::String toString(void) const
             {
                 ostd::String str = "NOTE INFO: ";
                 str.add(name).add(octave);
@@ -71,7 +62,13 @@ class MidiParser
                 return str;
             }
 
-            static bool isBlackKey(int32_t noteInOctave) { return !NoteInfo::isWhiteKey(noteInOctave); }
+            static inline bool isWhiteKey(int32_t noteInOctave)
+            {
+                return noteInOctave == 0 || noteInOctave == 2 || noteInOctave == 4 ||
+                noteInOctave == 5 || noteInOctave == 7 || noteInOctave == 9 ||
+                noteInOctave == 11;
+            }
+            static inline bool isBlackKey(int32_t noteInOctave) { return !NoteInfo::isWhiteKey(noteInOctave); }
 	};
 
     public:
