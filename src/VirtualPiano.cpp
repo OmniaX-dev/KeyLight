@@ -23,12 +23,12 @@ VirtualPiano::VirtualPianoData::VirtualPianoData(void)
 	glowMargins = { 4, 4, 4, 4 };
 	recalculateKeyOffsets();
 
-	fallingWhiteNoteColor = { 190, 20, 220 };
-	fallingWhiteNoteOutlineColor = { 230, 60, 255 };
-	fallingWhiteNoteGlowColor = { 230, 60, 255 };
-	fallingBlackNoteColor = { 66, 6, 76 };
-	fallingBlackNoteOutlineColor = { 100, 40, 110 };
-	fallingBlackNoteGlowColor = { 100, 40, 110 };
+	fallingWhiteNoteColor = { 20, 110, 170 };
+	fallingWhiteNoteOutlineColor = { 50, 140, 200 };
+	fallingWhiteNoteGlowColor = { 50, 140, 200 };
+	fallingBlackNoteColor = { 0, 50, 75 };
+	fallingBlackNoteOutlineColor = { 30, 80, 105 };
+	fallingBlackNoteGlowColor = { 30, 80, 105 };
 
 	whiteKeyShrinkFactor = 8;
 	blackKeyShrinkFactor = 0;
@@ -159,7 +159,7 @@ bool VirtualPiano::loadAudioFile(const ostd::String& filePath)
 	}
 	OX_DEBUG("loaded <%s>", filePath.c_str());
 	m_hasAudioFile = true;
-	m_autoSoundStart = scanMusicStartPoint(filePath, 0.01f);
+	m_autoSoundStart = scanMusicStartPoint(filePath, 0.005f);
 	return true;
 }
 
