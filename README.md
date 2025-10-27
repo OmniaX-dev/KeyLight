@@ -3,12 +3,13 @@
 A Free and OpenSource MIDI Piano Visualizer
 
 ## Build instructions - All
-This project requires the OmniaFramework library I wrote, which can be found at https://github.com/OmniaX-dev/OmniaFramework   
+This project requires the OmniaFramework library I wrote, which can be found at https://github.com/OmniaX-dev/OmniaFramework
 This library must be correctly installed in clang's search paths (include, lib, bin) before compiling this project.
 
 ## Build instructions - Windows
 **Step 1:**
 download MSYS2 from https://www.msys2.org/ and install it (the project assumes the default install path of c:\msys64, if you install it anywhere else you might have to adjust some scripts/commands accordingly)
+
 
 
 **Step 2:**
@@ -72,7 +73,7 @@ open a terminal inside the root directory of the project and run this command:
 open a terminal and run:
 ```
 sudo dnf update
-sudo dnf install gcc gcc-c++ make clang gdb cmake clang-tools-extra boost boost-devel openssl openssl-devel SDL2 SDL2_image SDL2_mixer SDL2_ttf SDL2_gfx SDL2-devel SDL2_image-devel SDL2_mixer-devel SDL2_ttf-devel SDL2_gfx-devel 
+sudo dnf install gcc gcc-c++ make clang gdb cmake clang-tools-extra boost boost-devel openssl openssl-devel SDL2 SDL2_image SDL2_mixer SDL2_ttf SDL2_gfx SDL2-devel SDL2_image-devel SDL2_mixer-devel SDL2_ttf-devel SDL2_gfx-devel
 ```
 
 #### For other Linux distros, install the dependencies using your package manager.
