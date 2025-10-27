@@ -62,7 +62,7 @@ if (WIN32)
 	target_link_libraries(${MAIN_EXECUTABLE} mingw32)
 endif (WIN32)
 target_link_libraries(${MAIN_EXECUTABLE} SDL2main SDL2)
-target_link_libraries(${MAIN_EXECUTABLE} sfml-system sfml-window sfml-graphics sfml-audio)
+target_link_libraries(${MAIN_EXECUTABLE} sfml-system sfml-window sfml-graphics sfml-audio tgui)
 #-----------------------------------------------------------------------------------------
 
 #Linking 

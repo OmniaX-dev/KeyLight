@@ -90,6 +90,7 @@ void WindowBase::handleEvents(void)
 	};
 	while (const std::optional event = m_window.pollEvent())
 	{
+		onEventPoll(event);
 		// Close window: exit
 		if (event->is<sf::Event::Closed>())
 		{
@@ -107,6 +108,16 @@ void WindowBase::handleEvents(void)
 			wrd.new_width = m_windowWidth;
 			wrd.new_height = m_windowHeight;
 			ostd::SignalHandler::emitSignal(ostd::tBuiltinSignals::WindowResized, ostd::tSignalPriority::RealTime, wrd);
+		}
+		else if (event->is<sf::Event::FocusLost>())
+		{
+			// const auto* focus = event->getIf<sf::Event::Resized>();
+			ostd::SignalHandler::emitSignal(WindowFocusLost, ostd::tSignalPriority::RealTime, *this);
+		}
+		else if (event->is<sf::Event::FocusGained>())
+		{
+			// const auto* focus = event->getIf<sf::Event::Resized>();
+			ostd::SignalHandler::emitSignal(WindowFocusGained, ostd::tSignalPriority::RealTime, *this);
 		}
 		else if (event->is<sf::Event::MouseMoved>())
 		{

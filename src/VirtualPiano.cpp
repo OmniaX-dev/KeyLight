@@ -473,7 +473,7 @@ float VirtualPiano::scanMusicStartPoint(const ostd::String& filePath, float thre
         if (rms > threshold)
         {
             // Found the first sustained sound
-            return static_cast<float>(i / channels) / sampleRate;
+            return static_cast<float>((float)i / channels) / sampleRate;
         }
     }
 

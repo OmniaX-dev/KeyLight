@@ -1,7 +1,6 @@
 #include "MidiParser.hpp"
 
 #include "vendor/midifile/MidiFile.h"
-#include <iostream>
 #include <vector>
 #include <stdexcept>
 #include <string>

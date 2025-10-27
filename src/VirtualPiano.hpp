@@ -7,7 +7,6 @@
 #include <ostd/Geometry.hpp>
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
-#include "RoundedRectangleShape.hpp"
 
 class Window;
 class VirtualPiano

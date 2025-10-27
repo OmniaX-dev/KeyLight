@@ -8,7 +8,8 @@ This library must be correctly installed in clang's search paths (include, lib, 
 
 ## Build instructions - Windows
 **Step 1:**
-download MSYS2 from https://www.msys2.org/ and install it
+download MSYS2 from https://www.msys2.org/ and install it (the project assumes the default install path of c:\msys64, if you install it anywhere else you might have to adjust some scripts/commands accordingly)
+
 
 **Step 2:**
 run MSYS2, and in the terminal run:
@@ -18,13 +19,27 @@ pacman -S --needed base-devel mingw-w64-ucrt-x86_64-clang mingw-w64-ucrt-x86_64-
 ```
 
 **Step 3:**
-open a UCRT64/MSYS2 command prompt inside the root directory of the project
+open a UCRT64/MSYS2 command prompt
 
 **Step 4:**
-execute this command:
+in the UCRT64 command prompt, run the following commands to install tgui (dependency of the project)
+```
+git clone https://github.com/texus/TGUI.git
+cd TGUI
+mkdir build && cd build
+cmake .. -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DTGUI_BACKEND=SFML_GRAPHICS -DCMAKE_INSTALL_PREFIX=/ucrt64
+make -j$(nproc)
+make install
+```
+
+
+**Step 4:**
+now, in the UCRT64 command prompt, navigate to the root directory of the project and execute this command to build KeyLight:
 ```
 ./compile
 ```
+
+
 ## Build instructions - Linux (Arch)
 **Step 1:**
 open a terminal and run:

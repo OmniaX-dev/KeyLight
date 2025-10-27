@@ -3,10 +3,8 @@
         {
             "name": "Linux",
             "includePath": [
-                "${default}",
-                "${workspaceRoot}/../omnia-framework/src"
-            ],
-            "defines": [],
+                "${default}"
+            ],"defines": [],
             "compilerPath": "/usr/bin/clang++",
             "cStandard": "c17",
             "cppStandard": "c++23",
@@ -16,8 +14,7 @@
         {
             "name": "Windows",
             "includePath": [
-                "${default}",
-                "${workspaceRoot}/../omnia-framework/src"
+                "${default}"
             ],
             "defines": [],
             "compilerPath": "C:\\msys64\\ucrt64\\bin\\clang++",
