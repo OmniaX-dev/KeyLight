@@ -1,3 +1,23 @@
+/*
+    KeyLight - A MIDI Piano Visualizer
+    Copyright (C) 2025  OmniaX-Dev
+
+    This file is part of KeyLight.
+
+    KeyLight is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    KeyLight is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with KeyLight.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 #pragma once
 
 #include "SFMLWindow.hpp"
@@ -5,13 +25,7 @@
 #include <ostd/Defines.hpp>
 #include <ostd/Signals.hpp>
 #include <ostd/Utils.hpp>
-
-#include <TGUI/Backend/SFML-Graphics.hpp>
-#include <TGUI/TGUI.hpp>
-
-// #ifdef WINDOWS_OS
-// 	#include  <windows.h>
-// #endif
+#include "Gui.hpp"
 
 class Window : public WindowBase
 {
@@ -26,27 +40,11 @@ class Window : public WindowBase
 		void onFixedUpdate(void) override;
 		void onUpdate(void) override;
 		void enableFullscreen(bool enable = true);
-		void drawGUI(void);
-
-		bool buildGUI(tgui::BackendGui& gui);
-
-		void onFileSelected(const tgui::String& str);
 
 	private:
 		ostd::Vec2 m_windowSizeBeforeFullscreen { 0.0f, 0.0f };
 		ostd::Vec2 m_windowPositionBeforeFullscreen { 0.0f, 0.0f };
 		bool m_isFullscreen { false };
 		VirtualPiano m_vpiano;
-
-		tgui::Gui m_gui;
-		std::optional<sf::Cursor> m_cursor;
-		sf::Image m_icon;
-		bool m_drawGui { true };
-
-		// #ifdef WINDOWS_OS
-		// 		std::chrono::steady_clock::time_point lastFocusChange;
-		// 		bool isTopmost = false;
-		// 	public:
-		// 		inline static constexpr bool OnWindows = true;
-		// #endif
+		Gui m_gui;
 };

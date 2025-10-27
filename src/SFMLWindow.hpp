@@ -1,3 +1,23 @@
+/*
+    KeyLight - A MIDI Piano Visualizer
+    Copyright (C) 2025  OmniaX-Dev
+
+    This file is part of KeyLight.
+
+    KeyLight is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    KeyLight is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with KeyLight.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 #pragma once
 
 #include <ostd/BaseObject.hpp>
@@ -17,6 +37,7 @@ class WindowBase : public ostd::BaseObject
 		~WindowBase(void);
 		inline WindowBase(int32_t width, int32_t height, const ostd::String& windowTitle) { initialize(width, height, windowTitle); }
 		void initialize(int32_t width, int32_t height, const ostd::String& windowTitle);
+		void close(void);
 
 		void update(void);
 		void setSize(int32_t width, int32_t height);
@@ -29,11 +50,11 @@ class WindowBase : public ostd::BaseObject
 		inline virtual void onSlowUpdate(void) { }
 		inline virtual void onInitialize(void) { }
 		inline virtual void onDestroy(void) { }
+		inline virtual void onClose(void) { }
 		inline virtual void onEventPoll(const std::optional<sf::Event>& event) { }
 
 		inline bool	isInitialized(void) const { return m_initialized; }
 		inline bool	isRunning(void) const { return m_running; }
-		inline void	close(void) { m_running = false; }
 		inline void	hide(void) { m_window.setVisible(false); }
 		inline void	show(void) { m_window.setVisible(true); }
 		inline ostd::String	getTitle(void) const { return m_title; }

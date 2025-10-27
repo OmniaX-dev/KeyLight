@@ -41,6 +41,7 @@ list(APPEND SOURCE_FILES
 	${CMAKE_CURRENT_LIST_DIR}/src/Common.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/VirtualPiano.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/Renderer.cpp
+	${CMAKE_CURRENT_LIST_DIR}/src/Gui.cpp
 )
 #-----------------------------------------------------------------------------------------
 
@@ -55,7 +56,7 @@ target_compile_definitions(${MAIN_EXECUTABLE} PUBLIC  BUILD_NR=${BUILD_NUMBER} M
 #TODO: Different flags for Release/Debug
 add_compile_options(-O3 -m32 -MMD -MP -Wall -ggdb)
 if (UNIX)
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,'$ORIGIN',-rpath,/usr/lib")
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,'$ORIGIN',-rpath,/usr/lib,-rpath,/usr/local/lib")
 	target_link_libraries(${MAIN_EXECUTABLE} xcb xcb-randr boost_regex)
 endif (UNIX)
 if (WIN32)
@@ -65,7 +66,7 @@ target_link_libraries(${MAIN_EXECUTABLE} SDL2main SDL2)
 target_link_libraries(${MAIN_EXECUTABLE} sfml-system sfml-window sfml-graphics sfml-audio tgui)
 #-----------------------------------------------------------------------------------------
 
-#Linking 
+#Linking
 #-----------------------------------------------------------------------------------------
 target_link_libraries(${MAIN_EXECUTABLE} ostd)
 target_link_libraries(${MAIN_EXECUTABLE} ogfx)

@@ -1,6 +1,27 @@
+/*
+    KeyLight - A MIDI Piano Visualizer
+    Copyright (C) 2025  OmniaX-Dev
+
+    This file is part of KeyLight.
+
+    KeyLight is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    KeyLight is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with KeyLight.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 #include "Window.hpp"
 #include "Renderer.hpp"
 #include <ostd/Logger.hpp>
+#include <vector>
 
 void Window::onInitialize(void)
 {
@@ -25,19 +46,7 @@ void Window::onInitialize(void)
 	m_vpiano.loadMidiFile("res/midi/rach.mid");
 	m_vpiano.loadAudioFile("res/music/rach.mp3");
 
-	sf::Image cursorImage;
-	if (cursorImage.loadFromFile("themes/ui/cursor.png"))
-	{
-		sf::Cursor tempCursor(cursorImage.getPixelsPtr(), cursorImage.getSize(), sf::Vector2u(0, 0));
-		m_cursor = std::move(tempCursor);
-		m_window.setMouseCursor(*m_cursor);
-	}
-	if (m_icon.loadFromFile("themes/ui/icon.png"))
-    {
-        m_window.setIcon(m_icon.getSize(), m_icon.getPixelsPtr());
-    } //TODO: Error
-	m_gui.setWindow(m_window);
-	buildGUI(m_gui);
+	m_gui.init(*this, "themes/ui/cursor.png", "themes/ui/icon.png", "themes/Dark.txt", true);
 }
 
 void Window::handleSignal(ostd::tSignal& signal)
@@ -64,12 +73,18 @@ void Window::handleSignal(ostd::tSignal& signal)
 		}
 		else if (evtData.keyCode == (int32_t)sf::Keyboard::Key::F2)
 		{
-			m_drawGui = !m_drawGui;
+			m_gui.toggleVisibility();
+		}
+		else if (evtData.keyCode == (int32_t)sf::Keyboard::Key::F3)
+		{
+			m_gui.showFileDialog("Test File DIalog", { { "All file types", { "*.*" } } }, [](const std::vector<ostd::String>& fileList, bool wasCanceled){
+
+			}, true);
 		}
 	}
 	else if (signal.ID == ostd::tBuiltinSignals::WindowResized)
 	{
-		auto&	 evtData = (WindowResizedData&)signal.userData;
+		auto& evtData = (WindowResizedData&)signal.userData;
 		sf::View view	 = m_window.getView();
 		view.setSize({ static_cast<float>(evtData.new_width), static_cast<float>(evtData.new_height) });
 		view.setCenter({ evtData.new_width / 2.f, evtData.new_height / 2.f });
@@ -88,32 +103,15 @@ void Window::handleSignal(ostd::tSignal& signal)
 	}
 	else if (signal.ID == WindowFocusLost)
 	{
-		// if (OnWindows)
-		// {
-		//     HWND hwnd = m_window.getNativeHandle();
-		//     SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOOWNERZORDER | SWP_SHOWWINDOW);
-		//     lastFocusChange = std::chrono::steady_clock::now();
-		//     std::cout << "LOST\n";
-		// }
 	}
 	else if (signal.ID == WindowFocusGained)
 	{
-		// if (OnWindows)
-		// {
-		//         std::cout << "GAINED\n";
-		//     if (std::chrono::steady_clock::now() - lastFocusChange > std::chrono::milliseconds(100))
-		//     {
-		//         HWND hwnd = m_window.getNativeHandle();
-		//         SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOOWNERZORDER | SWP_SHOWWINDOW);
-		//         lastFocusChange = std::chrono::steady_clock::now();
-		//     }
-		// }
 	}
 }
 
 void Window::onEventPoll(const std::optional<sf::Event>& event)
 {
-	m_gui.handleEvent(*event);
+	m_gui.onEventPoll(event);
 }
 
 void Window::onRender(void)
@@ -160,48 +158,17 @@ void Window::enableFullscreen(bool enable)
 		m_window.setPosition({ (int32_t)m_windowPositionBeforeFullscreen.x, (int32_t)m_windowPositionBeforeFullscreen.y });
 		m_isFullscreen = false;
 	}
-	m_window.setMouseCursor(*m_cursor);
+	// m_window.setMouseCursor(*m_cursor);
 	auto			  new_size = m_window.getSize();
 	WindowResizedData wrd(*this, old_size.x, old_size.y, new_size.x, new_size.y);
 	ostd::SignalHandler::emitSignal(ostd::tBuiltinSignals::WindowResized, ostd::tSignalPriority::RealTime, wrd);
 }
 
-void Window::drawGUI(void)
-{
-}
-
-void Window::onFileSelected(const tgui::String& str)
-{
-	std::cout << "BOOM! " << str << "\n";
-}
-
+/*
 bool Window::buildGUI(tgui::BackendGui& gui)
 {
 	try
 	{
-		gui.setRelativeView({ 0, 0, 0.5f, 0.5f });
-		tgui::Theme theme { "themes/Dark.txt" };
-
-		auto fileDialog = tgui::FileDialog::create();
-		fileDialog->setTitle("Open File");
-		fileDialog->setFileMustExist(true);
-		const std::vector<std::pair<tgui::String, std::vector<tgui::String>>> filters {
-			{ "Image files", { "*.png", "*.jpg" } }
-		};
-		fileDialog->setFileTypeFilters(filters);
-		fileDialog->setRenderer(theme.getRenderer("FileDialog"));
-
-		fileDialog->onFileSelect([&](const std::filesystem::path& path) {
-			std::cout << "Selected file: " << path << '\n';
-		});
-
-		gui.add(fileDialog);
-		fileDialog->setVisible(false);
-		fileDialog->onFileSelect([this](const tgui::Filesystem::Path& path) {
-			onFileSelected(path.asString());  // Convert Path to String if needed
-		});
-
-
 		auto tabs = tgui::Tabs::create();
 		tabs->setRenderer(theme.getRenderer("Tabs"));
 		tabs->setTabHeight(30);
@@ -411,3 +378,4 @@ bool Window::buildGUI(tgui::BackendGui& gui)
 
 	return true;
 }
+*/

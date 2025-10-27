@@ -1,3 +1,23 @@
+/*
+    KeyLight - A MIDI Piano Visualizer
+    Copyright (C) 2025  OmniaX-Dev
+
+    This file is part of KeyLight.
+
+    KeyLight is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    KeyLight is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with KeyLight.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 #include "SFMLWindow.hpp"
 #include <ostd/Logger.hpp>
 
@@ -21,6 +41,13 @@ void WindowBase::initialize(int32_t width, int32_t height, const ostd::String& w
 	validate();
 
 	onInitialize();
+}
+
+void WindowBase::close(void)
+{
+	m_running = false;
+	onClose();
+	ostd::SignalHandler::emitSignal(ostd::tBuiltinSignals::WindowClosed, ostd::tSignalPriority::RealTime, *this);
 }
 
 void WindowBase::update(void)
@@ -95,7 +122,8 @@ void WindowBase::handleEvents(void)
 		if (event->is<sf::Event::Closed>())
 		{
 			m_running = false;
-			ostd::SignalHandler::emitSignal(ostd::tBuiltinSignals::WindowClosed, ostd::tSignalPriority::Normal, *this);
+			onClose();
+			ostd::SignalHandler::emitSignal(ostd::tBuiltinSignals::WindowClosed, ostd::tSignalPriority::RealTime, *this);
 		}
 		else if (event->is<sf::Event::Resized>())
 		{

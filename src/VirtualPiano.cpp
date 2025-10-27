@@ -1,3 +1,23 @@
+/*
+    KeyLight - A MIDI Piano Visualizer
+    Copyright (C) 2025  OmniaX-Dev
+
+    This file is part of KeyLight.
+
+    KeyLight is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    KeyLight is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with KeyLight.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 #include "VirtualPiano.hpp"
 #include "Common.hpp"
 #include <ostd/Logger.hpp>
@@ -60,12 +80,14 @@ void VirtualPiano::VirtualPianoData::updateScale(int32_t width, int32_t height)
 {
 	scale_x = (float)width / (float)base_width;
 	scale_y = (float)height / (float)base_height;
+	Common::guiScaleX = scale_x;
+	Common::guiScaleY = scale_y;
 }
 
 
 
 void VirtualPiano::init(void)
-{	
+{
 	m_playing = false;
 	m_paused = false;
 	m_firstNotePlayed = false;
@@ -84,7 +106,7 @@ void VirtualPiano::init(void)
 	if (!noteTexture.loadFromFile("res/tex/note.jpg"))
 		OX_ERROR("Failed to load texture");
 	noteTexture.setRepeated(true);
-	
+
 	sf::Vector2u winSize = { m_parentWindow.sfWindow().getSize().x, m_parentWindow.sfWindow().getSize().y };
 	sf::Vector2u winHalfSize = { winSize.x / 2, winSize.y / 2 };
 	m_blurBuff1 = sf::RenderTexture(winHalfSize);
@@ -360,7 +382,7 @@ void VirtualPiano::calculateFallingNotes(void)
 	{
 		auto noteInfo = MidiParser::getNoteInfo(note.pitch);
 		if (noteInfo.isWhiteKey()) continue;
-		
+
 		double h = note.duration * m_vPianoData.pps();
 		double totalTravelTime = m_fallingTime_s + note.duration;
 		double elapsedSinceSpawn = (currentTime - (note.startTime - m_fallingTime_s));
@@ -449,7 +471,7 @@ float VirtualPiano::scanMusicStartPoint(const ostd::String& filePath, float thre
     // Convert percentage to raw PCM units
     const float fullScale = 32767.f;
     const float threshold = thresholdPercent * fullScale;
-	const std::size_t hop = 256; 
+	const std::size_t hop = 256;
 
     // Number of samples in the sustain window (per channel)
     std::size_t windowSamples = static_cast<std::size_t>(minDuration * sampleRate);
