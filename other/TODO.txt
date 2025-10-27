@@ -1,0 +1,23 @@
+General/Project
+	Rewrite Readme file
+	Streamlined way of creating a Windows Release
+	Testing on fresh Arch/Ubundu/Fedora installs
+
+Gui
+	FileDialog Filter manager
+	Automatic midi/mp3 list for files that are in the correct folders (res/midi & res/music)
+	Ability to load midi/mp3 (ogg?) at will, using the FileDialog
+	Gui to customize the colors of the VirtualPiano/Falling Notes
+	Gui to customize all values (sizes, defaults) of the VirtualPiano/Falling Notes
+
+VirtualPiano
+	Implement Pause/Stop functionality
+	Implement seekbar functionality
+
+Core
+	Implement way to render the whole thing to a file
+
+GFX
+	Implement Particle System
+	Implement Better blur
+	Implement Emissive glow
