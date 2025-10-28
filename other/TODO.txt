@@ -1,7 +1,8 @@
 General/Project
 	Rewrite Readme file
-	Streamlined way of creating a Windows Release
+	***Streamlined way of creating a Windows Release
 	Testing on fresh Arch/Ubundu/Fedora installs
+	***Separate Release/Debug configurations
 
 Gui
 	FileDialog Filter manager
@@ -9,6 +10,7 @@ Gui
 	Ability to load midi/mp3 (ogg?) at will, using the FileDialog
 	Gui to customize the colors of the VirtualPiano/Falling Notes
 	Gui to customize all values (sizes, defaults) of the VirtualPiano/Falling Notes
+	Splash Screen
 
 VirtualPiano
 	Implement Pause/Stop functionality
@@ -16,7 +18,6 @@ VirtualPiano
 
 Core
 	Implement way to render the whole thing to a file
-
 
 GFX
 	Implement Particle System
