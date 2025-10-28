@@ -24,6 +24,10 @@ elif [[ "$1" == "windows_release" ]]; then
     cd other
     ./build_windows_release.sh
     cd ..
+elif [[ "$1" == "dependencies" ]]; then
+    cd other
+    ./build_dependencies.sh
+    cd ..
 else
     cp -r extra/* bin/
     printf "\n\033[0;32mBuilding Changes...\n\n\033[0m"

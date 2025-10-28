@@ -32,8 +32,6 @@ KeyLight uses the [**midifile**](https://github.com/craigsapp/midifile) library 
 
 > This library is **included directly** in the project source tree, so no separate installation is required, the library is compiled as part of KeyLight.
 
-
-
 ### <u>Build instructions - Windows</u>
 
 ##### Step 1: Install MSYS2
@@ -101,7 +99,7 @@ cd KeyLight
 
 ##### Build options
 
-Once **MSYS2** is installed and your environment is set up, you can use the `./build` script to compile KeyLight in various modes:
+Once **MSYS2** is installed and your environment is set up, you can use the `./build` script to compile KeyLight in various modes other than release:
 
 ###### <u>Debug build</u>
 
@@ -139,7 +137,7 @@ Creates a full Windows release in `bin/KeyLight_w64/`, including:
 - The compiled executable
 - All required DLLs
 - Assets and resources
-- License file
+- License files
 
 > ⚠️ **Important:**
 > This script assumes MSYS2 is installed at `C:/msys64`.

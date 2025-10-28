@@ -1,6 +1,9 @@
 General/Project
  ** Rewrite Readme file
-	***Streamlined way of creating a Windows Release
+    Add Linux build insctructions to README
+    Maybe a Linux script to install dependencies
+    Maybe an MSYS2 script to install dependencies on Windows
+ ** Streamlined way of creating a Windows Release
 	Testing on fresh Arch/Ubundu/Fedora installs
  ** Separate Release/Debug configurations
 

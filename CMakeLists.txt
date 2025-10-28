@@ -85,8 +85,6 @@ if (UNIX)
     target_link_libraries(${MAIN_EXECUTABLE} xcb xcb-randr boost_regex)
 endif (UNIX)
 
-target_link_libraries(${MAIN_EXECUTABLE} SDL2main SDL2)
 target_link_libraries(${MAIN_EXECUTABLE} sfml-system sfml-window sfml-graphics sfml-audio tgui)
 target_link_libraries(${MAIN_EXECUTABLE} ostd)
-# target_link_libraries(${MAIN_EXECUTABLE} ogfx)
 #-----------------------------------------------------------------------------------------
