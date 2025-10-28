@@ -20,6 +20,10 @@ if [[ "$1" == "debug" || "$1" == "release" ]]; then
     ((build_number++))
     truncate -s 0 other/build.nr
     echo $build_number >> other/build.nr
+elif [[ "$1" == "windows_release" ]]; then
+    cd other
+    ./build_windows_release.sh
+    cd ..
 else
     cp -r extra/* bin/
     printf "\n\033[0;32mBuilding Changes...\n\n\033[0m"

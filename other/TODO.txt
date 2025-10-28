@@ -1,8 +1,8 @@
 General/Project
-	Rewrite Readme file
+ ** Rewrite Readme file
 	***Streamlined way of creating a Windows Release
 	Testing on fresh Arch/Ubundu/Fedora installs
-	***Separate Release/Debug configurations
+ ** Separate Release/Debug configurations
 
 Gui
 	FileDialog Filter manager
