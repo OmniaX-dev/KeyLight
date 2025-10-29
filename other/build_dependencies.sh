@@ -32,13 +32,6 @@ install_manual_dependencies_linux() {
     sudo make install
     cd ../..
 
-    # Build OmniaFramework
-	git clone https://github.com/OmniaX-dev/OmniaFramework.git
-    cd OmniaFramework
-    ./build release
-    ./build install
-    cd ../..
-
 	# Build SFML3
 	git clone --branch 3.0.1 https://github.com/SFML/SFML.git sfml3
 	cd sfml3
@@ -48,6 +41,13 @@ install_manual_dependencies_linux() {
 	    -DBUILD_SHARED_LIBS=ON
 	cmake --build build-shared
 	sudo cmake --install build-shared
+
+    # Build OmniaFramework
+	git clone https://github.com/OmniaX-dev/OmniaFramework.git
+    cd OmniaFramework
+    ./build release
+    ./build install
+    cd ../..
 }
 
 set -e
