@@ -1,3 +1,5 @@
+# ⚠️ !!! THIS PROJECT IS STILL IN EARLY DEVELOPMENT !!! ⚠️
+
 # ![icon.png](./other/icon.png) KeyLight
 
 #### A modern alternative to tools like *Embers* and *SeeMusic*
@@ -87,7 +89,19 @@ make install
 cd ..
 ```
 
-#### Step 5: build KeyLight
+#### Step 5: build OmniaFramework
+
+IN the **UCRT64** terminal, run the following commands to download, compile and install **OmniaFramework** into your environment:
+
+```bash
+pacman -S --needed base-devel mingw-w64-ucrt-x86_64-clang mingw-w64-ucrt-x86_64-gdb mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-make mingw-w64-ucrt-x86_64-boost mingw-w64-ucrt-x86_64-SDL2 mingw-w64-ucrt-x86_64-SDL2_mixer mingw-w64-ucrt-x86_64-SDL2_image mingw-w64-ucrt-x86_64-SDL2_ttf mingw-w64-ucrt-x86_64-SDL2_gfx
+git clone https://github.com/OmniaX-dev/OmniaFramework.git
+cd OmniaFramework
+./build relese
+./build install
+```
+
+#### Step 6: build KeyLight
 
 Finally, still in the UCRT64 terminal, run the following commands to download and compile KeyLight:
 
