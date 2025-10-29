@@ -29,13 +29,13 @@ if [ "$(expr substr $(uname -s) 1 10)" == "MINGW64_NT" ]; then
     cmake .. -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DTGUI_BACKEND=SFML_GRAPHICS -DCMAKE_INSTALL_PREFIX=/ucrt64
     make -j$(nproc)
     make install
-    cd ..
+    cd ../..
 
     # Build OmniaFramework
     pacman -S --noconfirm --needed base-devel mingw-w64-ucrt-x86_64-clang mingw-w64-ucrt-x86_64-gdb mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-make mingw-w64-ucrt-x86_64-boost mingw-w64-ucrt-x86_64-SDL2 mingw-w64-ucrt-x86_64-SDL2_mixer mingw-w64-ucrt-x86_64-SDL2_image mingw-w64-ucrt-x86_64-SDL2_ttf mingw-w64-ucrt-x86_64-SDL2_gfx
     git clone https://github.com/OmniaX-dev/OmniaFramework.git
     cd OmniaFramework
-    ./build relese
+    ./build release
     ./build install
     cd ..
 fi
