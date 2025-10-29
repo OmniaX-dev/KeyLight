@@ -62,7 +62,7 @@ void Gui::handleSignal(ostd::tSignal& signal)
 		static sf::Cursor defaultCursor(sf::Cursor::Type::Arrow);
 		m_window->sfWindow().setMouseCursor(defaultCursor);
 		m_cursor.reset();
-		OX_INFO("Gui Cleanup complete.");
+		OX_DEBUG("Gui Cleanup complete.");
 	}
 }
 
