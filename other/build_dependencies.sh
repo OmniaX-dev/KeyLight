@@ -22,6 +22,23 @@ detect_package_manager() {
   fi
 }
 
+install_manual_dependencies_linux() {
+    # Build TGUI
+    git clone https://github.com/texus/TGUI.git
+    cd TGUI
+    mkdir build && cd build
+    cmake .. -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DTGUI_BACKEND=SFML_GRAPHICS -DCMAKE_INSTALL_PREFIX=/usr
+    make -j$(nproc)
+    sudo make install
+    cd ../..
+
+    # Build OmniaFramework
+	git clone https://github.com/OmniaX-dev/OmniaFramework.git
+    cd OmniaFramework
+    ./build release
+    ./build install
+    cd ../..
+}
 
 set -e
 mkdir ../dependencies && cd ../dependencies
@@ -64,41 +81,24 @@ if [ "$(expr substr $(uname -s) 1 10)" == "MINGW64_NT" ]; then
 elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
 	pkgmgr=$(detect_package_manager)
 	case "$pkgmgr" in
-	  pacman)
+	  pacman) # Arch Based ==================================================================================================
 	    sudo pacman -Syu --noconfirm
-	    sudo pacman -S --noconfirm base-devel clang openssl gdb cmake make boost sfml
-
-	    # Build TGUI
-	    git clone https://github.com/texus/TGUI.git
-	    cd TGUI
-	    mkdir build && cd build
-	    cmake .. -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DTGUI_BACKEND=SFML_GRAPHICS -DCMAKE_INSTALL_PREFIX=/usr
-	    make -j$(nproc)
-	    sudo make install
-	    cd ../..
-
-	    # Build OmniaFramework
-	    sudo pacman -S --noconfirm --needed base-devel clang gdb cmake make boost sdl2 sdl2_mixer sdl2_image sdl2_ttf sdl2_gfx
-		git clone https://github.com/OmniaX-dev/OmniaFramework.git
-	    cd OmniaFramework
-	    ./build release
-	    ./build install
-	    cd ../..
-
+	    sudo pacman -S --noconfirm --needed base-devel clang openssl gdb cmake make boost sfml sdl2 sdl2_mixer sdl2_image sdl2_ttf sdl2_gfx
 	    ;;
-	  apt)
+	  apt) # Debian Based ==================================================================================================
 	    sudo apt update
-	    sudo apt install -y build-essential dkms linux-headers-$(uname -r) \
+	    sudo apt install -y build-essential dkms linux-headers-generic \
 	      clang gdb make cmake libssl-dev libboost-all-dev \
 	      libsdl2-dev libsdl2-mixer-dev libsdl2-image-dev \
-	      libsdl2-ttf-dev libsdl2-gfx-dev libxcb-randr0-dev
+	      libsdl2-ttf-dev libsdl2-gfx-dev libxcb-randr0-dev libsfml-dev
 	    ;;
-	  dnf)
+	  dnf) # Fedora ==================================================================================================
 	    sudo dnf install -y clang gdb make cmake boost-devel SDL2-devel SDL2_mixer-devel SDL2_image-devel SDL2_ttf-devel SDL2_gfx-devel libxcb-devel
 	    ;;
 	  *)
-	    echo "Unsupported distro. Only Arch-based, Debian-based, and Fedora are supported."
+	    echo "Unsupported distro. Supported distros are: Arch, EndeavourOS, Garuda, Manjaro, Ubuntu, Mint, Debian, Fedora."
 	    exit 1
 	    ;;
-esac
+	esac
+	install_manual_dependencies_linux
 fi
