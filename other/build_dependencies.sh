@@ -23,15 +23,6 @@ detect_package_manager() {
 }
 
 install_manual_dependencies_linux() {
-    # Build TGUI
-    git clone https://github.com/texus/TGUI.git
-    cd TGUI
-    mkdir build && cd build
-    cmake .. -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DTGUI_BACKEND=SFML_GRAPHICS -DCMAKE_INSTALL_PREFIX=/usr
-    make -j$(nproc)
-    sudo make install
-    cd ../..
-
 	# Build SFML3
 	git clone --branch 3.0.1 https://github.com/SFML/SFML.git sfml3
 	cd sfml3
@@ -41,6 +32,15 @@ install_manual_dependencies_linux() {
 	    -DBUILD_SHARED_LIBS=ON
 	cmake --build build-shared
 	sudo cmake --install build-shared
+
+    # Build TGUI
+    git clone https://github.com/texus/TGUI.git
+    cd TGUI
+    mkdir build && cd build
+    cmake .. -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DTGUI_BACKEND=SFML_GRAPHICS -DCMAKE_INSTALL_PREFIX=/usr
+    make -j$(nproc)
+    sudo make install
+    cd ../..
 
     # Build OmniaFramework
 	git clone https://github.com/OmniaX-dev/OmniaFramework.git
