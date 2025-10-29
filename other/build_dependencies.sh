@@ -38,6 +38,16 @@ install_manual_dependencies_linux() {
     ./build release
     ./build install
     cd ../..
+
+	# Build SFML3
+	git clone --branch 3.0.1 https://github.com/SFML/SFML.git sfml3
+	cd sfml3
+	cmake -S . -B build-shared -G Ninja \
+	    -DCMAKE_BUILD_TYPE=Release \
+	    -DCMAKE_INSTALL_PREFIX=/usr \
+	    -DBUILD_SHARED_LIBS=ON
+	cmake --build build-shared
+	sudo cmake --install build-shared
 }
 
 set -e
@@ -46,10 +56,13 @@ mkdir ../dependencies && cd ../dependencies
 if [ "$(expr substr $(uname -s) 1 10)" == "MINGW64_NT" ]; then
     # Setup environment
     pacman -Syuu --noconfirm
-    pacman -S --noconfirm --needed base-devel mingw-w64-ucrt-x86_64-clang mingw-w64-ucrt-x86_64-gdb mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-make mingw-w64-ucrt-x86_64-boost
+    pacman -S --noconfirm --needed base-devel mingw-w64-ucrt-x86_64-clang mingw-w64-ucrt-x86_64-gdb \
+    							   mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-make mingw-w64-ucrt-x86_64-boost
 
     # Build SFML3
-    pacman -S --noconfirm --needed git cmake ninja mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-libvorbis mingw-w64-ucrt-x86_64-flac mingw-w64-ucrt-x86_64-libogg mingw-w64-ucrt-x86_64-openal mingw-w64-ucrt-x86_64-freetype mingw-w64-ucrt-x86_64-libjpeg-turbo
+    pacman -S --noconfirm --needed git cmake ninja mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-libvorbis \
+    							   mingw-w64-ucrt-x86_64-flac mingw-w64-ucrt-x86_64-libogg mingw-w64-ucrt-x86_64-openal \
+              					   mingw-w64-ucrt-x86_64-freetype mingw-w64-ucrt-x86_64-libjpeg-turbo
     git clone --branch 3.0.1 https://github.com/SFML/SFML.git sfml3
     cd sfml3
     cmake -S . -B build-shared -G Ninja \
@@ -72,7 +85,11 @@ if [ "$(expr substr $(uname -s) 1 10)" == "MINGW64_NT" ]; then
     cd ../..
 
     # Build OmniaFramework
-    pacman -S --noconfirm --needed base-devel mingw-w64-ucrt-x86_64-clang mingw-w64-ucrt-x86_64-gdb mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-make mingw-w64-ucrt-x86_64-boost mingw-w64-ucrt-x86_64-SDL2 mingw-w64-ucrt-x86_64-SDL2_mixer mingw-w64-ucrt-x86_64-SDL2_image mingw-w64-ucrt-x86_64-SDL2_ttf mingw-w64-ucrt-x86_64-SDL2_gfx
+    pacman -S --noconfirm --needed base-devel mingw-w64-ucrt-x86_64-clang mingw-w64-ucrt-x86_64-gdb \
+    							   mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-make \
+              					   mingw-w64-ucrt-x86_64-boost mingw-w64-ucrt-x86_64-SDL2 \
+                      			   mingw-w64-ucrt-x86_64-SDL2_mixer mingw-w64-ucrt-x86_64-SDL2_image \
+                            	   mingw-w64-ucrt-x86_64-SDL2_ttf mingw-w64-ucrt-x86_64-SDL2_gfx
     git clone https://github.com/OmniaX-dev/OmniaFramework.git
     cd OmniaFramework
     ./build release
@@ -83,17 +100,26 @@ elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
 	case "$pkgmgr" in
 	  pacman) # Arch Based ==================================================================================================
 	    sudo pacman -Syu --noconfirm
-	    sudo pacman -S --noconfirm --needed base-devel clang openssl gdb cmake make boost sfml sdl2 sdl2_mixer sdl2_image sdl2_ttf sdl2_gfx
+	    sudo pacman -S --noconfirm --needed base-devel clang gdb cmake \
+											make boost sdl2 sdl2_mixer sdl2_image \
+											sdl2_ttf sdl2_gfx ninja gcc libvorbis \
+											flac libogg openal freetype2 libjpeg-turbo
 	    ;;
 	  apt) # Debian Based ==================================================================================================
 	    sudo apt update
 	    sudo apt install -y build-essential dkms linux-headers-generic \
 	      clang gdb make cmake libssl-dev libboost-all-dev \
 	      libsdl2-dev libsdl2-mixer-dev libsdl2-image-dev \
-	      libsdl2-ttf-dev libsdl2-gfx-dev libxcb-randr0-dev libsfml-dev
+	      libsdl2-ttf-dev libsdl2-gfx-dev libxcb-randr0-dev libsfml-dev \
+		  ninja-build g++ libvorbis-dev libflac-dev libogg-dev libopenal-dev \
+		  libfreetype-dev libjpeg-dev
 	    ;;
 	  dnf) # Fedora ==================================================================================================
-	    sudo dnf install -y clang gdb make cmake boost-devel SDL2-devel SDL2_mixer-devel SDL2_image-devel SDL2_ttf-devel SDL2_gfx-devel libxcb-devel
+	    sudo dnf install -y clang gdb make cmake boost-devel SDL2-devel \
+							SDL2_mixer-devel SDL2_image-devel SDL2_ttf-devel \
+							SDL2_gfx-devel libxcb-devel ninja-build gcc-c++ \
+							libvorbis-devel flac-devel libogg-devel \
+							openal-soft-devel freetype-devel libjpeg-turbo-devel
 	    ;;
 	  *)
 	    echo "Unsupported distro. Supported distros are: Arch, EndeavourOS, Garuda, Manjaro, Ubuntu, Mint, Debian, Fedora."
