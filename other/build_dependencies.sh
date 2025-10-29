@@ -32,6 +32,7 @@ install_manual_dependencies_linux() {
 	    -DBUILD_SHARED_LIBS=ON
 	cmake --build build-shared
 	sudo cmake --install build-shared
+	cd ..
 
     # Build TGUI
     git clone https://github.com/texus/TGUI.git
@@ -119,7 +120,9 @@ elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
 							SDL2_mixer-devel SDL2_image-devel SDL2_ttf-devel \
 							SDL2_gfx-devel libxcb-devel ninja-build gcc-c++ \
 							libvorbis-devel flac-devel libogg-devel \
-							openal-soft-devel freetype-devel libjpeg-turbo-devel
+							openal-soft-devel freetype-devel libjpeg-turbo-devel \
+							libX11-devel libXrandr-devel libXcursor-devel \
+							libXi-devel systemd-devel ncurses-devel
 	    ;;
 	  *)
 	    echo "Unsupported distro. Supported distros are: Arch, EndeavourOS, Garuda, Manjaro, Ubuntu, Mint, Debian, Fedora."
