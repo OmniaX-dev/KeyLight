@@ -7,7 +7,7 @@ detect_package_manager() {
       arch|manjaro|endeavouros|garuda)
         echo "pacman"
         ;;
-      ubuntu|debian|mint)
+      ubuntu|debian|linuxmint)
         echo "apt"
         ;;
       fedora)
