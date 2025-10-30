@@ -4,35 +4,15 @@
 
 #### A modern alternative to tools like *Embers* and *SeeMusic*
 
+---
+
 **KeyLight** is a free and open-source MIDI piano visualizer designed to create stunning falling-note animations on a virtual keyboard. It offers seamless synchronization between MIDI input and MP3 audio, making it ideal for creating expressive music renderings and performance videos.
+
+---
 
 ![screenshot1.png](./other/screenshots/screenshot1.png)
 
-## <u>Dependencies</u>
-
-##### OmniaFramework
-
-KeyLight depends on [**OmniaFramework**](https://github.com/OmniaX-dev/OmniaFramework), a modular C++ utility library developed alongside this project.
-
-> On **Windows** (**MSYS2**) ensure the **ostd.dll** file is placed inside the `bin/` directory of your MSYS2 `ucrt64/` environment, and the `inckude/ostd/` directory is placed into `include/` directory of the MSYS2 `ucrt64/` environment.
-
-##### TGUI
-
-KeyLight uses [**TGUI**](https://tgui.eu/), a modern C++ GUI library built on SFML.
-
-> On **Windows** (**MSYS2**), this library muhst be built manually from source (instructions are in the **Windows** section).
-
-##### SFML3
-
-KeyLight relies on [**SFML 3**](https://www.sfml-dev.org/) for rendering, audio playback, and input handling.
-
-> On **Windows** (**MSYS2**), this library muhst be built manually from source (instructions are in the **Windows** section).
-
-##### midifile (included)
-
-KeyLight uses the [**midifile**](https://github.com/craigsapp/midifile) library by Craig Stuart Sapp for MIDI parsing and manipulation.
-
-> This library is **included directly** in the project source tree, so no separate installation is required, the library is compiled as part of KeyLight.
+---
 
 ### <u>Build instructions - Windows</u>
 
@@ -48,68 +28,29 @@ Once installed, launch the **MSYS2 UCRT64 terminal**; this is the environment Ke
 
 ##### Step 2: Prepare build environment
 
-Once you have the **MSYS2 UCRT64 terminal** open, run theese two commands to prepare the build environment:
+Once you have the **MSYS2 UCRT64 terminal** open, run the following command:
 
 ```bash
-pacman -Syuu
-pacman -S --needed base-devel mingw-w64-ucrt-x86_64-clang mingw-w64-ucrt-x86_64-gdb mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-make mingw-w64-ucrt-x86_64-boost
+pacman -Syuu --noconfirm
 ```
 
-##### Step 3: build SFML3 from source
+When finished, it's going to ask you to close the terminal and **reopen** it. 
 
-Still in the **UCRT64** terminal, run the following commands to download, compile and install **SFML3** into your environment:
+##### Step 3: Install dependencies and build KeyLight
 
-```bash
-pacman -S --needed git cmake ninja mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-libvorbis mingw-w64-ucrt-x86_64-flac mingw-w64-ucrt-x86_64-libogg mingw-w64-ucrt-x86_64-openal mingw-w64-ucrt-x86_64-freetype mingw-w64-ucrt-x86_64-libjpeg-turbo
-mkdir keylight_dev && cd keylight_dev
-git clone --branch 3.0.1 https://github.com/SFML/SFML.git sfml3
-cd sfml3
-cmake -S . -B build-shared -G Ninja \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=/ucrt64 \
-    -DCMAKE_C_COMPILER=/ucrt64/bin/gcc.exe \
-    -DCMAKE_CXX_COMPILER=/ucrt64/bin/g++.exe \
-    -DBUILD_SHARED_LIBS=ON
-cmake --build build-shared
-cmake --install build-shared
-cd ..
-```
-
-#### Step 4: build TGUI from source
-
-In the **UCRT64** terminal, run the following commands to download, compile and install **TGUI** into your environment:
+Still in the newly opened **UCRT64** terminal, run the following commands to automatically download and install all the dependencies, and build **KeyLight**:
 
 ```bash
-git clone https://github.com/texus/TGUI.git
-cd TGUI
-mkdir build && cd build
-cmake .. -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DTGUI_BACKEND=SFML_GRAPHICS -DCMAKE_INSTALL_PREFIX=/ucrt64
-make -j$(nproc)
-make install
-cd ..
-```
-
-#### Step 5: build OmniaFramework
-
-IN the **UCRT64** terminal, run the following commands to download, compile and install **OmniaFramework** into your environment:
-
-```bash
-pacman -S --needed base-devel mingw-w64-ucrt-x86_64-clang mingw-w64-ucrt-x86_64-gdb mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-make mingw-w64-ucrt-x86_64-boost mingw-w64-ucrt-x86_64-SDL2 mingw-w64-ucrt-x86_64-SDL2_mixer mingw-w64-ucrt-x86_64-SDL2_image mingw-w64-ucrt-x86_64-SDL2_ttf mingw-w64-ucrt-x86_64-SDL2_gfx
-git clone https://github.com/OmniaX-dev/OmniaFramework.git
-cd OmniaFramework
-./build relese
-./build install
-```
-
-#### Step 6: build KeyLight
-
-Finally, still in the UCRT64 terminal, run the following commands to download and compile KeyLight:
-
-```bash
-git clone https://github.com/OmniaX-dev/KeyLight.git
+pacman -S --noconfirm git
+git clone https://github.com/OmniaX-Dev/KeyLight
 cd KeyLight
+./build dependencies
 ./build release
 ```
+
+> <u>**NOTE**</u>: Refer to the [Manual Build](other/manual_build.md) file for more information on the build process.
+
+---
 
 ##### Build options
 
@@ -154,9 +95,58 @@ Creates a full Windows release in `bin/KeyLight_w64/`, including:
 - License files
 
 > ⚠️ **Important:**
-> This script assumes MSYS2 is installed at `C:/msys64`.
+> The `build` script assumes MSYS2 is installed at `C:/msys64`.
 > If your installation is in a different location, you must manually update the `MSYS_ROOT` variable at the top of `other/build_windows_release.sh`.
+
+---
 
 ### <u>Build instructions - Linux</u>
 
-TODO
+This project is officially test only on the following Linux Distros:
+
+- **Debian based**: Debian, LinuxMint, Ubuntu
+
+- **Arch Based**: ArchLinux, GarudaLinux, Manjaro, EndeavourOS
+
+- **Fedora**
+
+If you are using any other distro, there is no guarantee that the `build_dependencies.sh` script will work, so you will have to install the dependencies manually using your package manager.
+
+##### Step 1: Install git
+
+Use your package manager to install git.
+
+- **Arch** Based distros:
+
+```bash
+sudo pacman -S --needed git
+```
+
+- **Debian** Based distros:
+
+```bash
+sudo apt install git
+```
+
+- **Fedora**
+
+```bash
+sudo dnf install git
+```
+
+##### Step 2: install dependencies and build KeyLight
+
+Once **git** is installed, clone the **KeyLight** repo and run the build `script` to install the dependencies and build the project.
+
+```bash
+git clone https://github.com/OmniaX-Dev/KeyLight
+cd KeyLight
+./build dependencies
+./build release
+```
+
+> **<u>NOTE</u>**: The same build options for the `./build` script apply here, as explained in the **Windows** section, except for `./build windows_release`, which is replaced with `./build linux_release`.
+
+> <u>**NOTE**</u>: Refer to the [Manual Build](other/manual_build.md) file for more information on the build process.
+
+---
