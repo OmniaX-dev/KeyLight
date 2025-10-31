@@ -25,6 +25,11 @@ elif [[ "$1" == "windows_release" ]]; then
     chmod +x build_windows_release.sh
     ./build_windows_release.sh
     cd ..
+elif [[ "$1" == "linux_release" ]]; then
+    cd other
+    chmod +x build_linux_release.sh
+    ./build_linux_release.sh
+    cd ..
 elif [[ "$1" == "dependencies" ]]; then
     cd other
     chmod +x build_dependencies.sh

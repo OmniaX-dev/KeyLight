@@ -1,8 +1,14 @@
 # ⚠️ !!! THIS PROJECT IS STILL IN EARLY DEVELOPMENT !!! ⚠️
 
-## <u>Dependencies</u>
+---
 
-##### OmniaFramework
+### <u>Manual dependency installation process</u>
+
+##### This readme explains how to install dependencies for KeyLight manually, note however that the project includes an automatic script to install dependencies, for more info on that, refer to the main [README](../README.md) file.
+
+---
+
+## <u>Dependencies</u>
 
 KeyLight depends on the following libraries:
 
@@ -14,9 +20,11 @@ KeyLight depends on the following libraries:
 
 - [**midifile**](https://github.com/craigsapp/midifile): for MIDI parsing and manipulation
 
-These libraries must be built manually from source (instructions down below).
+These libraries can be built manually from source (instructions down below).
 
 > **<u>NOTE</u>**: the midifile library is included directly as part of the source tree of KeyLight, therefore it doesn't need to be built manually.
+
+---
 
 ### <u>Build instructions - Windows</u>
 
@@ -95,11 +103,112 @@ cd KeyLight
 ./build release
 ```
 
-##### Build options
+---
 
-Once **MSYS2** is installed and your environment is set up, you can use the `./build` script to compile KeyLight in various modes other than release:
+### <u>Build instructions - Linux</u>
 
-###### <u>Debug build</u>
+This project is officially tested only on the following Linux Distros:
+
+- **Debian based**: Debian, LinuxMint, Ubuntu
+
+- **Arch Based**: ArchLinux, GarudaLinux, Manjaro, EndeavourOS
+
+- **Fedora**
+
+If you are using any other distro, you will have to install the dependencies manually using your package manager.
+
+##### Step 1: Install dependencies
+
+Use your package manager to install git.
+
+- **Arch** Based distros:
+
+```bash
+sudo pacman -Syu
+sudo pacman -S --needed base-devel git clang gdb cmake \
+					    make boost sdl2 sdl2_mixer sdl2_image \
+						sdl2_ttf sdl2_gfx ninja gcc libvorbis \
+						flac libogg openal freetype2 libjpeg-turbo
+```
+
+- **Debian** Based distros:
+
+```bash
+sudo apt update
+sudo apt install build-essential git dkms linux-headers-generic \
+	             clang gdb make cmake libssl-dev libboost-all-dev \
+	             libsdl2-dev libsdl2-mixer-dev libsdl2-image-dev \
+	             libsdl2-ttf-dev libsdl2-gfx-dev libxcb-randr0-dev libsfml-dev \
+		         ninja-build g++ libvorbis-dev libflac-dev libogg-dev libopenal-dev \
+		         libfreetype-dev libjpeg-dev
+```
+
+- **Fedora**
+
+```bash
+sudo dnf install clang gdb make cmake boost-devel SDL2-devel \
+				 SDL2_mixer-devel SDL2_image-devel SDL2_ttf-devel \
+				 SDL2_gfx-devel libxcb-devel ninja-build gcc-c++ \
+				 libvorbis-devel flac-devel libogg-devel \
+				 openal-soft-devel freetype-devel libjpeg-turbo-devel \
+				 libX11-devel libXrandr-devel libXcursor-devel \
+				 libXi-devel systemd-devel ncurses-devel
+```
+
+##### Step 2: build SFML3 from source
+
+```bash
+git clone --branch 3.0.1 https://github.com/SFML/SFML.git sfml3
+cd sfml3
+cmake -S . -B build-shared -G Ninja \
+	  -DCMAKE_BUILD_TYPE=Release \
+	  -DCMAKE_INSTALL_PREFIX=/usr \
+	  -DBUILD_SHARED_LIBS=ON
+cmake --build build-shared
+sudo cmake --install build-shared
+```
+
+##### Step 3: build TGUI from source
+
+```bash
+git clone https://github.com/texus/TGUI.git
+cd TGUI
+mkdir build && cd build
+cmake .. -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DTGUI_BACKEND=SFML_GRAPHICS -DCMAKE_INSTALL_PREFIX=/usr
+make -j$(nproc)
+sudo make install
+cd ../..
+```
+
+---
+
+##### Step 4: build OmniaFramework from source
+
+```bash
+git clone https://github.com/OmniaX-dev/OmniaFramework.git
+cd OmniaFramework
+./build release
+./build install
+cd ..
+```
+
+---
+
+##### Step 5: build KeyLight
+
+```bash
+git clone https://github.com/OmniaX-Dev/KeyLight
+cd KeyLight
+./build release
+```
+
+---
+
+### <u>Build options</u>
+
+Once **MSYS2** is installed and your environment is set up, you can use the `./build` script in various modes:
+
+##### <u>Debug build</u>
 
 ```bash
 ./build debug
@@ -107,7 +216,7 @@ Once **MSYS2** is installed and your environment is set up, you can use the `./b
 
 Compiles KeyLight with debug symbols and no optimization, ideal for development and troubleshooting.
 
-###### <u>Incremental build (uses last configuration)</u>
+##### <u>Incremental build (uses last configuration)</u>
 
 ```bash
  ./build
@@ -116,7 +225,7 @@ Compiles KeyLight with debug symbols and no optimization, ideal for development 
 Rebuilds only the modified source files using **whichever build configuration was last used** (`debug` or `release`).
 This is ideal for fast iteration without switching modes.
 
-###### <u>Run after build</u>
+##### <u>Run after build</u>
 
 ```bash
 ./build run
@@ -124,7 +233,7 @@ This is ideal for fast iteration without switching modes.
 
 Same as `./build`, but immediately launches the application after building the changes.
 
-###### <u>Windows release packaging</u>
+##### <u>Windows release packaging</u>
 
 ```bash
 ./build windows_release
@@ -138,9 +247,36 @@ Creates a full Windows release in `bin/KeyLight_w64/`, including:
 - License files
 
 > ⚠️ **Important:**
-> This script assumes MSYS2 is installed at `C:/msys64`.
+> 
+> **<u>This option is for use on Windows only.</u>** 
+> 
+> The `build` script assumes MSYS2 is installed at `C:/msys64`.
 > If your installation is in a different location, you must manually update the `MSYS_ROOT` variable at the top of `other/build_windows_release.sh`.
 
-### <u>Build instructions - Linux</u>
+##### <u>Linux release packaging</u>
 
-TODO
+```bash
+./build linux_release
+```
+
+Creates a Linux release in `bin/KeyLight_linux64/`, including:
+
+- The compiled executable
+- Assets and resources
+- License files
+
+> ⚠️ **Important:**
+> 
+> **<u>This option is for use on Linux only</u>**, and nlike the `windows_release` option, the `linux_release` option does not include runtime shared libraries, as bundling them is generally discouraged on Linux.
+> This option is intended for **personal use only**, and there is **no guarantee** that the resulting release will work on other Linux systems.
+> The preferred practice on Linux is to **build from source on the target system**, ensuring compatibility with its libraries and environment.
+
+##### <u>Install dependencies automatically</u>
+
+```bash
+./build dependencies
+```
+
+This option is used to install all the needed dependencies, and should only be used **once**, before the first build.
+
+---

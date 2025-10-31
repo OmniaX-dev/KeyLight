@@ -1,5 +1,7 @@
 # ⚠️ !!! THIS PROJECT IS STILL IN EARLY DEVELOPMENT !!! ⚠️
 
+---
+
 # ![icon.png](./other/icon.png) KeyLight
 
 #### A modern alternative to tools like *Embers* and *SeeMusic*
@@ -34,7 +36,7 @@ Once you have the **MSYS2 UCRT64 terminal** open, run the following command:
 pacman -Syuu --noconfirm
 ```
 
-When finished, it's going to ask you to close the terminal and **reopen** it. 
+When finished, it's going to ask you to close the terminal and **reopen** it.
 
 ##### Step 3: Install dependencies and build KeyLight
 
@@ -45,14 +47,89 @@ pacman -S --noconfirm git
 git clone https://github.com/OmniaX-Dev/KeyLight
 cd KeyLight
 ./build dependencies
-./build release
+./build windows_release
 ```
 
-> <u>**NOTE**</u>: Refer to the [Manual Build](other/manual_build.md) file for more information on the build process.
+> ⚠️ **Important:**
+> 
+> The `./build windows_release` command creates a full Windows release in `bin/KeyLight_w64/`, including:
+> 
+> - The compiled executable
+> - All required DLLs
+> - Assets and resources
+> - License files
+> 
+> **<u>This option is for use on Windows only.</u>** 
+> 
+> The `build` script assumes MSYS2 is installed at `C:/msys64`.
+> If your installation is in a different location, you must manually update the `MSYS_ROOT` variable at the top of `other/build_windows_release.sh`.
+> 
+> Refer to the [Manual Build](other/manual_build.md) file for more information on the build process.
 
 ---
 
-##### Build options
+### <u>Build instructions - Linux</u>
+
+This project is officially tested only on the following Linux Distros:
+
+- **Debian based**: Debian, LinuxMint, Ubuntu
+
+- **Arch Based**: ArchLinux, GarudaLinux, Manjaro, EndeavourOS
+
+- **Fedora**
+
+If you are using any other distro, there is no guarantee that the `build_dependencies.sh` script will work, so you will have to install the dependencies manually using your package manager.
+
+##### Step 1: Install git
+
+Use your package manager to install git.
+
+- **Arch** Based distros:
+
+```bash
+sudo pacman -S --needed git
+```
+
+- **Debian** Based distros:
+
+```bash
+sudo apt install git
+```
+
+- **Fedora**
+
+```bash
+sudo dnf install git
+```
+
+##### Step 2: install dependencies and build KeyLight
+
+Once **git** is installed, clone the **KeyLight** repo and run the build `script` to install the dependencies and build the project.
+
+```bash
+git clone https://github.com/OmniaX-Dev/KeyLight
+cd KeyLight
+./build dependencies
+./build linux_release
+```
+
+> ⚠️ **Important:**
+> 
+> The ./build linux_release command creates a Linux release in `bin/KeyLight_linux64/`, including:
+> 
+> - The compiled executable
+> - Assets and resources
+> - License files
+> 
+> **<u>This option is for use on Linux only</u>**, and unlike the `windows_release` option, the `linux_release` option does not include runtime shared libraries, as bundling them is generally discouraged on Linux.
+> This option is intended for **personal use only**, and there is **no guarantee** that the resulting release will work on other Linux systems.
+> The preferred practice on Linux is to **build from source on the target system**, ensuring compatibility with its libraries and environment.
+> 
+> Refer to the [Manual Build](other/manual_build.md) file for more information on the build process.
+
+---
+
+### <u>Build options</u>
 
 Once **MSYS2** is installed and your environment is set up, you can use the `./build` script to compile KeyLight in various modes other than release:
 
@@ -94,59 +171,35 @@ Creates a full Windows release in `bin/KeyLight_w64/`, including:
 - Assets and resources
 - License files
 
-> ⚠️ **Important:**
-> The `build` script assumes MSYS2 is installed at `C:/msys64`.
+> ⚠️ **Important:** 
+> 
+> **<u>This option is for use on Windows only.</u>** The `build` script assumes MSYS2 is installed at `C:/msys64`.
 > If your installation is in a different location, you must manually update the `MSYS_ROOT` variable at the top of `other/build_windows_release.sh`.
 
----
-
-### <u>Build instructions - Linux</u>
-
-This project is officially test only on the following Linux Distros:
-
-- **Debian based**: Debian, LinuxMint, Ubuntu
-
-- **Arch Based**: ArchLinux, GarudaLinux, Manjaro, EndeavourOS
-
-- **Fedora**
-
-If you are using any other distro, there is no guarantee that the `build_dependencies.sh` script will work, so you will have to install the dependencies manually using your package manager.
-
-##### Step 1: Install git
-
-Use your package manager to install git.
-
-- **Arch** Based distros:
+###### <u>Linux release packaging</u>
 
 ```bash
-sudo pacman -S --needed git
+./build linux_release
 ```
 
-- **Debian** Based distros:
+Creates a Linux release in `bin/KeyLight_linux64/`, including:
+
+- The compiled executable
+- Assets and resources
+- License files
+
+> ⚠️ **Important:** 
+> 
+> **<u>This option is for use on Linux only</u>**, and nlike the `windows_release` option, the `linux_release` option does not include runtime shared libraries, as bundling them is generally discouraged on Linux.
+> This option is intended for **personal use only**, and there is **no guarantee** that the resulting release will work on other Linux systems.
+> The preferred practice on Linux is to **build from source on the target system**, ensuring compatibility with its libraries and environment.
+
+###### <u>Install dependencies automatically</u>
 
 ```bash
-sudo apt install git
-```
-
-- **Fedora**
-
-```bash
-sudo dnf install git
-```
-
-##### Step 2: install dependencies and build KeyLight
-
-Once **git** is installed, clone the **KeyLight** repo and run the build `script` to install the dependencies and build the project.
-
-```bash
-git clone https://github.com/OmniaX-Dev/KeyLight
-cd KeyLight
 ./build dependencies
-./build release
 ```
 
-> **<u>NOTE</u>**: The same build options for the `./build` script apply here, as explained in the **Windows** section, except for `./build windows_release`, which is replaced with `./build linux_release`.
-
-> <u>**NOTE**</u>: Refer to the [Manual Build](other/manual_build.md) file for more information on the build process.
+This option is used to install all the needed dependencies, and should only be used **once**, before the first build.
 
 ---

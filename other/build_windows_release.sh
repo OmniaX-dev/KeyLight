@@ -5,6 +5,8 @@ MSYS2_ROOT=c:/msys64
 cd ..
 ./build release
 
+printf "\n\n\033[0;32mBuilding Windows release...\n\033[0m"
+
 mkdir bin/KeyLight_w64
 
 cp -r extra/* bin/KeyLight_w64/
@@ -21,3 +23,5 @@ done
 
 cp -r licences bin/KeyLight_w64
 cp LICENSE bin/KeyLight_w64/licences/KeyLight-LICENCE.txt
+
+printf "\n\033[0;32mWindows release ready in bin/KeyLight_w64!\n\033[0m"
