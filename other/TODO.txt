@@ -1,10 +1,10 @@
 General/Project
  ** Rewrite Readme file
-    Add Linux build insctructions to README
-    Maybe a Linux script to install dependencies
-    Maybe an MSYS2 script to install dependencies on Windows
+ ** Add Linux build insctructions to README
+ ** Maybe a Linux script to install dependencies
+ ** Maybe an MSYS2 script to install dependencies on Windows
  ** Streamlined way of creating a Windows Release
-	Testing on fresh Arch/Ubundu/Fedora installs
+ ** Testing on fresh Arch/Ubundu/Fedora installs
  ** Separate Release/Debug configurations
 
 Gui
@@ -13,7 +13,7 @@ Gui
 	Ability to load midi/mp3 (ogg?) at will, using the FileDialog
 	Gui to customize the colors of the VirtualPiano/Falling Notes
 	Gui to customize all values (sizes, defaults) of the VirtualPiano/Falling Notes
-	Splash Screen
+ ** Splash Screen
 
 VirtualPiano
 	Implement Pause/Stop functionality

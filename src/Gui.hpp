@@ -20,14 +20,19 @@
 
 #pragma once
 
+#include <SFML/Graphics/Image.hpp>
+#include <SFML/Graphics/Sprite.hpp>
+#include <SFML/System/Clock.hpp>
 #include <TGUI/Loading/Theme.hpp>
 #include <functional>
+#include <optional>
 #include <ostd/BaseObject.hpp>
 #include <ostd/String.hpp>
 
 #include <TGUI/Widgets/FileDialog.hpp>
 #include <TGUI/Backend/SFML-Graphics.hpp>
 #include <TGUI/TGUI.hpp>
+#include <ostd/Utils.hpp>
 
 #include "SFMLWindow.hpp"
 
@@ -52,6 +57,7 @@ class Gui : public ostd::BaseObject
 
 	private:
 		void __build_gui(void);
+		void __show_splashscreen(void);
 
 	private:
 		tgui::Gui m_gui;
@@ -59,6 +65,11 @@ class Gui : public ostd::BaseObject
 		sf::Image m_AppIcon;
 		WindowBase* m_window { nullptr };
 		bool m_visible { true };
+
+		sf::Texture m_splashScreenTex;
+		std::optional<sf::Sprite> m_splashScreenSpr;
+		sf::Clock m_splashScreenTimer;
+		bool m_showSplashScreen { true };
 
 		tgui::FileDialog::Ptr m_fileDialog { nullptr };
 		tgui::Theme m_tguiTheme;

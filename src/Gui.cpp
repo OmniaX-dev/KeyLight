@@ -19,12 +19,15 @@
 */
 
 #include "Gui.hpp"
+#include <SFML/Graphics/Image.hpp>
+#include <SFML/Graphics/Sprite.hpp>
 #include <algorithm>
 #include <ostd/Logger.hpp>
 #include <ostd/Signals.hpp>
 
 Gui& Gui::init(WindowBase& window, const ostd::String& cursorFilePath, const ostd::String& appIconFilePath, const ostd::String& themeFilePath, bool visible)
 {
+	invalidate();
 	m_window = &window;
 	m_visible = visible;
 
@@ -39,12 +42,26 @@ Gui& Gui::init(WindowBase& window, const ostd::String& cursorFilePath, const ost
 		m_cursor = std::move(tempCursor);
 		m_window->sfWindow().setMouseCursor(*m_cursor);
 	}
+	else return *this; //TODO: Error
+
+	sf::Image splashScreen;
+	if (splashScreen.loadFromFile("themes/ui/logo.png"))
+	{
+	    (void)m_splashScreenTex.loadFromImage(splashScreen);
+		m_splashScreenSpr = sf::Sprite(m_splashScreenTex);
+		float x = (m_window->getWindowWidth() / 2.0f) - (m_splashScreenTex.getSize().x / 2.0f);
+		float y = (m_window->getWindowHeight() / 2.0f) - (m_splashScreenTex.getSize().y / 2.0f);
+		m_splashScreenSpr->setPosition({ x, y });
+		m_splashScreenTimer.restart();
+	}
+	else return *this; //TODO: Error
 
 	// Load Icon file
 	if (m_AppIcon.loadFromFile(appIconFilePath))
     {
         m_window->sfWindow().setIcon(m_AppIcon.getSize(), m_AppIcon.getPixelsPtr());
-    } //TODO: Error
+    }
+    //TODO: Error
 
 	enableSignals();
 	connectSignal(ostd::tBuiltinSignals::WindowClosed);
@@ -99,6 +116,8 @@ void Gui::draw(void)
 	if (!isValid()) return;
 	if (!isVisible()) return;
 	m_gui.draw();
+
+	__show_splashscreen();
 }
 
 void Gui::onEventPoll(const std::optional<sf::Event>& event)
@@ -119,5 +138,29 @@ void Gui::__build_gui(void)
 	m_fileDialog->setVisible(false);
 	m_fileDialog->setFileMustExist(true);
 	m_gui.add(m_fileDialog);
+}
 
+void Gui::__show_splashscreen(void)
+{
+	if (!isValid()) return;
+
+	if (m_showSplashScreen)
+	{
+		float elapsed = m_splashScreenTimer.getElapsedTime().asSeconds();
+		if (elapsed < 1.5f)
+		{
+        	m_window->sfWindow().draw(*m_splashScreenSpr);
+		}
+		else if (elapsed < 3.0f)
+        {
+        	float alpha = 255.f * (1.f - (elapsed - 1.5f) / 1.5f);
+	        m_splashScreenSpr->setColor(sf::Color(255, 255, 255, (uint8_t)alpha));
+			m_window->sfWindow().draw(*m_splashScreenSpr);
+        }
+		else
+		{
+			m_splashScreenSpr->setColor(sf::Color(255, 255, 255, 0));
+			m_showSplashScreen = false;
+		}
+	}
 }
