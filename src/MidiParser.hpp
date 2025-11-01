@@ -38,6 +38,7 @@ class MidiParser
             bool hit { false };
             bool rightHand { false };
             bool last { false };
+            bool first { false };
 
         public:
             inline bool operator<(const NoteEvent& other) const

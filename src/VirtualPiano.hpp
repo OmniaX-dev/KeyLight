@@ -173,6 +173,7 @@ class VirtualPiano
 
 	private:
 		void __preallocate_file_names_for_rendering(uint32_t frameCount, const ostd::String& baseFileName, const ostd::String& basePath, const ostd::String& extension, const uint16_t marginFrames = 200);
+		void __build_ffmpeg_command(const ostd::UI16Point& resolution, uint16_t fps);
 
 	private:
 		Window& m_parentWindow;
@@ -198,6 +199,9 @@ class VirtualPiano
 
 		double m_fallingTime_s { 4.5 };
 		double m_startTimeOffset_ns { 0.0 };
+
+		double m_firstNoteStartTime { 0.0 };
+		double m_lastNoteEndTime { 0.0 };
 
 		sf::RenderTexture m_glowBuffer;
 		sf::RenderTexture m_blurBuff1;

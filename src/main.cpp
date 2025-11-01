@@ -24,6 +24,7 @@
 
 #include "Common.hpp"
 #include "Window.hpp"
+#include "ffmpeg_helper.hpp"
 
 ostd::ConsoleOutputHandler out;
 
@@ -41,6 +42,8 @@ int main(int argc, char** argv)
 
 	Window window;
 	window.initialize(VirtualPiano::VirtualPianoData::base_width, VirtualPiano::VirtualPianoData::base_height, "KeyLight");
+
+	FFMPEG::printDebugInfo();
 
 	while (window.isRunning())
 	{

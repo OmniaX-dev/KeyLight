@@ -20,6 +20,7 @@
 
 #include "Window.hpp"
 #include "Renderer.hpp"
+#include <SFML/Window/WindowEnums.hpp>
 #include <ostd/Logger.hpp>
 #include <vector>
 
@@ -136,6 +137,7 @@ void Window::onUpdate(void)
 
 void Window::enableFullscreen(bool enable)
 {
+	if (m_lockFullscreenStatus) return;
 	auto old_size	  = m_window.getSize();
 	auto old_position = m_window.getPosition();
 	if (enable)
@@ -163,6 +165,23 @@ void Window::enableFullscreen(bool enable)
 	auto			  new_size = m_window.getSize();
 	WindowResizedData wrd(*this, old_size.x, old_size.y, new_size.x, new_size.y);
 	ostd::SignalHandler::emitSignal(ostd::tBuiltinSignals::WindowResized, ostd::tSignalPriority::RealTime, wrd);
+}
+
+void Window::enableResizeable(bool enable)
+{
+	if (m_isFullscreen) return;
+	if (enable && m_isResizeable) return;
+	if (!enable && !m_isResizeable) return;
+	if (enable)
+	{
+		m_window.create(sf::VideoMode::getDesktopMode(), getTitle().cpp_str(), sf::Style::Close, sf::State::Windowed);
+		m_isResizeable = true;
+	}
+	else
+	{
+		m_window.create(sf::VideoMode::getDesktopMode(), getTitle().cpp_str(), sf::Style::Default, sf::State::Windowed);
+		m_isResizeable = false;
+	}
 }
 
 /*

@@ -46,6 +46,7 @@ list(APPEND SOURCE_FILES
 	${CMAKE_CURRENT_LIST_DIR}/src/VirtualPiano.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/Renderer.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/Gui.cpp
+	${CMAKE_CURRENT_LIST_DIR}/src/ffmpeg_helper.cpp
 )
 #-----------------------------------------------------------------------------------------
 

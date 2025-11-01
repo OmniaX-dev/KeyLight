@@ -28,6 +28,7 @@
 #include <ostd/Logger.hpp>
 #include <ostd/Signals.hpp>
 #include <ostd/Utils.hpp>
+#include "MidiParser.hpp"
 #include "Window.hpp"
 #include "Renderer.hpp"
 
@@ -183,9 +184,16 @@ bool VirtualPiano::loadMidiFile(const ostd::String& filePath)
 		{
 			note.startTime += m_fallingTime_s;
 			note.endTime   += m_fallingTime_s;
+
+			if (note.first)
+				m_firstNoteStartTime = note.startTime;
+			else if (note.last)
+				m_lastNoteEndTime = note.startTime;
 		}
 		std::sort(m_midiNotes.begin(), m_midiNotes.end());
-		OX_DEBUG("loaded <%s>: total notes parsed: %d", filePath.c_str(), m_midiNotes.size());
+		OX_DEBUG("loaded <%s>: total notes parsed: %f", filePath.c_str(), m_midiNotes.size());
+		OX_DEBUG("  First note start time: %f seconds.", m_firstNoteStartTime);
+		OX_DEBUG("  Last note end time: %f seconds.", m_lastNoteEndTime);
 		return true;
     }
     catch (const std::exception& ex) {
@@ -205,6 +213,8 @@ bool VirtualPiano::loadAudioFile(const ostd::String& filePath)
 	OX_DEBUG("loaded <%s>", filePath.c_str());
 	m_hasAudioFile = true;
 	m_autoSoundStart = scanMusicStartPoint(filePath, 0.005f);
+	OX_DEBUG("  Auto sound start: %f.", m_autoSoundStart);
+	OX_DEBUG("  Delta time: %f.", (m_firstNoteStartTime - m_autoSoundStart));
 	return true;
 }
 
@@ -501,16 +511,7 @@ bool VirtualPiano::renderFramesToFile(const ostd::String& folderPath, const ostd
 	if (resolution.x != 1920 || resolution.y != 1080) return false; //TODO: allow for valid resolutions
 	if (fps != 60) return false; //TODO: allow for valid FPS values
 
-	double last_time = 0.0;
-	for (const auto& note : m_midiNotes)
-	{
-		if (note.last)
-		{
-			last_time = note.endTime;
-			break;
-		}
-	}
-
+	double last_time = m_lastNoteEndTime;
 	if (last_time == 0.0) return false; //TODO: Error
 
 	m_isRenderingToFile = true;
@@ -574,10 +575,6 @@ bool VirtualPiano::renderFramesToFile(const ostd::String& folderPath, const ostd
 void VirtualPiano::saveFrame(const sf::RenderTexture& rt, const ostd::String& basePath, int frameIndex)
 {
     sf::Image img = rt.getTexture().copyToImage();
-
-    // char filename[256];
-    // std::snprintf(filename, sizeof(filename), "%s/frame_%04d.png", basePath.c_str(), frameIndex);
-    // img.flipVertically();
     if (!img.saveToFile(m_renderFileNames[frameIndex]))
     {
         OX_ERROR("Failed to save frame %d to %s", frameIndex, m_renderFileNames[frameIndex].c_str());
@@ -670,4 +667,21 @@ void VirtualPiano::__preallocate_file_names_for_rendering(uint32_t frameCount, c
     	std::snprintf(filename, sizeof(filename), "%s/%s%06d.%s", basePath.c_str(), baseFileName.c_str(), i, extension.c_str());
     	m_renderFileNames.push_back(filename);
 	}
+}
+
+void VirtualPiano::__build_ffmpeg_command(const ostd::UI16Point& resolution, uint16_t fps)
+{
+#ifdef _WIN32
+    FILE* ffmpeg = _popen(
+        "ffmpeg -f rawvideo -pix_fmt rgba -s 1920x1080 -r 60 -i - "
+        "-i audio.wav -c:v libx264 -preset slow -crf 18 -c:a aac output.mp4",
+        "wb"
+    );
+#else
+    FILE* ffmpeg = popen(
+        "ffmpeg -f rawvideo -pix_fmt rgba -s 1920x1080 -r 60 -i - "
+        "-i audio.wav -c:v libx264 -preset slow -crf 18 -c:a aac output.mp4",
+        "w"
+    );
+#endif
 }

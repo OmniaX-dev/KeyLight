@@ -40,11 +40,18 @@ class Window : public WindowBase
 		void onFixedUpdate(void) override;
 		void onUpdate(void) override;
 		void enableFullscreen(bool enable = true);
+		void enableResizeable(bool enable = true);
+
+		inline bool isFullscreen(void) const { return m_lockFullscreenStatus; }
+		inline void lockFullscreenStatus(bool lock = true) { m_lockFullscreenStatus = lock; }
+		inline bool isFullscreenStatusLocked(void) const { return m_lockFullscreenStatus; }
 
 	private:
 		ostd::Vec2 m_windowSizeBeforeFullscreen { 0.0f, 0.0f };
 		ostd::Vec2 m_windowPositionBeforeFullscreen { 0.0f, 0.0f };
 		bool m_isFullscreen { false };
+		bool m_isResizeable { true };
+		bool m_lockFullscreenStatus { false };
 		VirtualPiano m_vpiano;
 		Gui m_gui;
 };

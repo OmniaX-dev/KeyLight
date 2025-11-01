@@ -62,22 +62,36 @@ std::vector<MidiParser::NoteEvent> MidiParser::parseFile(const ostd::String& fil
             note.channel   = ev.getChannel();
             note.rightHand = false;
             note.last	   = false;
+            note.first	   = false;
             notes.push_back(note);
         }
     }
 
-    NoteEvent* lastNote = nullptr;
-    double lastNoteEndTime = 0.0;
+    NoteEvent* notePtr = nullptr;
+    double noteTime = 0.0;
     for (auto& note : notes)
     {
-    	if (note.endTime > lastNoteEndTime)
+    	if (note.endTime > noteTime)
 	    {
-   			lastNote = &note;
-    		lastNoteEndTime = note.endTime;
+   			notePtr = &note;
+    		noteTime = note.endTime;
 	    }
     }
-    if (lastNote != nullptr)
-   		lastNote->last = true;
+    if (notePtr != nullptr)
+   		notePtr->last = true;
+
+    notePtr = nullptr;
+    noteTime = 999999.0;
+    for (auto& note : notes)
+    {
+       	if (note.startTime < noteTime)
+	    {
+	     	notePtr = &note;
+	      	noteTime = note.startTime;
+	    }
+    }
+    if (notePtr != nullptr)
+    	notePtr->first = true;
 
     return notes;
 }
