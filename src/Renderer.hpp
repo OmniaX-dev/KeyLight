@@ -34,6 +34,7 @@ class Renderer
 		static void useTexture(sf::Texture* texture, ostd::Rectangle textureRect = { 0, 0, 0, 0 });
 		static void setTextureRect(ostd::Rectangle textureRect);
 		static void clear(const ostd::Color& color);
+		static ostd::Vec2 getStringSize(const ostd::String& str,  uint32_t font_size);
 
 		static inline sf::RenderTarget* getRenderTarget(void) { return m_target; }
 		static inline WindowBase* getWindow(void) { return m_window; }
@@ -46,15 +47,15 @@ class Renderer
 
 		static void drawString(const ostd::String& str, const ostd::Vec2& position, const ostd::Color& color, uint32_t font_size);
 		static void drawTexture(const sf::Texture& texture, const ostd::Vec2& position = { 0, 0 }, float scale = 1.0f);
-		
+
 		static void drawRect(const ostd::Rectangle& rect, const ostd::Color& outlineColor, int32_t outlineThickness = -1);
 		static void fillRect(const ostd::Rectangle& rect, const ostd::Color& fillColor);
 		static void outlineRect(const ostd::Rectangle& rect, const ostd::Color& fillColor, const ostd::Color& outlineColor, int32_t outlineThickness = -1);
-		
+
 		static void drawRoundedRect(const ostd::Rectangle& rect, const ostd::Color& outlineColor, const ostd::Rectangle& radius, int32_t outlineThickness = -1);
 		static void fillRoundedRect(const ostd::Rectangle& rect, const ostd::Color& fillColor, const ostd::Rectangle& radius);
 		static void outlineRoundedRect(const ostd::Rectangle& rect, const ostd::Color& fillColor, const ostd::Color& outlineColor, const ostd::Rectangle& radius, int32_t outlineThickness = -1);
-		
+
 	private:
 		static void __draw_call(sf::Drawable* obj);
 

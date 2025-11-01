@@ -20,13 +20,20 @@
 
 #pragma once
 
+#include <SFML/Graphics/RenderTarget.hpp>
+#include <SFML/Graphics/RenderTexture.hpp>
+#include <functional>
+#include <optional>
+#include <ostd/BaseObject.hpp>
 #include <ostd/Signals.hpp>
 #include <ostd/Utils.hpp>
 #include <deque>
+#include "Common.hpp"
 #include "MidiParser.hpp"
 #include <ostd/Geometry.hpp>
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
+#include <vector>
 
 class Window;
 class VirtualPiano
@@ -56,11 +63,11 @@ class VirtualPiano
 			float blackKeyShrinkFactor { 0 };
 
 			ostd::Rectangle glowMargins { 0, 0, 0, 0 };
-		
+
 		public:
 			inline static constexpr int32_t base_width { 2080 };
 			inline static constexpr int32_t base_height { 1400 };
-		
+
 			ostd::Color whiteKeyColor { 0, 0, 0 };
 			ostd::Color whiteKeyPressedColor { 0, 0, 0 };
 			ostd::Color blackKeyColor { 0, 0, 0 };
@@ -79,6 +86,7 @@ class VirtualPiano
 			void recalculateKeyOffsets(void);
 			void updateScale(int32_t width, int32_t height);
 
+			inline void setScale(const ostd::Vec2& scale) { scale_x = scale.x; scale_y = scale.y; }
 			inline ostd::Vec2 getScale(void) const { return { scale_x, scale_y }; }
 			inline float pps(void) const { return pixelsPerSecond * scale_y; }
 			inline float vpx(void) const { return virtualPiano_x * scale_x; }
@@ -96,9 +104,9 @@ class VirtualPiano
 	};
 	public: class NoteEventData : public ostd::BaseObject
 	{
-		public: enum class eEventType { NoteON = 0, NoteOFF };
+		public: enum class eEventType { NoteON = 0, NoteOFF, MidiEnd };
 		public:
-			NoteEventData(PianoKey& key) : vPianoKey(key) { setTypeName("NoteEventData"); validate(); }
+			NoteEventData(PianoKey& key) : vPianoKey(key) { setTypeName("VirtualPiano::NoteEventData"); validate(); }
 			PianoKey& vPianoKey;
 			MidiParser::NoteEvent note;
 			eEventType eventType;
@@ -113,26 +121,44 @@ class VirtualPiano
 		int32_t outlineThickness;
 		float cornerRadius;
 	};
+	public: class SignalListener : public ostd::BaseObject
+	{
+		public:
+			inline SignalListener(VirtualPiano& _parent) : parent(_parent)
+			{
+				setTypeName("VirtualPiano::SignalListener");
+				connectSignal(Common::SigIntSignal);
+				validate();
+			}
+			void handleSignal(ostd::tSignal& signal) override;
+
+		public:
+			VirtualPiano& parent;
+	};
 
 	public:
-		inline VirtualPiano(Window& parentWindow) : m_parentWindow(parentWindow) {  }
+		inline VirtualPiano(Window& parentWindow) : m_sigListener(*this), m_parentWindow(parentWindow) {  }
 		void init(void);
 
 		void play(void);
 		void pause(void);
 		void stop(void);
-		
+
 		bool loadMidiFile(const ostd::String& filePath);
 		bool loadAudioFile(const ostd::String& filePath);
 		double getPlayTime_s(void);
 		void update(void);
-		void render(void);
+		void render(std::optional<std::reference_wrapper<sf::RenderTarget>> target = std::nullopt);
 		void onWindowResized(uint32_t width, uint32_t height);
-		void renderVirtualKeyboard(void);
-		void calculateFallingNotes(void);
+		void renderVirtualKeyboard(std::optional<std::reference_wrapper<sf::RenderTarget>> target = std::nullopt);
+		void calculateFallingNotes(double currentTime);
 		void drawFallingNote(const FallingNoteGraphicsData& noteData);
 		void drawFallingNoteOutline(const FallingNoteGraphicsData& noteData);
 		void drawFallingNoteGlow(const FallingNoteGraphicsData& noteData);
+		void updateVisualization(double currentTime);
+
+		bool renderFramesToFile(const ostd::String& folderPath, const ostd::UI16Point& resolution, uint8_t fps);
+		void saveFrame(const sf::RenderTexture& rt, const ostd::String& basePath, int frameIndex);
 
 		float scanMusicStartPoint(const ostd::String& filePath, float thresholdPercent = 0.02f, float minDuration = 0.05f);
 
@@ -141,8 +167,12 @@ class VirtualPiano
 		inline float getAutoSoundStart(void) { return m_autoSoundStart; }
 		inline bool hasAudioFile(void) { return m_hasAudioFile; }
 		inline bool isPlaying(void) { return m_playing; }
+		inline bool isRenderingToFile(void) { return m_isRenderingToFile; }
 
 		static sf::VertexArray getMusicWaveForm(const ostd::String& filePath, int32_t windowHeight);
+
+	private:
+		void __preallocate_file_names_for_rendering(uint32_t frameCount, const ostd::String& baseFileName, const ostd::String& basePath, const ostd::String& extension, const uint16_t marginFrames = 200);
 
 	private:
 		Window& m_parentWindow;
@@ -155,10 +185,13 @@ class VirtualPiano
 		std::vector<FallingNoteGraphicsData> m_fallingNoteGfx_w;
 		std::vector<FallingNoteGraphicsData> m_fallingNoteGfx_b;
 
-		bool m_playing;
-		bool m_paused;
-		bool m_firstNotePlayed;
-		bool m_hasAudioFile;
+		std::vector<ostd::String> m_renderFileNames;
+
+		bool m_playing { false };
+		bool m_paused { false };
+		bool m_isRenderingToFile { false };
+		bool m_firstNotePlayed { false };
+		bool m_hasAudioFile { false };
 
 		int32_t m_nextFallingNoteIndex { 0 };
 		float m_autoSoundStart { 0.0f };
@@ -170,15 +203,21 @@ class VirtualPiano
 		sf::RenderTexture m_blurBuff1;
 		sf::RenderTexture m_blurBuff2;
 		sf::View m_glowView;
-	
+
+		SignalListener m_sigListener;
+
 	public:
 		sf::Shader noteShader;
 		sf::Shader blurShader;
+		sf::Shader flipShader;
 		sf::Texture noteTexture;
 
 	public:
 		inline static const uint64_t NoteOnSignal = ostd::SignalHandler::newCustomSignal(5000);
 		inline static const uint64_t NoteOffSignal = ostd::SignalHandler::newCustomSignal(5001);
 		inline static const uint64_t MidiStartSignal = ostd::SignalHandler::newCustomSignal(5002);
+		inline static const uint64_t MidiEndSignal = ostd::SignalHandler::newCustomSignal(5003);
+
+		friend class SignalListener;
 
 };

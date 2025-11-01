@@ -21,6 +21,8 @@
 #pragma once
 
 #include <SFML/System/Clock.hpp>
+#include <ostd/Signals.hpp>
+#include <ostd/String.hpp>
 
 #define sf_color(ostd_color) sf::Color { ostd_color.r, ostd_color.g, ostd_color.b, ostd_color.a }
 #define color_to_glsl(ostd_color) sf::Glsl::Vec4(ostd_color.r / 255.0f, ostd_color.g / 255.0f, ostd_color.b / 255.0f, ostd_color.a / 255.0f)
@@ -30,12 +32,29 @@ class Common
 {
 	public:
 		static double getCurrentTIme_ns(void);
+		static void ensureDirectory(const ostd::String& path);
+		static void deleteDirectory(const ostd::String& path);
+		static double percentage(double n, double max);
 		inline static const sf::Clock& getAppClock(void) { return s_appClock; }
+		inline static bool wasSIGINTTriggered(void) { return s_sigint_triggered; }
+		inline static float scaleX(float value) { return value * guiScaleX; }
+		inline static float scaleY(float value) { return value * guiScaleY; }
 
 	public:
 	    inline static float guiScaleX { 1.0f };
 	    inline static float guiScaleY { 1.0f };
 
+	#ifdef BUILD_CONFIG_DEBUG
+		inline static constexpr bool IsDebug = true;
+	#else
+		inline static constexpr bool IsDebug = false;
+	#endif
+
+		inline static bool s_sigint_triggered { false };
+
 	private:
 		inline static sf::Clock s_appClock;
+
+	public:
+		inline static const uint32_t SigIntSignal = ostd::SignalHandler::newCustomSignal(0xBB00000);
 };

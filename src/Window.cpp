@@ -47,6 +47,7 @@ void Window::onInitialize(void)
 	m_vpiano.loadAudioFile("res/music/rach2.mp3");
 
 	m_gui.init(*this, "themes/ui/cursor.png", "themes/ui/icon.png", "themes/Dark.txt", true);
+	m_gui.showFPS(true);
 }
 
 void Window::handleSignal(ostd::tSignal& signal)
@@ -66,6 +67,10 @@ void Window::handleSignal(ostd::tSignal& signal)
 		else if (evtData.keyCode == (int32_t)sf::Keyboard::Key::Enter)
 		{
 			m_vpiano.stop();
+		}
+		else if (evtData.keyCode == (int32_t)sf::Keyboard::Key::F)
+		{
+			m_vpiano.renderFramesToFile("tmp", { 1920, 1080 }, 60);
 		}
 		else if (evtData.keyCode == (int32_t)sf::Keyboard::Key::F11)
 		{
@@ -95,7 +100,7 @@ void Window::handleSignal(ostd::tSignal& signal)
 	}
 	else if (signal.ID == VirtualPiano::MidiStartSignal)
 	{
-		if (m_vpiano.hasAudioFile())
+		if (m_vpiano.hasAudioFile() && !m_vpiano.isRenderingToFile())
 		{
 			m_vpiano.getAudioFile().play();
 			m_vpiano.getAudioFile().setPlayingOffset(sf::seconds(m_vpiano.getAutoSoundStart()));
@@ -116,11 +121,7 @@ void Window::onEventPoll(const std::optional<sf::Event>& event)
 
 void Window::onRender(void)
 {
-	m_window.clear({ 10, 10, 30 });
 	m_vpiano.render();
-	ostd::String fps_text = "FPS: ";
-	fps_text.add(getFPS());
-	Renderer::drawString(fps_text, { 10, 10 }, { 220, 170, 0 }, 24);
 	m_gui.draw();
 }
 

@@ -52,12 +52,14 @@ class Gui : public ostd::BaseObject
 		inline bool isVisible(void) const { return m_visible; }
 		inline void show(bool _show = true) { m_visible = _show; }
 		inline void toggleVisibility(void) { m_visible = !m_visible; }
+		inline void showFPS(bool show = true) { m_showFPS = show; }
 
 		void onEventPoll(const std::optional<sf::Event>& event);
 
 	private:
 		void __build_gui(void);
 		void __show_splashscreen(void);
+		void __draw_fps(void);
 
 	private:
 		tgui::Gui m_gui;
@@ -65,6 +67,7 @@ class Gui : public ostd::BaseObject
 		sf::Image m_AppIcon;
 		WindowBase* m_window { nullptr };
 		bool m_visible { true };
+		bool m_showFPS { false };
 
 		sf::Texture m_splashScreenTex;
 		std::optional<sf::Sprite> m_splashScreenSpr;

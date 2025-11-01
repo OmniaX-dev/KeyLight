@@ -51,19 +51,19 @@ cd KeyLight
 ```
 
 > ⚠️ **Important:**
-> 
+>
 > The `./build windows_release` command creates a full Windows release in `bin/KeyLight_w64/`, including:
-> 
+>
 > - The compiled executable
 > - All required DLLs
 > - Assets and resources
 > - License files
-> 
-> **<u>This option is for use on Windows only.</u>** 
-> 
+>
+> **<u>This option is for use on Windows only.</u>**
+>
 > The `build` script assumes MSYS2 is installed at `C:/msys64`.
 > If your installation is in a different location, you must manually update the `MSYS_ROOT` variable at the top of `other/build_windows_release.sh`.
-> 
+>
 > Refer to the [Manual Build](other/manual_build.md) file for more information on the build process.
 
 ---
@@ -114,92 +114,17 @@ cd KeyLight
 ```
 
 > ⚠️ **Important:**
-> 
+>
 > The ./build linux_release command creates a Linux release in `bin/KeyLight_linux64/`, including:
-> 
+>
 > - The compiled executable
 > - Assets and resources
 > - License files
-> 
+>
 > **<u>This option is for use on Linux only</u>**, and unlike the `windows_release` option, the `linux_release` option does not include runtime shared libraries, as bundling them is generally discouraged on Linux.
 > This option is intended for **personal use only**, and there is **no guarantee** that the resulting release will work on other Linux systems.
 > The preferred practice on Linux is to **build from source on the target system**, ensuring compatibility with its libraries and environment.
-> 
+>
 > Refer to the [Manual Build](other/manual_build.md) file for more information on the build process.
-
----
-
-### <u>Build options</u>
-
-Once **MSYS2** is installed and your environment is set up, you can use the `./build` script to compile KeyLight in various modes other than release:
-
-###### <u>Debug build</u>
-
-```bash
-./build debug
-```
-
-Compiles KeyLight with debug symbols and no optimization, ideal for development and troubleshooting.
-
-###### <u>Incremental build (uses last configuration)</u>
-
-```bash
- ./build
-```
-
-Rebuilds only the modified source files using **whichever build configuration was last used** (`debug` or `release`).
-This is ideal for fast iteration without switching modes.
-
-###### <u>Run after build</u>
-
-```bash
-./build run
-```
-
-Same as `./build`, but immediately launches the application after building the changes.
-
-###### <u>Windows release packaging</u>
-
-```bash
-./build windows_release
-```
-
-Creates a full Windows release in `bin/KeyLight_w64/`, including:
-
-- The compiled executable
-- All required DLLs
-- Assets and resources
-- License files
-
-> ⚠️ **Important:** 
-> 
-> **<u>This option is for use on Windows only.</u>** The `build` script assumes MSYS2 is installed at `C:/msys64`.
-> If your installation is in a different location, you must manually update the `MSYS_ROOT` variable at the top of `other/build_windows_release.sh`.
-
-###### <u>Linux release packaging</u>
-
-```bash
-./build linux_release
-```
-
-Creates a Linux release in `bin/KeyLight_linux64/`, including:
-
-- The compiled executable
-- Assets and resources
-- License files
-
-> ⚠️ **Important:** 
-> 
-> **<u>This option is for use on Linux only</u>**, and nlike the `windows_release` option, the `linux_release` option does not include runtime shared libraries, as bundling them is generally discouraged on Linux.
-> This option is intended for **personal use only**, and there is **no guarantee** that the resulting release will work on other Linux systems.
-> The preferred practice on Linux is to **build from source on the target system**, ensuring compatibility with its libraries and environment.
-
-###### <u>Install dependencies automatically</u>
-
-```bash
-./build dependencies
-```
-
-This option is used to install all the needed dependencies, and should only be used **once**, before the first build.
 
 ---

@@ -24,6 +24,8 @@
 #include <algorithm>
 #include <ostd/Logger.hpp>
 #include <ostd/Signals.hpp>
+#include "Common.hpp"
+#include "Renderer.hpp"
 
 Gui& Gui::init(WindowBase& window, const ostd::String& cursorFilePath, const ostd::String& appIconFilePath, const ostd::String& themeFilePath, bool visible)
 {
@@ -115,8 +117,12 @@ void Gui::draw(void)
 {
 	if (!isValid()) return;
 	if (!isVisible()) return;
+
+	Renderer::outlineRect({ 0.0f, 0.0f, Common::scaleX(600), (float)m_window->getWindowHeight()}, { 0, 0, 0, 230 }, { 230, 230, 230, 230 }, 2);
+
 	m_gui.draw();
 
+	__draw_fps();
 	__show_splashscreen();
 }
 
@@ -147,6 +153,9 @@ void Gui::__show_splashscreen(void)
 	if (m_showSplashScreen)
 	{
 		float elapsed = m_splashScreenTimer.getElapsedTime().asSeconds();
+		float x = (m_window->getWindowWidth() / 2.0f) - (m_splashScreenTex.getSize().x / 2.0f);
+		float y = (m_window->getWindowHeight() / 2.0f) - (m_splashScreenTex.getSize().y / 2.0f);
+		m_splashScreenSpr->setPosition({ x, y });
 		if (elapsed < 1.5f)
 		{
         	m_window->sfWindow().draw(*m_splashScreenSpr);
@@ -163,4 +172,15 @@ void Gui::__show_splashscreen(void)
 			m_showSplashScreen = false;
 		}
 	}
+}
+
+void Gui::__draw_fps(void)
+{
+	if (isInvalid()) return;
+	if (!m_showFPS) return;
+	ostd::String fps_text = "FPS: ";
+	fps_text.add(m_window->getFPS());
+	int32_t fontSize = 26;
+	auto stringSize = Renderer::getStringSize(fps_text, fontSize);
+	Renderer::drawString(fps_text, { (float)m_window->getWindowWidth() - stringSize.x - 10 , 10 }, { 220, 170, 0 }, fontSize);
 }

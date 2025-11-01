@@ -24,7 +24,7 @@
 
 bool Renderer::init(WindowBase& window, const ostd::String& fontFilePath)
 {
-	m_window = &window;
+	m_window = nullptr;
 	if (fontFilePath.new_trim() != "")
 	{
 		if (!m_font.openFromFile(fontFilePath.cpp_str()))
@@ -33,6 +33,7 @@ bool Renderer::init(WindowBase& window, const ostd::String& fontFilePath)
 			return false;
 		}
 	}
+	m_window = &window;
 	return true;
 }
 
@@ -76,6 +77,18 @@ void Renderer::clear(const ostd::Color& color)
 	if (m_window == nullptr) return;
 	sf::RenderTarget& target = (m_target == nullptr ? m_window->sfWindow() : *m_target);
 	target.clear(sf_color(color));
+}
+
+ostd::Vec2 Renderer::getStringSize(const ostd::String& str,  uint32_t font_size)
+{
+	if (m_window == nullptr) return { 0.0f, 0.0f };
+	ostd::Vec2 result; // or allocate however your API expects
+
+    sf::Text text(m_font);
+    text.setString(str.c_str());
+    text.setCharacterSize(font_size);
+    sf::FloatRect bounds = text.getLocalBounds();
+    return { bounds.size.x, bounds.size.y };
 }
 
 void Renderer::drawString(const ostd::String& str, const ostd::Vec2& position, const ostd::Color& color, uint32_t font_size)

@@ -19,16 +19,28 @@
 */
 
 #include <ostd/IOHandlers.hpp>
+#include <csignal>
+#include <ostd/Signals.hpp>
 
+#include "Common.hpp"
 #include "Window.hpp"
 
 ostd::ConsoleOutputHandler out;
 
+void handleSigint(int signal)
+{
+	if (signal == SIGINT)
+	{
+		ostd::SignalHandler::emitSignal(Common::SigIntSignal, ostd::tSignalPriority::RealTime);
+	}
+}
+
 int main(int argc, char** argv)
 {
+	std::signal(SIGINT, handleSigint);
+
 	Window window;
 	window.initialize(VirtualPiano::VirtualPianoData::base_width, VirtualPiano::VirtualPianoData::base_height, "KeyLight");
-	window.setClearColor({ 0, 2	, 15 });
 
 	while (window.isRunning())
 	{

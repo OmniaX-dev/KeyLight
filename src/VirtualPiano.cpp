@@ -20,7 +20,14 @@
 
 #include "VirtualPiano.hpp"
 #include "Common.hpp"
+#include <SFML/Graphics/RenderStates.hpp>
+#include <SFML/Graphics/RenderTarget.hpp>
+#include <SFML/Graphics/RenderTexture.hpp>
+#include <cmath>
+#include <ostd/Geometry.hpp>
 #include <ostd/Logger.hpp>
+#include <ostd/Signals.hpp>
+#include <ostd/Utils.hpp>
 #include "Window.hpp"
 #include "Renderer.hpp"
 
@@ -85,6 +92,19 @@ void VirtualPiano::VirtualPianoData::updateScale(int32_t width, int32_t height)
 }
 
 
+void VirtualPiano::SignalListener::handleSignal(ostd::tSignal& signal)
+{
+	if (signal.ID == Common::SigIntSignal)
+	{
+		if (Common::IsDebug)
+		{
+			OX_DEBUG("Capturing SIGINT.");
+		}
+		Common::s_sigint_triggered = true;
+	}
+}
+
+
 
 void VirtualPiano::init(void)
 {
@@ -102,6 +122,8 @@ void VirtualPiano::init(void)
 	if (!noteShader.loadFromFile("shaders/note.vert", "shaders/note.frag"))
 		OX_ERROR("Failed to load shader");
 	if (!blurShader.loadFromFile("shaders/note.vert", "shaders/blur.frag"))
+		OX_ERROR("Failed to load shader");
+	if (!flipShader.loadFromFile("shaders/flip.vert", "shaders/flip.frag"))
 		OX_ERROR("Failed to load shader");
 	if (!noteTexture.loadFromFile("res/tex/note.jpg"))
 		OX_ERROR("Failed to load texture");
@@ -140,7 +162,6 @@ void VirtualPiano::pause(void)
 void VirtualPiano::stop(void)
 {
 	m_audioFile.stop();
-	m_playing = false;
 	m_paused = false;
 	m_firstNotePlayed = false;
 	m_startTimeOffset_ns = Common::getCurrentTIme_ns();
@@ -148,6 +169,8 @@ void VirtualPiano::stop(void)
 	m_activeFallingNotes.clear();
 	for (auto& pk : m_pianoKeys)
 		pk.pressed = false;
+	update();
+	m_playing = false;
 }
 
 bool VirtualPiano::loadMidiFile(const ostd::String& filePath)
@@ -195,29 +218,15 @@ void VirtualPiano::update(void)
 {
 	if (m_playing)
 	{
-		double currentTime = getPlayTime_s(); // in seconds
-
-		// Remove notes that have ended
-		while (!m_activeFallingNotes.empty() && currentTime > (m_activeFallingNotes.front().endTime + 0.05))
-		{
-			auto info = MidiParser::getNoteInfo(m_activeFallingNotes.front().pitch);
-			m_pianoKeys[info.keyIndex].pressed = false;
-			m_activeFallingNotes.pop_front();
-		}
-
-		// Add new notes that are starting now
-		while (m_nextFallingNoteIndex < m_midiNotes.size() && currentTime >= m_midiNotes[m_nextFallingNoteIndex].startTime - m_fallingTime_s)
-		{
-			// auto info = MidiParser::getNoteInfo(m_midiNotes[m_nextFallingNoteIndex].pitch);
-			m_activeFallingNotes.push_back(m_midiNotes[m_nextFallingNoteIndex]);
-			++m_nextFallingNoteIndex;
-		}
-		calculateFallingNotes();
+		updateVisualization(getPlayTime_s());
 	}
 }
 
-void VirtualPiano::render(void)
+void VirtualPiano::render(std::optional<std::reference_wrapper<sf::RenderTarget>> target)
 {
+	sf::RenderTarget*  __target = nullptr;
+	if (target)
+		__target = &target->get();
 	Renderer::setRenderTarget(&m_glowBuffer);
 	Renderer::clear({ 10, 10, 30, 0 });
 	for (const auto& note : m_fallingNoteGfx_w)
@@ -248,10 +257,10 @@ void VirtualPiano::render(void)
 	Renderer::drawTexture(m_blurBuff1.getTexture());
 	m_blurBuff2.display();
 
-	Renderer::setRenderTarget(nullptr);
+	Renderer::setRenderTarget(__target);
 	Renderer::useTexture(nullptr);
 	Renderer::useShader(nullptr);
-	Renderer::clear({ 2, 0, 2 });
+	Renderer::clear({ 20, 20, 20 });
 	Renderer::drawTexture(m_blurBuff2.getTexture(), { 0, 0 }, 2);
 
 	for (const auto& note : m_fallingNoteGfx_w)
@@ -272,7 +281,7 @@ void VirtualPiano::render(void)
 	Renderer::useShader(nullptr);
 	Renderer::useTexture(nullptr);
 
-	renderVirtualKeyboard();
+	renderVirtualKeyboard(target);
 }
 
 void VirtualPiano::onWindowResized(uint32_t width, uint32_t height)
@@ -286,8 +295,12 @@ void VirtualPiano::onWindowResized(uint32_t width, uint32_t height)
 	m_glowBuffer.setView(m_glowView);
 }
 
-void VirtualPiano::renderVirtualKeyboard(void)
+void VirtualPiano::renderVirtualKeyboard(std::optional<std::reference_wrapper<sf::RenderTarget>> target)
 {
+	sf::RenderTarget*  __target = nullptr;
+	if (target)
+		__target = &target->get();
+	Renderer::setRenderTarget(__target);
 	auto& vpd = m_vPianoData;
 	int whiteKeyCount = 0;
 	for (int midiNote = 21; midiNote <= 108; ++midiNote)
@@ -326,9 +339,8 @@ void VirtualPiano::renderVirtualKeyboard(void)
 	}
 }
 
-void VirtualPiano::calculateFallingNotes(void)
+void VirtualPiano::calculateFallingNotes(double currentTime)
 {
-	double currentTime = getPlayTime_s(); // in seconds
 	m_fallingNoteGfx_w.clear();
 	m_fallingNoteGfx_b.clear();
 	for (auto& note : m_activeFallingNotes)
@@ -448,12 +460,130 @@ void VirtualPiano::drawFallingNoteGlow(const FallingNoteGraphicsData& noteData)
 	Renderer::fillRoundedRect(bounds, noteData.glowColor, { noteData.cornerRadius, noteData.cornerRadius, noteData.cornerRadius, noteData.cornerRadius });
 }
 
+void VirtualPiano::updateVisualization(double currentTime)
+{
+	// Remove notes that have ended
+	while (!m_activeFallingNotes.empty() && currentTime > (m_activeFallingNotes.front().endTime + 0.05))
+	{
+		auto note = m_activeFallingNotes.front();
+		auto info = MidiParser::getNoteInfo(note.pitch);
+		m_pianoKeys[info.keyIndex].pressed = false;
+		if (note.last)
+		{
+			auto& key = m_pianoKeys[info.keyIndex];
+			NoteEventData ned(key);
+			ned.eventType = NoteEventData::eEventType::MidiEnd;
+			ned.note = note;
+			ostd::SignalHandler::emitSignal(MidiEndSignal, ostd::tSignalPriority::RealTime, ned);
+		}
+		m_activeFallingNotes.pop_front();
+	}
+
+	// Add new notes that are starting now
+	while (m_nextFallingNoteIndex < m_midiNotes.size() && currentTime >= m_midiNotes[m_nextFallingNoteIndex].startTime - m_fallingTime_s)
+	{
+		// auto info = MidiParser::getNoteInfo(m_midiNotes[m_nextFallingNoteIndex].pitch);
+		m_activeFallingNotes.push_back(m_midiNotes[m_nextFallingNoteIndex]);
+		++m_nextFallingNoteIndex;
+	}
+	calculateFallingNotes(currentTime);
+}
+
 void VirtualPiano::drawFallingNoteOutline(const FallingNoteGraphicsData& noteData)
 {
 	Renderer::useTexture(nullptr);
 	Renderer::useShader(nullptr);
 	Renderer::drawRoundedRect(noteData.rect, noteData.outlineColor, { noteData.cornerRadius, noteData.cornerRadius, noteData.cornerRadius, noteData.cornerRadius }, noteData.outlineThickness);
 }
+
+bool VirtualPiano::renderFramesToFile(const ostd::String& folderPath, const ostd::UI16Point& resolution, uint8_t fps)
+{
+	if (resolution.x != 1920 || resolution.y != 1080) return false; //TODO: allow for valid resolutions
+	if (fps != 60) return false; //TODO: allow for valid FPS values
+
+	double last_time = 0.0;
+	for (const auto& note : m_midiNotes)
+	{
+		if (note.last)
+		{
+			last_time = note.endTime;
+			break;
+		}
+	}
+
+	if (last_time == 0.0) return false; //TODO: Error
+
+	m_isRenderingToFile = true;
+
+	int32_t total_frames = (int32_t)std::ceil(last_time * fps);
+	__preallocate_file_names_for_rendering(total_frames, "frame_", folderPath, ".png");
+
+	Common::ensureDirectory(folderPath);
+	ostd::Vec2 current_scale = m_vPianoData.getScale();
+	m_vPianoData.updateScale(resolution.x, resolution.y);
+
+	sf::RenderTexture render_target({ resolution.x, resolution.y });
+	sf::RenderTexture flipped_render_target({ resolution.x, resolution.y });
+	stop();
+
+	ostd::Timer fpsTimer;
+
+	int32_t frameIndex = 0;
+	int32_t render_fps = 0;
+	int percentage = 0;
+	double frame_time = 1.0 / (float)fps;
+	double current_time = 0.0;
+	fpsTimer.startCount(ostd::eTimeUnits::Milliseconds);
+	while (true)
+	{
+		updateVisualization(current_time);
+		render(render_target);
+		Renderer::setRenderTarget(&flipped_render_target);
+		Renderer::useShader(&flipShader);
+		flipShader.setUniform("texture", render_target.getTexture());
+		Renderer::drawTexture(render_target.getTexture());
+		Renderer::useShader(nullptr);
+		saveFrame(flipped_render_target, folderPath, ++frameIndex);
+		if (Common::wasSIGINTTriggered())
+		{
+			Common::deleteDirectory(folderPath);
+			m_parentWindow.close();
+			break;
+		}
+		if ((frameIndex % fps) == 0)
+		{
+			double frame_render_time = ((double)fpsTimer.endCount() / (double)fps);
+			fpsTimer.startCount(ostd::eTimeUnits::Milliseconds);
+			render_fps = (int32_t)std::round(1000.0 / frame_render_time);
+		}
+		percentage = Common::percentage(current_time, last_time);
+		if (frameIndex % 10 == 0)
+			std::cout << (int)percentage << "% (FPS: " << (int)render_fps << ")\n";
+
+		current_time += frame_time;
+
+		if (current_time > last_time)
+			break;
+	}
+	m_vPianoData.setScale(current_scale);
+	m_isRenderingToFile = false;
+
+	return true;
+}
+
+void VirtualPiano::saveFrame(const sf::RenderTexture& rt, const ostd::String& basePath, int frameIndex)
+{
+    sf::Image img = rt.getTexture().copyToImage();
+
+    // char filename[256];
+    // std::snprintf(filename, sizeof(filename), "%s/frame_%04d.png", basePath.c_str(), frameIndex);
+    // img.flipVertically();
+    if (!img.saveToFile(m_renderFileNames[frameIndex]))
+    {
+        OX_ERROR("Failed to save frame %d to %s", frameIndex, m_renderFileNames[frameIndex].c_str());
+    }
+}
+
 
 float VirtualPiano::scanMusicStartPoint(const ostd::String& filePath, float thresholdPercent, float minDuration)
 {
@@ -529,4 +659,15 @@ sf::VertexArray VirtualPiano::getMusicWaveForm(const ostd::String& filePath, int
 		waveform[x].color = sf::Color::White;
 	}
 	return waveform;
+}
+
+void VirtualPiano::__preallocate_file_names_for_rendering(uint32_t frameCount, const ostd::String& baseFileName, const ostd::String& basePath, const ostd::String& extension, const uint16_t marginFrames)
+{
+	m_renderFileNames.clear();
+	char filename[256];
+	for (int32_t i = 0; i < frameCount + marginFrames; i++)
+	{
+    	std::snprintf(filename, sizeof(filename), "%s/%s%06d.%s", basePath.c_str(), baseFileName.c_str(), i, extension.c_str());
+    	m_renderFileNames.push_back(filename);
+	}
 }
