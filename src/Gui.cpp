@@ -113,6 +113,11 @@ void Gui::showFileDialog(const ostd::String& title, const Gui::FileDialogFilterL
 	});
 }
 
+void Gui::showVideoRenderingGui(const VideoRenderState& renderState)
+{
+	renderState.isFinished();
+}
+
 void Gui::draw(void)
 {
 	if (!isValid()) return;

@@ -35,6 +35,7 @@
 #include <ostd/Utils.hpp>
 
 #include "SFMLWindow.hpp"
+#include "VPianoDataStructures.hpp"
 
 class Gui : public ostd::BaseObject
 {
@@ -47,6 +48,7 @@ class Gui : public ostd::BaseObject
 		Gui& init(WindowBase& window, const ostd::String& cursorFilePath, const ostd::String& appIconFilePath, const ostd::String& themeFilePath, bool visible = true);
 		void handleSignal(ostd::tSignal& signal) override;
 		void showFileDialog(const ostd::String& title, const FileDialogFilterList& filters, std::function<void(const std::vector<ostd::String>&, bool)> callback, bool multiselect = false);
+		void showVideoRenderingGui(const VideoRenderState& renderState);
 		void draw(void);
 
 		inline bool isVisible(void) const { return m_visible; }
@@ -68,6 +70,7 @@ class Gui : public ostd::BaseObject
 		WindowBase* m_window { nullptr };
 		bool m_visible { true };
 		bool m_showFPS { false };
+		bool m_isRenderingVideo { false };
 
 		sf::Texture m_splashScreenTex;
 		std::optional<sf::Sprite> m_splashScreenSpr;

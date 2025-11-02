@@ -23,6 +23,8 @@
 #include <ostd/Utils.hpp>
 #include <ostd/Logger.hpp>
 
+#include <SFML/Audio.hpp>
+
 double Common::getCurrentTIme_ns(void)
 {
 	return std::chrono::duration_cast<std::chrono::nanoseconds> (std::chrono::high_resolution_clock::now().time_since_epoch()).count();
@@ -53,12 +55,6 @@ void Common::ensureDirectory(const ostd::String& path)
     }
 }
 
-double Common::percentage(double n, double max)
-{
-    if (max == 0.0) return 0.0;
-    return (n / max) * 100.0;
-}
-
 void Common::deleteDirectory(const ostd::String& path)
 {
     namespace fs = std::filesystem;
@@ -73,4 +69,40 @@ void Common::deleteDirectory(const ostd::String& path)
     {
         OX_ERROR("Failed to delete tmp folder '%s': %s", path.c_str(), e.what());
     }
+}
+
+double Common::percentage(double n, double max)
+{
+    if (max == 0.0) return 0.0;
+    return (n / max) * 100.0;
+}
+
+sf::VertexArray Common::getMusicWaveForm(const ostd::String& filePath, int32_t windowHeight)
+{
+	sf::SoundBuffer buffer;
+	if (!buffer.loadFromFile(filePath.cpp_str()))
+	{
+		OX_ERROR("Error while trying to load audio file: %s", filePath.c_str());
+		return {  };
+	}
+	const int16_t* samples = buffer.getSamples();
+	std::size_t sampleCount = buffer.getSampleCount();
+	unsigned int channels = buffer.getChannelCount();
+	std::vector<float> amplitudes;
+	amplitudes.reserve(1000);
+	std::size_t samplesPerPixel = sampleCount / channels / 1000;
+	for (std::size_t i = 0; i < sampleCount; i += samplesPerPixel * channels)
+	{
+		long sum = 0;
+		for (unsigned int c = 0; c < channels; ++c)
+			sum += std::abs(samples[i + c]);
+		amplitudes.push_back(static_cast<float>(sum) / channels / 32768.f);
+	}
+	sf::VertexArray waveform(sf::PrimitiveType::LineStrip, amplitudes.size());
+	for (std::size_t x = 0; x < amplitudes.size(); ++x) {
+		float y = (1.f - amplitudes[x]) * windowHeight / 2.f;
+		waveform[x].position = sf::Vector2f(static_cast<float>(x), y);
+		waveform[x].color = sf::Color::White;
+	}
+	return waveform;
 }

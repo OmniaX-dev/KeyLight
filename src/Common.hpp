@@ -21,6 +21,8 @@
 #pragma once
 
 #include <SFML/System/Clock.hpp>
+#include <SFML/Graphics.hpp>
+
 #include <ostd/Signals.hpp>
 #include <ostd/String.hpp>
 
@@ -35,6 +37,8 @@ class Common
 		static void ensureDirectory(const ostd::String& path);
 		static void deleteDirectory(const ostd::String& path);
 		static double percentage(double n, double max);
+		sf::VertexArray getMusicWaveForm(const ostd::String& filePath, int32_t windowHeight);
+
 		inline static const sf::Clock& getAppClock(void) { return s_appClock; }
 		inline static bool wasSIGINTTriggered(void) { return s_sigint_triggered; }
 		inline static float scaleX(float value) { return value * guiScaleX; }

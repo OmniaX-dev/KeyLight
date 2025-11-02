@@ -41,7 +41,7 @@ int main(int argc, char** argv)
 	std::signal(SIGINT, handleSigint);
 
 	Window window;
-	window.initialize(VirtualPiano::VirtualPianoData::base_width, VirtualPiano::VirtualPianoData::base_height, "KeyLight");
+	window.initialize(VirtualPianoData::base_width, VirtualPianoData::base_height, "KeyLight");
 
 	FFMPEG::printDebugInfo();
 

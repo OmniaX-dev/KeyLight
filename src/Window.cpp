@@ -60,44 +60,68 @@ void Window::handleSignal(ostd::tSignal& signal)
 			close();
 		if (evtData.keyCode == (int32_t)sf::Keyboard::Key::Space)
 		{
-			if (!m_vpiano.isPlaying())
-				m_vpiano.play();
-			else
-				m_vpiano.pause();
+			if (!m_vpiano.isRenderingToFile())
+			{
+				if (!m_vpiano.isPlaying())
+					m_vpiano.play();
+				else
+					m_vpiano.pause();
+			}
 		}
 		else if (evtData.keyCode == (int32_t)sf::Keyboard::Key::Enter)
 		{
-			m_vpiano.stop();
+			if (!m_vpiano.isRenderingToFile())
+			{
+				m_vpiano.stop();
+			}
 		}
 		else if (evtData.keyCode == (int32_t)sf::Keyboard::Key::F)
 		{
-			m_vpiano.renderFramesToFile("tmp", { 1920, 1080 }, 60);
+			if (!m_vpiano.isRenderingToFile())
+			{
+				// m_vpiano.renderFramesToFile("tmp", { 1920, 1080 }, 60);
+				if (!m_vpiano.configImageSequenceRender("tmp", { 1920, 1080 }, 60))
+					OX_ERROR("Unable to start image sequence render.");
+
+			}
 		}
 		else if (evtData.keyCode == (int32_t)sf::Keyboard::Key::F11)
 		{
-			enableFullscreen(!m_isFullscreen);
+			if (!m_vpiano.isRenderingToFile())
+			{
+				enableFullscreen(!m_isFullscreen);
+			}
 		}
 		else if (evtData.keyCode == (int32_t)sf::Keyboard::Key::F2)
 		{
-			m_gui.toggleVisibility();
+			if (!m_vpiano.isRenderingToFile())
+			{
+				m_gui.toggleVisibility();
+			}
 		}
 		else if (evtData.keyCode == (int32_t)sf::Keyboard::Key::F3)
 		{
-			m_gui.showFileDialog("Test File DIalog", { { "All file types", { "*.*" } } }, [](const std::vector<ostd::String>& fileList, bool wasCanceled){
+			if (!m_vpiano.isRenderingToFile())
+			{
+				m_gui.showFileDialog("Test File DIalog", { { "All file types", { "*.*" } } }, [](const std::vector<ostd::String>& fileList, bool wasCanceled){
 
-			}, true);
+				}, true);
+			}
 		}
 	}
 	else if (signal.ID == ostd::tBuiltinSignals::WindowResized)
 	{
-		auto& evtData = (WindowResizedData&)signal.userData;
-		sf::View view	 = m_window.getView();
-		view.setSize({ static_cast<float>(evtData.new_width), static_cast<float>(evtData.new_height) });
-		view.setCenter({ evtData.new_width / 2.f, evtData.new_height / 2.f });
-		m_window.setView(view);
-		m_vpiano.vPianoData().updateScale(evtData.new_width, evtData.new_height);
-		m_vpiano.onWindowResized((uint32_t)evtData.new_width, (uint32_t)evtData.new_height);
-		__update_local_window_size((uint32_t)evtData.new_width, (uint32_t)evtData.new_height);
+		if (!m_vpiano.isRenderingToFile())
+		{
+			auto& evtData = (WindowResizedData&)signal.userData;
+			sf::View view	 = m_window.getView();
+			view.setSize({ static_cast<float>(evtData.new_width), static_cast<float>(evtData.new_height) });
+			view.setCenter({ evtData.new_width / 2.f, evtData.new_height / 2.f });
+			m_window.setView(view);
+			m_vpiano.vPianoData().updateScale(evtData.new_width, evtData.new_height);
+			m_vpiano.onWindowResized((uint32_t)evtData.new_width, (uint32_t)evtData.new_height);
+			__update_local_window_size((uint32_t)evtData.new_width, (uint32_t)evtData.new_height);
+		}
 	}
 	else if (signal.ID == VirtualPiano::MidiStartSignal)
 	{
@@ -106,12 +130,6 @@ void Window::handleSignal(ostd::tSignal& signal)
 			m_vpiano.getAudioFile().play();
 			m_vpiano.getAudioFile().setPlayingOffset(sf::seconds(m_vpiano.getAutoSoundStart()));
 		}
-	}
-	else if (signal.ID == WindowFocusLost)
-	{
-	}
-	else if (signal.ID == WindowFocusGained)
-	{
 	}
 }
 
@@ -162,7 +180,7 @@ void Window::enableFullscreen(bool enable)
 		m_isFullscreen = false;
 	}
 	// m_window.setMouseCursor(*m_cursor);
-	auto			  new_size = m_window.getSize();
+	auto new_size = m_window.getSize();
 	WindowResizedData wrd(*this, old_size.x, old_size.y, new_size.x, new_size.y);
 	ostd::SignalHandler::emitSignal(ostd::tBuiltinSignals::WindowResized, ostd::tSignalPriority::RealTime, wrd);
 }
@@ -172,14 +190,17 @@ void Window::enableResizeable(bool enable)
 	if (m_isFullscreen) return;
 	if (enable && m_isResizeable) return;
 	if (!enable && !m_isResizeable) return;
+	auto position = m_window.getPosition();
 	if (enable)
 	{
-		m_window.create(sf::VideoMode::getDesktopMode(), getTitle().cpp_str(), sf::Style::Close, sf::State::Windowed);
+		m_window.create(sf::VideoMode({ (uint32_t)getWindowWidth(), (uint32_t)getWindowHeight() }), getTitle().cpp_str(), sf::Style::Default, sf::State::Windowed);
+		m_window.setPosition(position);
 		m_isResizeable = true;
 	}
 	else
 	{
-		m_window.create(sf::VideoMode::getDesktopMode(), getTitle().cpp_str(), sf::Style::Default, sf::State::Windowed);
+		m_window.create(sf::VideoMode({ (uint32_t)getWindowWidth(), (uint32_t)getWindowHeight() }), getTitle().cpp_str(), sf::Style::Close, sf::State::Windowed);
+		m_window.setPosition(position);
 		m_isResizeable = false;
 	}
 }
