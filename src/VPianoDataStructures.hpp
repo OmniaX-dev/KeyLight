@@ -12,7 +12,6 @@
 #include <vector>
 #include "Common.hpp"
 #include "ffmpeg_helper.hpp"
-#include "vendor/subprocess.hpp"
 #include <boost/process/v1.hpp>
 
 namespace bp = boost::process::v1;
@@ -129,7 +128,6 @@ struct VideoRenderState
 		ffmpegProfile = FFMPEG::Profiles::GeneralPurpose;
 		ffmpegPipe = nullptr;
 		subProcArgs.clear();
-		subProcArgsStorage.clear();
 
 		lastNoteEndTime = 0.0;
 		totalFrames = 0;
@@ -157,9 +155,7 @@ struct VideoRenderState
 	ImageType imageType { ImageType::PNG };
 	FFMPEG::tProfile ffmpegProfile;
 	FILE* ffmpegPipe { nullptr };
-	struct subprocess_s subProc;
 	std::vector<std::string> subProcArgs;
-	std::vector<ostd::String> subProcArgsStorage;
 	bp::child ffmpeg_child;
 	bp::opstream ffmpeg_stdin;
 

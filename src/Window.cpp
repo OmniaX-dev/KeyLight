@@ -45,8 +45,8 @@ void Window::onInitialize(void)
 	m_windowPositionBeforeFullscreen = { (float)m_window.getPosition().x, (float)m_window.getPosition().y };
 	// enableFullscreen(true);
 	m_vpiano.init();
-	m_vpiano.loadMidiFile("res/midi/scale2.mid");
-	m_vpiano.loadAudioFile("res/music/scale2.mp3");
+	m_vpiano.loadMidiFile("res/midi/rach2.mid");
+	m_vpiano.loadAudioFile("res/music/rach2.mp3");
 
 	m_gui.init(*this, m_vpiano.getVideoRenderState(), "themes/ui/cursor.png", "themes/ui/icon.png", "themes/Dark.txt", true);
 	m_gui.showFPS(true);
