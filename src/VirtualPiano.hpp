@@ -41,7 +41,7 @@ class VirtualPiano
 
 	public:
 		// Core functionality
-		inline VirtualPiano(Window& parentWindow) : m_sigListener(*this), m_parentWindow(parentWindow) {  }
+		inline VirtualPiano(Window& parentWindow) : m_sigListener(*this), m_parentWindow(parentWindow), m_videoRenderState(*this) {  }
 		void init(void);
 		void onWindowResized(uint32_t width, uint32_t height);
 
@@ -77,6 +77,7 @@ class VirtualPiano
 		inline bool hasAudioFile(void) { return m_hasAudioFile; }
 		inline bool isPlaying(void) { return m_playing; }
 		inline bool isRenderingToFile(void) { return m_isRenderingToFile; }
+		inline VideoRenderState& getVideoRenderState(void) { return m_videoRenderState; }
 
 	private:
 		void __render_frame(std::optional<std::reference_wrapper<sf::RenderTarget>> target = std::nullopt);
@@ -121,6 +122,8 @@ class VirtualPiano
 
 		SignalListener m_sigListener;
 		VideoRenderState m_videoRenderState;
+
+		ostd::Color m_clearColor { 20, 20, 20 };
 
 	public:
 		sf::Shader noteShader;

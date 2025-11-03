@@ -22,15 +22,21 @@
 #include <SFML/Graphics/Image.hpp>
 #include <SFML/Graphics/Sprite.hpp>
 #include <algorithm>
+#include <ostd/Color.hpp>
+#include <ostd/Geometry.hpp>
 #include <ostd/Logger.hpp>
 #include <ostd/Signals.hpp>
+#include <ostd/String.hpp>
 #include "Common.hpp"
 #include "Renderer.hpp"
+#include "VPianoDataStructures.hpp"
+#include "VirtualPiano.hpp"
 
-Gui& Gui::init(WindowBase& window, const ostd::String& cursorFilePath, const ostd::String& appIconFilePath, const ostd::String& themeFilePath, bool visible)
+Gui& Gui::init(WindowBase& window, VideoRenderState& videoRenderState, const ostd::String& cursorFilePath, const ostd::String& appIconFilePath, const ostd::String& themeFilePath, bool visible)
 {
 	invalidate();
 	m_window = &window;
+	m_videoRenderState = &videoRenderState;
 	m_visible = visible;
 
 	// Load theme file
@@ -65,8 +71,11 @@ Gui& Gui::init(WindowBase& window, const ostd::String& cursorFilePath, const ost
     }
     //TODO: Error
 
+    m_showSplashScreen = false; //TODO: remove
+
 	enableSignals();
 	connectSignal(ostd::tBuiltinSignals::WindowClosed);
+	connectSignal(ostd::tBuiltinSignals::WindowResized);
 	setTypeName("Gui");
 	validate();
 	__build_gui();
@@ -75,6 +84,7 @@ Gui& Gui::init(WindowBase& window, const ostd::String& cursorFilePath, const ost
 
 void Gui::handleSignal(ostd::tSignal& signal)
 {
+	if (!isValid()) return;
 	if (signal.ID == ostd::tBuiltinSignals::WindowClosed)
 	{
 		m_gui.removeAllWidgets();
@@ -82,6 +92,10 @@ void Gui::handleSignal(ostd::tSignal& signal)
 		m_window->sfWindow().setMouseCursor(defaultCursor);
 		m_cursor.reset();
 		OX_DEBUG("Gui Cleanup complete.");
+	}
+	else if (signal.ID == ostd::tBuiltinSignals::WindowResized)
+	{
+		__update_widgets_positions();
 	}
 }
 
@@ -113,20 +127,24 @@ void Gui::showFileDialog(const ostd::String& title, const Gui::FileDialogFilterL
 	});
 }
 
-void Gui::showVideoRenderingGui(const VideoRenderState& renderState)
+void Gui::showVideoRenderingGui(void)
 {
-	renderState.isFinished();
+	if (!m_videoRenderState->virtualPiano.isRenderingToFile())
+		return;
+
+	m_isRenderingVideo = true;
+	__update_widgets_positions();
+	m_renderingProgressBar->setVisible(true);
+	m_renderingProgressBar->setValue(0);
 }
 
 void Gui::draw(void)
 {
 	if (!isValid()) return;
-	if (!isVisible()) return;
 
-	Renderer::outlineRect({ 0.0f, 0.0f, Common::scaleX(600), (float)m_window->getWindowHeight()}, { 0, 0, 0, 230 }, { 230, 230, 230, 230 }, 2);
-
-	m_gui.draw();
-
+	__draw_sidebar();
+	__draw_videoRenderGui();
+	if (isVisible()) m_gui.draw();
 	__draw_fps();
 	__show_splashscreen();
 }
@@ -135,6 +153,25 @@ void Gui::onEventPoll(const std::optional<sf::Event>& event)
 {
 	if (!isValid()) return;
 	m_gui.handleEvent(*event);
+}
+
+void Gui::__update_widgets_positions(void)
+{
+	auto bounds = __get_center_bounds(m_renderingProgressBarSize);
+	bounds.y -= Common::scaleY((m_renderingGuiSize.y / 2.0f) - (m_renderingProgressBarSize.y / 2.0) - m_renderingProgressBarPadding);
+	m_renderingProgressBar->setPosition(bounds.x, bounds.y);
+	m_renderingProgressBar->setSize(bounds.w, bounds.h);
+	m_renderingGuiPosition = __get_center_bounds(m_renderingGuiSize).topLeft();
+}
+
+ostd::Rectangle Gui::__get_center_bounds(const ostd::Vec2& size)
+{
+	ostd::Rectangle bounds;
+	bounds.w = Common::scaleX(size.x);
+	bounds.h = Common::scaleY(size.y);
+	bounds.x = ((float)m_window->getWindowWidth() / 2.0f) - (bounds.w / 2.0f);
+	bounds.y = ((float)m_window->getWindowHeight() / 2.0f) - (bounds.h / 2.0f);
+	return bounds;
 }
 
 void Gui::__build_gui(void)
@@ -149,6 +186,20 @@ void Gui::__build_gui(void)
 	m_fileDialog->setVisible(false);
 	m_fileDialog->setFileMustExist(true);
 	m_gui.add(m_fileDialog);
+
+	m_renderingProgressBar = tgui::ProgressBar::create();
+	m_renderingProgressBar->setRenderer(m_tguiTheme.getRenderer("ProgressBar"));
+	m_renderingProgressBar->setValue(0);
+	m_renderingProgressBar->setVisible(false);
+	m_renderingProgressBar->setMaximum(100);
+	m_renderingProgressBar->setMinimum(0);
+	m_renderingProgressBar->getRenderer()->setFillColor(tgui::Color(110, 20, 20));
+	m_renderingProgressBar->getRenderer()->setBackgroundColor(tgui::Color(30, 5, 5));
+	m_renderingProgressBar->getRenderer()->setTextColor(tgui::Color(180, 180, 180));
+	m_renderingProgressBar->getRenderer()->setBorderColor(tgui::Color(130, 130, 130));
+	m_renderingProgressBar->getRenderer()->setTextSize(24);
+	m_renderingProgressBar->setText("");
+	m_gui.add(m_renderingProgressBar);
 }
 
 void Gui::__show_splashscreen(void)
@@ -181,11 +232,120 @@ void Gui::__show_splashscreen(void)
 
 void Gui::__draw_fps(void)
 {
-	if (isInvalid()) return;
-	if (!m_showFPS) return;
+	if (isInvalid() || m_isRenderingVideo) return;
+	if (!m_visible && m_showFPS) return;
 	ostd::String fps_text = "FPS: ";
 	fps_text.add(m_window->getFPS());
 	int32_t fontSize = 26;
 	auto stringSize = Renderer::getStringSize(fps_text, fontSize);
 	Renderer::drawString(fps_text, { (float)m_window->getWindowWidth() - stringSize.x - 10 , 10 }, { 220, 170, 0 }, fontSize);
+}
+
+void Gui::__draw_sidebar(void)
+{
+	if (!isVisible() || m_isRenderingVideo) return;
+	Renderer::outlineRect({ 0.0f, 0.0f, Common::scaleX(600), (float)m_window->getWindowHeight()}, { 0, 0, 0, 230 }, { 230, 230, 230, 230 }, 2);
+}
+
+void Gui::__draw_videoRenderGui(void)
+{
+	if (!m_isRenderingVideo) return;
+	auto padx = [](float pad, const ostd::String& str, uint32_t fontSize) -> float {
+		return Common::scaleX(pad) + Renderer::getStringSize(str, fontSize).x;
+	};
+	auto& vrs = *m_videoRenderState;
+	auto& basePos = m_renderingGuiPosition;
+
+	ostd::Vec2 pos;
+	ostd::String label = "";
+	uint32_t fontSize = Common::scaleXY(35);
+	ostd::Color color1 = { 210, 210, 210 }, color2 = { 120, 120, 120, 120 };
+	switch (vrs.mode)
+	{
+		case VideoRenderModes::Video:
+			label = "Rendering Video";
+		case VideoRenderModes::ImageSequence:
+			label = "Rendering Image Sequence";
+	}
+	auto guiBounds = __get_center_bounds(m_renderingGuiSize);
+
+
+	Renderer::outlineRoundedRect(guiBounds, { 0, 0, 0, 230 }, color2, { 20, 20, 20, 20 }, 2);
+	guiBounds.h = Common::scaleY(m_renderingProgressBarPadding - 20);
+	Renderer::outlineRoundedRect(guiBounds, { 140, 20, 120, 230 }, color2, { 20, 20, 0, 0 }, 2);
+	auto titleBounds = Renderer::getStringSize(label, fontSize);
+	pos.x = guiBounds.x + ((guiBounds.w / 2.0f) - (titleBounds.x / 2.0f));
+	pos.y = guiBounds.y + ((guiBounds.h / 2.0f) - (titleBounds.y / 2.0f)) - Common::scaleY(10);
+	Renderer::drawString(label, pos, color1, fontSize);
+
+
+	ostd::String percentageStr = "";
+	percentageStr.add(vrs.percentage);
+	percentageStr.add(" %");
+	m_renderingProgressBar->setText(percentageStr.cpp_str());
+	m_renderingProgressBar->setValue(vrs.percentage);
+
+	auto pbpos = __get_center_bounds(m_renderingProgressBarSize);
+	pos = { pbpos.x, basePos.y + Common::scaleY(m_renderingProgressBarPadding + m_renderingProgressBarSize.y + 20) };
+	color1 = { 200, 200, 230 };
+	color2 = { 250, 210, 10 };
+	fontSize = Common::scaleXY(24);
+
+	label = "Frames: ";
+	Renderer::drawString(label, pos, color1, fontSize);
+	pos.x += padx(-5, label, fontSize);
+	label.clr().add(vrs.frameIndex - 1).add("/").add(vrs.totalFrames + vrs.extraFrames);
+	Renderer::drawString(label, pos, color2, fontSize);
+
+	label = "FPS: ";
+	pos.x += Common::scaleX(250);
+	Renderer::drawString(label, pos, color1, fontSize);
+	pos.x += padx(-5, label, fontSize);
+	label.clr().add(vrs.renderFPS);
+	Renderer::drawString(label, pos, color2, fontSize);
+
+	float etaStrSize = 0;
+	auto tmpPos = pos;
+	int32_t totalSeconds = 0;
+	if (vrs.renderFPS > 0)
+		totalSeconds = static_cast<int32_t>(((vrs.totalFrames + vrs.extraFrames) - vrs.frameIndex) / vrs.renderFPS);
+	label.clr().add(Common::secondsToFormattedString(totalSeconds));
+	etaStrSize += Renderer::getStringSize(label, fontSize).x;
+	etaStrSize += Common::scaleX(2);
+	pos.x = pbpos.x + pbpos.w - etaStrSize;
+	Renderer::drawString(label, pos, color2, fontSize);
+	label = "ETA: ";
+	pos.x -= Common::scaleX(Renderer::getStringSize(label, fontSize).x - 2);
+	Renderer::drawString(label, pos, color1, fontSize);
+
+	Renderer::drawTexture(vrs.flippedRenderTarget.getTexture(), { pbpos.x, pos.y + Common::scaleY(65) }, { Common::scaleXY(0.2f), Common::scaleXY(0.2f) }, { 140, 140, 140 });
+	auto tmpSize = vrs.flippedRenderTarget.getTexture().getSize();
+	ostd::Vec2 previewSize = { (float)tmpSize.x * Common::scaleXY(0.2f), (float)tmpSize.y * Common::scaleXY(0.2f) };
+	Renderer::drawRoundedRect({ pbpos.x, pos.y + Common::scaleY(65), previewSize.x, previewSize.y }, { 140, 20, 120, 230 }, { 5, 5, 5, 5 }, 3);
+
+	pos = { guiBounds.x, pos.y + Common::scaleY(40) };
+	Renderer::fillRect({ pos.x, pos.y, guiBounds.w, 2 }, { 120, 120, 120, 120 });
+
+	color2 = { 240, 28, 180 };
+	pos = { pbpos.x + previewSize.x + Common::scaleX(10), pos.y + Common::scaleY(30) };
+	label = "Resolution: ";
+	Renderer::drawString(label, pos, color1, fontSize);
+	pos.x += padx(-5, label, fontSize);
+	label.clr().add(vrs.resolution.x).add("x").add(vrs.resolution.y);
+	Renderer::drawString(label, pos, color2, fontSize);
+
+	pos = { pbpos.x + previewSize.x + Common::scaleX(10), pos.y += Common::scaleY(40) };
+	label = "Target FPS: ";
+	Renderer::drawString(label, pos, color1, fontSize);
+	pos.x += padx(-5, label, fontSize);
+	label.clr().add(vrs.targetFPS);
+	Renderer::drawString(label, pos, color2, fontSize);
+
+	pos = { pbpos.x + previewSize.x + Common::scaleX(10), pos.y += Common::scaleY(40) };
+	label = "Duration: ";
+	Renderer::drawString(label, pos, color1, fontSize);
+	pos.x += padx(-5, label, fontSize);
+	int32_t seconds = (int32_t)std::round(vrs.lastNoteEndTime + ((double)vrs.extraFrames / (double)vrs.targetFPS));
+	label.clr().add(Common::secondsToFormattedString(seconds));
+	Renderer::drawString(label, pos, color2, fontSize);
 }

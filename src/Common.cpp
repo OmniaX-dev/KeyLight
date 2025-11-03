@@ -20,6 +20,7 @@
 
 #include "Common.hpp"
 
+#include <ostd/String.hpp>
 #include <ostd/Utils.hpp>
 #include <ostd/Logger.hpp>
 
@@ -105,4 +106,16 @@ sf::VertexArray Common::getMusicWaveForm(const ostd::String& filePath, int32_t w
 		waveform[x].color = sf::Color::White;
 	}
 	return waveform;
+}
+
+ostd::String Common::secondsToFormattedString(int32_t totalSeconds)
+{
+	int32_t hours   = totalSeconds / 3600;
+	int32_t minutes = (totalSeconds % 3600) / 60;
+	int32_t seconds = totalSeconds % 60;
+	ostd::String fmtstr = "";
+	fmtstr.add(ostd::String("").add(hours).addLeftPadding(2, '0')).add(":");
+	fmtstr.add(ostd::String("").add(minutes).addLeftPadding(2, '0')).add(":");
+	fmtstr.add(ostd::String("").add(seconds).addLeftPadding(2, '0'));
+	return fmtstr;
 }

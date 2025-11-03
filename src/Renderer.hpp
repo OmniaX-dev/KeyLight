@@ -21,6 +21,7 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
+#include <ostd/Color.hpp>
 #include "SFMLWindow.hpp"
 #include "RoundedRectangleShape.hpp"
 
@@ -46,7 +47,7 @@ class Renderer
 		static inline void setRoundedRectCornerResolution(int32_t res) { m_roundedRectCornerResolution = res; }
 
 		static void drawString(const ostd::String& str, const ostd::Vec2& position, const ostd::Color& color, uint32_t font_size);
-		static void drawTexture(const sf::Texture& texture, const ostd::Vec2& position = { 0, 0 }, float scale = 1.0f);
+		static void drawTexture(const sf::Texture& texture, const ostd::Vec2& position = { 0, 0 }, const ostd::Vec2& scale = { 1.0f, 1.0f }, const ostd::Color& tint = { 255, 255, 255, 255 });
 
 		static void drawRect(const ostd::Rectangle& rect, const ostd::Color& outlineColor, int32_t outlineThickness = -1);
 		static void fillRect(const ostd::Rectangle& rect, const ostd::Color& fillColor);

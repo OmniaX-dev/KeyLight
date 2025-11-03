@@ -440,9 +440,13 @@ void VirtualPiano::updateVisualization(double currentTime)
 
 void VirtualPiano::render(std::optional<std::reference_wrapper<sf::RenderTarget>> target)
 {
-	__render_frame(std::nullopt);
 	if (m_isRenderingToFile)
 	{
+		ostd::Vec2 render_scale = m_vPianoData.getScale();
+		m_vPianoData.setScale(m_videoRenderState.oldScale);
+		Renderer::clear(m_clearColor);
+		renderVirtualKeyboard(std::nullopt);
+		m_vPianoData.setScale(render_scale);
 		if (m_videoRenderState.mode == VideoRenderModes::ImageSequence)
 		{
 			__render_next_image_in_sequence();
@@ -453,6 +457,10 @@ void VirtualPiano::render(std::optional<std::reference_wrapper<sf::RenderTarget>
 		{
 
 		}
+	}
+	else
+	{
+		__render_frame(std::nullopt);
 	}
 }
 
@@ -540,7 +548,7 @@ bool VirtualPiano::configImageSequenceRender(const ostd::String& folderPath, con
 	if (fps != 60) return false; //TODO: allow for valid FPS values
 	if (m_lastNoteEndTime == 0.0) return false; //TODO: Error
 
-	m_videoRenderState = VideoRenderState();
+	m_videoRenderState.reset();
 	m_videoRenderState.mode = VideoRenderModes::ImageSequence;
 	m_videoRenderState.resolution = resolution;
 	m_videoRenderState.folderPath = folderPath;
@@ -551,6 +559,7 @@ bool VirtualPiano::configImageSequenceRender(const ostd::String& folderPath, con
 	m_videoRenderState.renderTarget = sf::RenderTexture({ resolution.x, resolution.y });
 	m_videoRenderState.flippedRenderTarget = sf::RenderTexture({ resolution.x, resolution.y });
 	m_videoRenderState.frameTime = 1.0 / (float)fps;
+	m_videoRenderState.renderFPS = 1;
 
 	__preallocate_file_names_for_rendering(m_videoRenderState.totalFrames, m_videoRenderState.baseFileName, m_videoRenderState.folderPath, m_videoRenderState.imageType);
 	Common::ensureDirectory(folderPath);
@@ -558,81 +567,11 @@ bool VirtualPiano::configImageSequenceRender(const ostd::String& folderPath, con
 	m_parentWindow.lockFullscreenStatus();
 	m_parentWindow.enableResizeable(false);
 	stop();
-	m_videoRenderState.fpsTimer.startCount(ostd::eTimeUnits::Milliseconds);
+	m_videoRenderState.updateFpsTimer.startCount(ostd::eTimeUnits::Milliseconds);
 
 	m_isRenderingToFile = true;
 	return true;
 }
-
-/*bool VirtualPiano::renderFramesToFile(const ostd::String& folderPath, const ostd::UI16Point& resolution, uint8_t fps)
-{
-	if (resolution.x != 1920 || resolution.y != 1080) return false; //TODO: allow for valid resolutions
-	if (fps != 60) return false; //TODO: allow for valid FPS values
-
-	double last_time = m_lastNoteEndTime;
-	if (last_time == 0.0) return false; //TODO: Error
-
-	int32_t total_frames = (int32_t)std::ceil(last_time * fps);
-	__preallocate_file_names_for_rendering(total_frames, "frame_", folderPath, ".png");
-
-	Common::ensureDirectory(folderPath);
-	ostd::Vec2 current_scale = m_vPianoData.getScale();
-	m_vPianoData.updateScale(resolution.x, resolution.y);
-	m_parentWindow.lockFullscreenStatus();
-	m_parentWindow.enableResizeable(false);
-
-	sf::RenderTexture render_target({ resolution.x, resolution.y });
-	sf::RenderTexture flipped_render_target({ resolution.x, resolution.y });
-	stop();
-
-	m_isRenderingToFile = true;
-
-	ostd::Timer fpsTimer;
-
-	int32_t frameIndex = 0;
-	int32_t render_fps = 0;
-	int percentage = 0;
-	double frame_time = 1.0 / (float)fps;
-	double current_time = 0.0;
-	fpsTimer.startCount(ostd::eTimeUnits::Milliseconds);
-	while (true)
-	{
-		updateVisualization(current_time);
-		render(render_target);
-		Renderer::setRenderTarget(&flipped_render_target);
-		Renderer::useShader(&flipShader);
-		flipShader.setUniform("texture", render_target.getTexture());
-		Renderer::drawTexture(render_target.getTexture());
-		Renderer::useShader(nullptr);
-		__save_frame_to_file(flipped_render_target, folderPath, ++frameIndex);
-		if (Common::wasSIGINTTriggered())
-		{
-			Common::deleteDirectory(folderPath);
-			m_parentWindow.close();
-			break;
-		}
-		if ((frameIndex % fps) == 0)
-		{
-			double frame_render_time = ((double)fpsTimer.endCount() / (double)fps);
-			fpsTimer.startCount(ostd::eTimeUnits::Milliseconds);
-			render_fps = (int32_t)std::round(1000.0 / frame_render_time);
-		}
-		percentage = Common::percentage(current_time, last_time);
-		if (frameIndex % 10 == 0)
-			std::cout << (int)percentage << "% (FPS: " << (int)render_fps << ")\n";
-
-		current_time += frame_time;
-
-		if (current_time > last_time)
-			break;
-	}
-	m_vPianoData.setScale(current_scale);
-	m_parentWindow.lockFullscreenStatus(false);
-	m_parentWindow.enableResizeable(true);
-	m_isRenderingToFile = false;
-
-	return true;
-}*/
 
 
 
@@ -676,7 +615,7 @@ void VirtualPiano::__render_frame(std::optional<std::reference_wrapper<sf::Rende
 	Renderer::setRenderTarget(__target);
 	Renderer::useTexture(nullptr);
 	Renderer::useShader(nullptr);
-	Renderer::clear({ 20, 20, 20 });
+	Renderer::clear(m_clearColor);
 	Renderer::drawTexture(m_blurBuff2.getTexture(), { 0, 0 }, 2);
 
 	for (const auto& note : m_fallingNoteGfx_w)
@@ -733,28 +672,29 @@ void VirtualPiano::__render_next_image_in_sequence(void)
 	if (!m_isRenderingToFile) return;
 	updateVisualization(m_videoRenderState.currentTime);
 	__render_frame(m_videoRenderState.renderTarget);
+	m_videoRenderState.framTimeTimer.startCount(ostd::eTimeUnits::Milliseconds);
 	Renderer::setRenderTarget(&m_videoRenderState.flippedRenderTarget);
 	Renderer::useShader(&flipShader);
 	flipShader.setUniform("texture", m_videoRenderState.renderTarget.getTexture());
 	Renderer::drawTexture(m_videoRenderState.renderTarget.getTexture());
 	Renderer::useShader(nullptr);
 	__save_frame_to_file(m_videoRenderState.flippedRenderTarget, m_videoRenderState.folderPath, ++m_videoRenderState.frameIndex);
-	if (Common::wasSIGINTTriggered())
+	if (Common::wasSIGINTTriggered()) //TODO: remove from here and handle closing on SIGINT in the handler
 	{
 		Common::deleteDirectory(m_videoRenderState.folderPath);
 		m_parentWindow.close();
 	}
-	if ((m_videoRenderState.frameIndex % m_videoRenderState.targetFPS) == 0)
+	double _frame_render_time = (double)m_videoRenderState.framTimeTimer.endCount();
+	if (m_videoRenderState.updateFpsTimer.read() > 1000 == 0)
 	{
-		double frame_render_time = ((double)m_videoRenderState.fpsTimer.endCount() / (double)m_videoRenderState.targetFPS);
-		m_videoRenderState.fpsTimer.startCount(ostd::eTimeUnits::Milliseconds);
-		m_videoRenderState.renderFPS = (int32_t)std::round(1000.0 / frame_render_time);
+		m_videoRenderState.renderFPS = (int32_t)std::round(1000.0 / _frame_render_time);
+		m_videoRenderState.updateFpsTimer.endCount();
+		m_videoRenderState.updateFpsTimer.startCount(ostd::eTimeUnits::Milliseconds);
 	}
 	m_videoRenderState.percentage = Common::percentage(m_videoRenderState.frameIndex, m_videoRenderState.totalFrames + m_videoRenderState.extraFrames);
-	if (m_videoRenderState.frameIndex % 10 == 0)
-		std::cout << (int)m_videoRenderState.percentage << "% (FPS: " << (int)m_videoRenderState.renderFPS << ")\n";
 
 	m_videoRenderState.currentTime += m_videoRenderState.frameTime;
+	Renderer::setRenderTarget(nullptr);
 }
 
 void VirtualPiano::__finish_image_sequence_render(void)

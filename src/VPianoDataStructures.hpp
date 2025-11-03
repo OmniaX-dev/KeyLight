@@ -1,6 +1,7 @@
 #pragma once
 
 #include "MidiParser.hpp"
+#include <SFML/Graphics/RenderTexture.hpp>
 #include <unordered_map>
 #include <ostd/Geometry.hpp>
 #include <ostd/Color.hpp>
@@ -113,21 +114,50 @@ class SignalListener : public ostd::BaseObject
 };
 struct VideoRenderState
 {
-	VideoRenderModes mode;
-	ImageType imageType;
+	inline VideoRenderState(VirtualPiano& parent) : virtualPiano(parent) {  }
+	inline void reset(void)
+	{
+		mode = VideoRenderModes::ImageSequence;
+		imageType = ImageType::PNG;
+
+		lastNoteEndTime = 0.0;
+		totalFrames = 0;
+		targetFPS = 60;
+		frameTime = 0.0;
+		extraFrames = 120;
+
+		baseFileName = "";
+		folderPath = "";
+
+		oldScale = { 0.0f, 0.0f };
+		resolution = { 0, 0 };
+
+		renderTarget = sf::RenderTexture();
+		flippedRenderTarget = sf::RenderTexture();
+
+		frameIndex = 0;
+		renderFPS = 0;
+		percentage = 0;
+		currentTime = 0.0;
+	}
+
+	VirtualPiano& virtualPiano;
+	VideoRenderModes mode { VideoRenderModes::ImageSequence };
+	ImageType imageType { ImageType::PNG };
 
 	double lastNoteEndTime { 0.0 };
 	int32_t totalFrames { 0 };
 	uint8_t targetFPS { 60 };
 	double frameTime { 0.0 };
 	int32_t extraFrames { 120 };
-	ostd::Timer fpsTimer;
+	ostd::Timer framTimeTimer;
+	ostd::Timer updateFpsTimer;
 
 	ostd::String baseFileName { "" };
 	ostd::String folderPath { "" };
 
-	ostd::Vec2 oldScale;
-	ostd::UI16Point resolution;
+	ostd::Vec2 oldScale { 0.0f, 0.0f };
+	ostd::UI16Point resolution { 0, 0 };
 
 	sf::RenderTexture renderTarget;
 	sf::RenderTexture flippedRenderTarget;

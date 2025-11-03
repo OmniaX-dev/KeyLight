@@ -36,7 +36,7 @@ void Window::onInitialize(void)
 	connectSignal(WindowFocusGained);
 	setClearColor({ 255, 10, 10 });
 
-	Renderer::init(*this, "themes/fonts/Courier Prime.ttf");
+	Renderer::init(*this, "themes/fonts/RobotoMono.ttf");
 
 	m_window.setPosition({ 30, 30 });
 
@@ -44,10 +44,10 @@ void Window::onInitialize(void)
 	m_windowPositionBeforeFullscreen = { (float)m_window.getPosition().x, (float)m_window.getPosition().y };
 	// enableFullscreen(true);
 	m_vpiano.init();
-	m_vpiano.loadMidiFile("res/midi/rach2.mid");
-	m_vpiano.loadAudioFile("res/music/rach2.mp3");
+	m_vpiano.loadMidiFile("res/midi/scale2.mid");
+	m_vpiano.loadAudioFile("res/music/scale2.mp3");
 
-	m_gui.init(*this, "themes/ui/cursor.png", "themes/ui/icon.png", "themes/Dark.txt", true);
+	m_gui.init(*this, m_vpiano.getVideoRenderState(), "themes/ui/cursor.png", "themes/ui/icon.png", "themes/Dark.txt", true);
 	m_gui.showFPS(true);
 }
 
@@ -75,14 +75,16 @@ void Window::handleSignal(ostd::tSignal& signal)
 				m_vpiano.stop();
 			}
 		}
-		else if (evtData.keyCode == (int32_t)sf::Keyboard::Key::F)
+		else if (evtData.keyCode == (int32_t)sf::Keyboard::Key::F9)
 		{
 			if (!m_vpiano.isRenderingToFile())
 			{
-				// m_vpiano.renderFramesToFile("tmp", { 1920, 1080 }, 60);
 				if (!m_vpiano.configImageSequenceRender("tmp", { 1920, 1080 }, 60))
 					OX_ERROR("Unable to start image sequence render.");
-
+				else
+				{
+					m_gui.showVideoRenderingGui();
+				}
 			}
 		}
 		else if (evtData.keyCode == (int32_t)sf::Keyboard::Key::F11)
@@ -219,27 +221,6 @@ bool Window::buildGUI(tgui::BackendGui& gui)
 		tabs->add("Tab - 3");
 		gui.add(tabs);
 
-		// auto menu = tgui::MenuBar::create();
-		// menu->setRenderer(theme.getRenderer("MenuBar"));
-		// menu->setHeight(22.f);
-		// menu->addMenu("File");
-		// menu->addMenuItem("Load");
-		// menu->addMenuItem("Save");
-		// menu->addMenuItem("Exit");
-		// menu->addMenu("Edit");
-		// menu->addMenuItem("Copy");
-		// menu->addMenuItem("Paste");
-		// menu->addMenu("Help");
-		// menu->addMenuItem("About");
-		// gui.add(menu);
-
-		// auto label = tgui::Label::create();
-		// label->setRenderer(theme.getRenderer("Label"));
-		// label->setText("This is a label.\nAnd these are radio buttons:");
-		// label->setPosition(10, 90);
-		// label->setTextSize(18);
-		// gui.add(label);
-
 		auto radioButton = tgui::RadioButton::create();
 		radioButton->setRenderer(theme.getRenderer("RadioButton"));
 		radioButton->setPosition(20, 140);
@@ -261,13 +242,6 @@ bool Window::buildGUI(tgui::BackendGui& gui)
 		radioButton->setSize(25, 25);
 		gui.add(radioButton);
 
-		// label = tgui::Label::create();
-		// label->setRenderer(theme.getRenderer("Label"));
-		// label->setText("We've got some edit boxes:");
-		// label->setPosition(10, 240);
-		// label->setTextSize(18);
-		// gui.add(label);
-
 		auto editBox = tgui::EditBox::create();
 		editBox->setRenderer(theme.getRenderer("EditBox"));
 		editBox->setSize(200, 25);
@@ -275,13 +249,6 @@ bool Window::buildGUI(tgui::BackendGui& gui)
 		editBox->setPosition(10, 270);
 		editBox->setDefaultText("Click to edit text...");
 		gui.add(editBox);
-
-		// label = tgui::Label::create();
-		// label->setRenderer(theme.getRenderer("Label"));
-		// label->setText("And some list boxes too...");
-		// label->setPosition(10, 310);
-		// label->setTextSize(18);
-		// gui.add(label);
 
 		auto listBox = tgui::ListBox::create();
 		listBox->setRenderer(theme.getRenderer("ListBox"));
@@ -292,34 +259,6 @@ bool Window::buildGUI(tgui::BackendGui& gui)
 		listBox->addItem("Item 2");
 		listBox->addItem("Item 3");
 		gui.add(listBox);
-
-		// label = tgui::Label::create();
-		// label->setRenderer(theme.getRenderer("Label"));
-		// label->setText("It's the progress bar below");
-		// label->setPosition(10, 470);
-		// label->setTextSize(18);
-		// gui.add(label);
-
-		auto progressBar = tgui::ProgressBar::create();
-		progressBar->setRenderer(theme.getRenderer("ProgressBar"));
-		progressBar->setPosition(10, 500);
-		progressBar->setSize(200, 20);
-		progressBar->setValue(50);
-		gui.add(progressBar);
-
-		// label = tgui::Label::create();
-		// label->setRenderer(theme.getRenderer("Label"));
-		// label->setText(tgui::String::fromNumber(progressBar->getValue()) + "%");
-		// label->setPosition(220, 500);
-		// label->setTextSize(18);
-		// gui.add(label);
-
-		// label = tgui::Label::create();
-		// label->setRenderer(theme.getRenderer("Label"));
-		// label->setText("That's the slider");
-		// label->setPosition(10, 530);
-		// label->setTextSize(18);
-		// gui.add(label);
 
 		auto slider = tgui::Slider::create();
 		slider->setRenderer(theme.getRenderer("Slider"));
@@ -353,13 +292,6 @@ bool Window::buildGUI(tgui::BackendGui& gui)
 		child->setTitle("Child window");
 		gui.add(child);
 
-		// label = tgui::Label::create();
-		// label->setRenderer(theme.getRenderer("Label"));
-		// label->setText("Hi! I'm a child window.");
-		// label->setPosition(30, 30);
-		// label->setTextSize(15);
-		// child->add(label);
-
 		auto button = tgui::Button::create();
 		button->setRenderer(theme.getRenderer("Button"));
 		button->setPosition(75, 70);
@@ -384,13 +316,6 @@ bool Window::buildGUI(tgui::BackendGui& gui)
 		checkbox->setText("No, I didn't");
 		checkbox->setSize(25, 25);
 		gui.add(checkbox);
-
-		// label = tgui::Label::create();
-		// label->setRenderer(theme.getRenderer("Label"));
-		// label->setText("Chatbox");
-		// label->setPosition(420, 280);
-		// label->setTextSize(18);
-		// gui.add(label);
 
 		auto chatbox = tgui::ChatBox::create();
 		chatbox->setRenderer(theme.getRenderer("ChatBox"));

@@ -24,9 +24,12 @@
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/System/Clock.hpp>
 #include <TGUI/Loading/Theme.hpp>
+#include <TGUI/Widgets/Label.hpp>
+#include <TGUI/Widgets/ProgressBar.hpp>
 #include <functional>
 #include <optional>
 #include <ostd/BaseObject.hpp>
+#include <ostd/Geometry.hpp>
 #include <ostd/String.hpp>
 
 #include <TGUI/Widgets/FileDialog.hpp>
@@ -44,11 +47,11 @@ class Gui : public ostd::BaseObject
 
 	public:
 		inline Gui(void) { invalidate(); }
-		inline Gui(WindowBase& window, const ostd::String& cursorFilePath, const ostd::String& appIconFilePath, const ostd::String& themeFilePath, bool visible = true) { init(window, cursorFilePath, appIconFilePath, themeFilePath, visible); }
-		Gui& init(WindowBase& window, const ostd::String& cursorFilePath, const ostd::String& appIconFilePath, const ostd::String& themeFilePath, bool visible = true);
+		inline Gui(WindowBase& window, VideoRenderState& videoRenderState, const ostd::String& cursorFilePath, const ostd::String& appIconFilePath, const ostd::String& themeFilePath, bool visible = true) { init(window, videoRenderState, cursorFilePath, appIconFilePath, themeFilePath, visible); }
+		Gui& init(WindowBase& window, VideoRenderState& videoRenderState, const ostd::String& cursorFilePath, const ostd::String& appIconFilePath, const ostd::String& themeFilePath, bool visible = true);
 		void handleSignal(ostd::tSignal& signal) override;
 		void showFileDialog(const ostd::String& title, const FileDialogFilterList& filters, std::function<void(const std::vector<ostd::String>&, bool)> callback, bool multiselect = false);
-		void showVideoRenderingGui(const VideoRenderState& renderState);
+		void showVideoRenderingGui(void);
 		void draw(void);
 
 		inline bool isVisible(void) const { return m_visible; }
@@ -59,24 +62,39 @@ class Gui : public ostd::BaseObject
 		void onEventPoll(const std::optional<sf::Event>& event);
 
 	private:
+		ostd::Rectangle __get_center_bounds(const ostd::Vec2& size);
+		void __update_widgets_positions(void);
 		void __build_gui(void);
 		void __show_splashscreen(void);
 		void __draw_fps(void);
+		void __draw_sidebar(void);
+		void __draw_videoRenderGui(void);
 
 	private:
+		WindowBase* m_window { nullptr };
 		tgui::Gui m_gui;
+		tgui::Theme m_tguiTheme;
 		std::optional<sf::Cursor> m_cursor;
 		sf::Image m_AppIcon;
-		WindowBase* m_window { nullptr };
 		bool m_visible { true };
 		bool m_showFPS { false };
 		bool m_isRenderingVideo { false };
 
+		// Splash screen
 		sf::Texture m_splashScreenTex;
 		std::optional<sf::Sprite> m_splashScreenSpr;
 		sf::Clock m_splashScreenTimer;
 		bool m_showSplashScreen { true };
 
+		// File dialog
 		tgui::FileDialog::Ptr m_fileDialog { nullptr };
-		tgui::Theme m_tguiTheme;
+
+		// Video rendering gui
+		tgui::ProgressBar::Ptr m_renderingProgressBar { nullptr };
+		ostd::Vec2 m_renderingGuiSize { 900, 490 };
+		ostd::Vec2 m_renderingGuiPosition { 0, 0 };
+		ostd::Vec2 m_renderingProgressBarSize { 800, 50 };
+		float m_renderingProgressBarPadding { 80 };
+		const VideoRenderState* m_videoRenderState { nullptr };
+
 };

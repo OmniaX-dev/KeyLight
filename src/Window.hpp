@@ -45,6 +45,7 @@ class Window : public WindowBase
 		inline bool isFullscreen(void) const { return m_lockFullscreenStatus; }
 		inline void lockFullscreenStatus(bool lock = true) { m_lockFullscreenStatus = lock; }
 		inline bool isFullscreenStatusLocked(void) const { return m_lockFullscreenStatus; }
+		inline const VirtualPiano& getVirtualPiano(void) const { return m_vpiano; }
 
 	private:
 		ostd::Vec2 m_windowSizeBeforeFullscreen { 0.0f, 0.0f };

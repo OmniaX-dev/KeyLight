@@ -108,11 +108,12 @@ void Renderer::drawString(const ostd::String& str, const ostd::Vec2& position, c
 	__draw_call(m_text);
 }
 
-void Renderer::drawTexture(const sf::Texture& texture, const ostd::Vec2& bounds, float scale)
+void Renderer::drawTexture(const sf::Texture& texture, const ostd::Vec2& position, const ostd::Vec2& scale, const ostd::Color& tint)
 {
 	sf::Sprite spr(texture);
-	spr.setPosition({ bounds.x, bounds.y });
-	spr.setScale({ scale, scale });
+	spr.setPosition({ position.x, position.y });
+	spr.setScale({ scale.x, scale.y });
+	spr.setColor(sf_color(tint));
 	__draw_call(&spr);
 }
 
