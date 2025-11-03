@@ -89,6 +89,9 @@ if (UNIX)
 	target_link_libraries(${MAIN_EXECUTABLE} xcb xcb-randr boost_regex)
 endif (UNIX)
 
+find_package(Boost REQUIRED COMPONENTS process)
+target_link_libraries(${MAIN_EXECUTABLE} Boost::process)
+
 target_link_libraries(${MAIN_EXECUTABLE} sfml-system sfml-window sfml-graphics sfml-audio tgui)
 target_link_libraries(${MAIN_EXECUTABLE} ostd)
 #-----------------------------------------------------------------------------------------

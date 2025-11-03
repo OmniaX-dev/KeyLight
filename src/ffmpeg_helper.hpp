@@ -4,11 +4,13 @@
 #include <ostd/Defines.hpp>
 
 #ifdef WINDOWS_OS
+	#include <windows.h>
     #define POPEN  _popen
     #define PCLOSE _pclose
 #else
     #define POPEN  popen
     #define PCLOSE pclose
+    #include <unistd.h>
 #endif
 
 class FFMPEG
@@ -57,19 +59,19 @@ class FFMPEG
 	};
 	public: struct tProfile
 	{
-		const ostd::String Container { "" };
-		const ostd::String VideoCodec { "" };
-		const ostd::String AudioCodec { "" };
-		const ostd::String Preset { "" };
-		const ostd::String Quality { "" };
+		ostd::String Container { "" };
+		ostd::String VideoCodec { "" };
+		ostd::String AudioCodec { "" };
+		ostd::String Preset { "" };
+		ostd::String Quality { "" };
 	};
 	public: struct Profiles
 	{
-		inline static const tProfile GeneralPurpose { Container::MP4, Codecs::Video::H264, Codecs::Audio::AAC, Preset::Medium, Quality::Default };
-		inline static const tProfile HighQUality { Container::MKV, Codecs::Video::H265, Codecs::Audio::Flac, Preset::Slow, Quality::Lossless };
-		inline static const tProfile Streaming { Container::WebM, Codecs::Video::AV1, Codecs::Audio::OPUS, Preset::Fast, Quality::Default };
-		inline static const tProfile Legacy { Container::AVI, Codecs::Video::MPEG4, Codecs::Audio::MP3, Preset::Fast, Quality::Low };
-		inline static const tProfile Editing { Container::MOV, Codecs::Video::PRORES, Codecs::Audio::PCM, "", "" };
+		inline static tProfile GeneralPurpose { Container::MP4, Codecs::Video::H264, Codecs::Audio::AAC, Preset::Medium, Quality::Default };
+		inline static tProfile HighQUality { Container::MKV, Codecs::Video::H265, Codecs::Audio::Flac, Preset::Slow, Quality::Lossless };
+		inline static tProfile Streaming { Container::WebM, Codecs::Video::AV1, Codecs::Audio::OPUS, Preset::Fast, Quality::Default };
+		inline static tProfile Legacy { Container::AVI, Codecs::Video::MPEG4, Codecs::Audio::MP3, Preset::Fast, Quality::Low };
+		inline static tProfile Editing { Container::MOV, Codecs::Video::PRORES, Codecs::Audio::PCM, "", "" };
 	};
 	public:
 		static ostd::String runCommand(const ostd::String& cmd);

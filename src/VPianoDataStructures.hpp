@@ -2,13 +2,20 @@
 
 #include "MidiParser.hpp"
 #include <SFML/Graphics/RenderTexture.hpp>
+#include <boost/process/v1/pipe.hpp>
+#include <ostd/String.hpp>
 #include <unordered_map>
 #include <ostd/Geometry.hpp>
 #include <ostd/Color.hpp>
 #include <ostd/Utils.hpp>
 #include <SFML/Graphics.hpp>
+#include <vector>
 #include "Common.hpp"
+#include "ffmpeg_helper.hpp"
+#include "vendor/subprocess.hpp"
+#include <boost/process/v1.hpp>
 
+namespace bp = boost::process::v1;
 
 class VirtualPiano;
 
@@ -119,6 +126,10 @@ struct VideoRenderState
 	{
 		mode = VideoRenderModes::ImageSequence;
 		imageType = ImageType::PNG;
+		ffmpegProfile = FFMPEG::Profiles::GeneralPurpose;
+		ffmpegPipe = nullptr;
+		subProcArgs.clear();
+		subProcArgsStorage.clear();
 
 		lastNoteEndTime = 0.0;
 		totalFrames = 0;
@@ -144,6 +155,13 @@ struct VideoRenderState
 	VirtualPiano& virtualPiano;
 	VideoRenderModes mode { VideoRenderModes::ImageSequence };
 	ImageType imageType { ImageType::PNG };
+	FFMPEG::tProfile ffmpegProfile;
+	FILE* ffmpegPipe { nullptr };
+	struct subprocess_s subProc;
+	std::vector<std::string> subProcArgs;
+	std::vector<ostd::String> subProcArgsStorage;
+	bp::child ffmpeg_child;
+	bp::opstream ffmpeg_stdin;
 
 	double lastNoteEndTime { 0.0 };
 	int32_t totalFrames { 0 };

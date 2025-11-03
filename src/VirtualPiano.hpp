@@ -34,6 +34,7 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include "VPianoDataStructures.hpp"
+#include "ffmpeg_helper.hpp"
 
 class Window;
 class VirtualPiano
@@ -68,7 +69,7 @@ class VirtualPiano
 
 		// File rendering
 		bool configImageSequenceRender(const ostd::String& folderPath, const ostd::UI16Point& resolution, uint8_t fps);
-		// bool renderFramesToFile(const ostd::String& folderPath, const ostd::UI16Point& resolution, uint8_t fps);
+		bool configFFMPEGVideoRender(const ostd::String& filePath, const ostd::UI16Point& resolution, uint8_t fps, const FFMPEG::tProfile& profile);
 
 		// Getters and Setters
 		inline VirtualPianoData& vPianoData(void) { return m_vPianoData; }
@@ -82,15 +83,17 @@ class VirtualPiano
 	private:
 		void __render_frame(std::optional<std::reference_wrapper<sf::RenderTarget>> target = std::nullopt);
 		void __preallocate_file_names_for_rendering(uint32_t frameCount, const ostd::String& baseFileName, const ostd::String& basePath, ImageType imageType, const uint16_t marginFrames = 200);
-		void __build_ffmpeg_command(const ostd::UI16Point& resolution, uint16_t fps);
+		FILE* __open_ffmpeg_pipe(const ostd::String& filePath, const ostd::UI16Point& resolution, uint8_t fps, const FFMPEG::tProfile& profile);
 		void __save_frame_to_file(const sf::RenderTexture& rt, const ostd::String& basePath, int frameIndex);
-		void __render_next_image_in_sequence(void);
-		void __finish_image_sequence_render(void);
+		void __stream_frame_to_ffmpeg(void);
+		void __render_next_output_frame(void);
+		void __finish_output_render(void);
 
 	private:
 		Window& m_parentWindow;
 		VirtualPianoData m_vPianoData;
 		sf::Music m_audioFile;
+		ostd::String m_audioFilePath;
 
 		std::vector<PianoKey> m_pianoKeys;
 		std::vector<MidiParser::NoteEvent> m_midiNotes;

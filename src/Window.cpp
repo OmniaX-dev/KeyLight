@@ -20,6 +20,7 @@
 
 #include "Window.hpp"
 #include "Renderer.hpp"
+#include "ffmpeg_helper.hpp"
 #include <SFML/Window/WindowEnums.hpp>
 #include <ostd/Logger.hpp>
 #include <vector>
@@ -79,8 +80,10 @@ void Window::handleSignal(ostd::tSignal& signal)
 		{
 			if (!m_vpiano.isRenderingToFile())
 			{
-				if (!m_vpiano.configImageSequenceRender("tmp", { 1920, 1080 }, 60))
-					OX_ERROR("Unable to start image sequence render.");
+				// if (!m_vpiano.configImageSequenceRender("tmp", { 1920, 1080 }, 60))
+				// 	OX_ERROR("Unable to start image sequence render.");
+				if (!m_vpiano.configFFMPEGVideoRender("./output", { 1920, 1080 }, 60, FFMPEG::Profiles::GeneralPurpose))
+					OX_ERROR("Unable to start video render.");
 				else
 				{
 					m_gui.showVideoRenderingGui();

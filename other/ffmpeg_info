@@ -5,3 +5,106 @@ ffmpeg -r 60 -f image2 -i frame_%04d.png \
 
 
 ffmpeg -r 60 -f image2 -i frame_%06d..png -itsoffset 2.84234 -i rach2.mp3 -c:v libx264 -preset slow -crf 18 -c:a aac -shortest output.mp4
+
+
+ffmpeg -r 60 -f image2 -i frame_%04d.png \
+       -ss TRIM_SECONDS -i audio.wav \
+       -c:v libx264 -crf 18 -c:a aac output.mp4
+
+
+so, in the case firstNoteTime > audioStartOffset, then I am fine using --itsoffset, but if it is the other way around, then what I am doing is effectively trimming the audio in such a way that firstNoteTime and audioStartOffset are technically the same
+
+
+#ifdef _WIN32
+    FILE* ffmpeg = _popen(
+        "ffmpeg -f rawvideo -pix_fmt rgba -s 1920x1080 -r 60 -i - "
+        "-i audio.wav -c:v libx264 -preset slow -crf 18 -c:a aac output.mp4",
+        "wb"
+    );
+#else
+    FILE* ffmpeg = popen(
+        "ffmpeg -f rawvideo -pix_fmt rgba -s 1920x1080 -r 60 -i - "
+        "-i audio.wav -c:v libx264 -preset slow -crf 18 -c:a aac output.mp4",
+        "w"
+    );
+#endif
+
+
+
+#ifdef _WIN32
+    _pclose(ffmpeg);
+#else
+    pclose(ffmpeg);
+#endif
+
+
+void streamFrame(sf::RenderTexture& renderTexture, FILE* ffmpegPipe)
+{
+    sf::Image frame = renderTexture.getTexture().copyToImage();
+    const sf::Uint8* pixels = frame.getPixelsPtr();
+    std::size_t dataSize = renderTexture.getSize().x * renderTexture.getSize().y * 3;
+
+    fwrite(pixels, 1, dataSize, ffmpegPipe);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	ostd::String cmd = "/usr/bin/ffmpeg -f rawvideo -pix_fmt rgba ";
+	cmd.add("-s ").add(resolution.x).add("x").add(resolution.y).add(" ");
+	cmd.add("-r ").add(fps).add(" ");
+	cmd.add("-i - ");
+	if (m_hasAudioFile)
+	{
+		if (m_firstNoteStartTime > m_autoSoundStart)
+			cmd.add("-itsoffset ").add((m_firstNoteStartTime - m_autoSoundStart)).add(" ");
+		else if (m_autoSoundStart > m_firstNoteStartTime)
+			cmd.add("-ss ").add((m_autoSoundStart - m_firstNoteStartTime)).add(" ");
+		cmd.add("-i \"").add(m_audioFilePath).add("\" ");
+	}
+	cmd.add("-c:v ").add(profile.VideoCodec).add(" ");
+	cmd.add("-preset ").add(profile.Preset).add(" ");
+	cmd.add("-crf ").add(profile.Quality).add(" ");
+	cmd.add("-c:a ").add(profile.AudioCodec).add(" ");
+	cmd.add("\"").add(filePath).add(".").add(profile.Container).add("\"");
+	cmd.add("-y");
+	OX_DEBUG("FFMPEG COMMAND:\n%s", cmd.c_str());
+	FILE* pipe = POPEN(cmd.c_str(), "wb");
+	if (!pipe) {
+#ifdef WINDOWS_OS
+	    DWORD err = GetLastError();
+	    char* msg = nullptr;
+	    FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+	                   NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+	                   (LPSTR)&msg, 0, NULL);
+	    OX_ERROR("popen failed: %s (error: %lu)", msg ? msg : "unknown", err);
+	    if (msg) LocalFree(msg);
+#else
+	    OX_ERROR("popen failed: %s", strerror(errno));
+#endif
+	    return nullptr;
+	}
+	return pipe;

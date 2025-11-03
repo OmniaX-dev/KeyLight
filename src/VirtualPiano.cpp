@@ -24,14 +24,18 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/RenderTexture.hpp>
 #include <cmath>
+#include <cstdio>
 #include <optional>
 #include <ostd/Geometry.hpp>
 #include <ostd/Logger.hpp>
 #include <ostd/Signals.hpp>
 #include <ostd/Utils.hpp>
 #include "MidiParser.hpp"
+#include "VPianoDataStructures.hpp"
 #include "Window.hpp"
 #include "Renderer.hpp"
+#include "ffmpeg_helper.hpp"
+#include "vendor/subprocess.hpp"
 
 
 // VirtualPianoData
@@ -246,6 +250,7 @@ bool VirtualPiano::loadAudioFile(const ostd::String& filePath)
 	OX_DEBUG("loaded <%s>", filePath.c_str());
 	m_hasAudioFile = true;
 	m_autoSoundStart = scanMusicStartPoint(filePath, 0.005f);
+	m_audioFilePath = filePath;
 	OX_DEBUG("  Auto sound start: %f.", m_autoSoundStart);
 	OX_DEBUG("  Delta time: %f.", (m_firstNoteStartTime - m_autoSoundStart));
 	return true;
@@ -449,14 +454,17 @@ void VirtualPiano::render(std::optional<std::reference_wrapper<sf::RenderTarget>
 		m_vPianoData.setScale(render_scale);
 		if (m_videoRenderState.mode == VideoRenderModes::ImageSequence)
 		{
-			__render_next_image_in_sequence();
+			__render_next_output_frame();
 			if (m_videoRenderState.isFinished())
-				__finish_image_sequence_render();
+				__finish_output_render();
 		}
 		else if (m_videoRenderState.mode == VideoRenderModes::Video)
 		{
-
+			__render_next_output_frame();
+			if (m_videoRenderState.isFinished())
+				__finish_output_render();
 		}
+		m_vPianoData.setScale(m_videoRenderState.oldScale);
 	}
 	else
 	{
@@ -573,6 +581,38 @@ bool VirtualPiano::configImageSequenceRender(const ostd::String& folderPath, con
 	return true;
 }
 
+bool VirtualPiano::configFFMPEGVideoRender(const ostd::String& filePath, const ostd::UI16Point& resolution, uint8_t fps, const FFMPEG::tProfile& profile)
+{
+	if (m_isRenderingToFile) return false;
+	if (resolution.x != 1920 || resolution.y != 1080) return false; //TODO: allow for valid resolutions
+	if (fps != 60) return false; //TODO: allow for valid FPS values
+	if (m_lastNoteEndTime == 0.0) return false; //TODO: Error
+
+	m_videoRenderState.reset();
+	m_videoRenderState.ffmpegProfile = profile;
+	m_videoRenderState.mode = VideoRenderModes::Video;
+	m_videoRenderState.resolution = resolution;
+	m_videoRenderState.folderPath = filePath;
+	m_videoRenderState.targetFPS = fps;
+	m_videoRenderState.lastNoteEndTime = m_lastNoteEndTime;
+	m_videoRenderState.totalFrames = (int32_t)std::ceil(m_videoRenderState.lastNoteEndTime * fps);
+	m_videoRenderState.oldScale = m_vPianoData.getScale();
+	m_videoRenderState.renderTarget = sf::RenderTexture({ resolution.x, resolution.y });
+	m_videoRenderState.flippedRenderTarget = sf::RenderTexture({ resolution.x, resolution.y });
+	m_videoRenderState.frameTime = 1.0 / (float)fps;
+	m_videoRenderState.renderFPS = 1;
+	m_vPianoData.updateScale(resolution.x, resolution.y);
+	m_parentWindow.lockFullscreenStatus();
+	m_parentWindow.enableResizeable(false);
+	stop();
+	m_videoRenderState.updateFpsTimer.startCount(ostd::eTimeUnits::Milliseconds);
+	m_videoRenderState.ffmpegPipe = __open_ffmpeg_pipe(filePath, resolution, fps, profile);
+	if (m_videoRenderState.ffmpegPipe == nullptr) return false;
+
+	m_isRenderingToFile = true;
+	return true;
+}
+
 
 
 
@@ -653,13 +693,130 @@ void VirtualPiano::__preallocate_file_names_for_rendering(uint32_t frameCount, c
 	}
 }
 
-void VirtualPiano::__build_ffmpeg_command(const ostd::UI16Point& resolution, uint16_t fps)
+FILE* VirtualPiano::__open_ffmpeg_pipe(const ostd::String& filePath, const ostd::UI16Point& resolution, uint8_t fps, const FFMPEG::tProfile& profile)
 {
+	if (!FFMPEG::exists()) return nullptr; // TODO: Error
+	if (!FFMPEG::isEncodeCodecAvailable(profile.VideoCodec)) return nullptr; //TODO: Error
+	if (!FFMPEG::isEncodeCodecAvailable(profile.AudioCodec)) return nullptr; //TODO: Error
+
+	// m_videoRenderState.subProcArgsStorage.push_back("/usr/bin/ffmpeg");
+	m_videoRenderState.subProcArgsStorage.push_back("-f");
+	m_videoRenderState.subProcArgsStorage.push_back("rawvideo");
+	m_videoRenderState.subProcArgsStorage.push_back("-pix_fmt");
+	m_videoRenderState.subProcArgsStorage.push_back("rgba");
+	m_videoRenderState.subProcArgsStorage.push_back("-s");
+	m_videoRenderState.subProcArgsStorage.push_back(ostd::String("").add(resolution.x).add("x").add(resolution.y));
+	m_videoRenderState.subProcArgsStorage.push_back("-r");
+	m_videoRenderState.subProcArgsStorage.push_back(ostd::String("").add(fps));
+	m_videoRenderState.subProcArgsStorage.push_back("-re");
+	m_videoRenderState.subProcArgsStorage.push_back("-i");
+	m_videoRenderState.subProcArgsStorage.push_back("-");
+	// m_hasAudioFile = false;
+	if (m_hasAudioFile)
+	{
+		if (m_firstNoteStartTime > m_autoSoundStart)
+		{
+			m_videoRenderState.subProcArgsStorage.push_back("-itsoffset");
+			m_videoRenderState.subProcArgsStorage.push_back(ostd::String("").add((m_firstNoteStartTime - m_autoSoundStart)));
+		}
+		else if (m_autoSoundStart > m_firstNoteStartTime)
+		{
+			m_videoRenderState.subProcArgsStorage.push_back("-ss");
+			m_videoRenderState.subProcArgsStorage.push_back(ostd::String("").add((m_autoSoundStart - m_firstNoteStartTime)));
+		}
+		m_videoRenderState.subProcArgsStorage.push_back("-i");
+		m_videoRenderState.subProcArgsStorage.push_back(ostd::String("").add(m_audioFilePath).add(""));
+	}
+	m_videoRenderState.subProcArgsStorage.push_back("-c:v");
+	m_videoRenderState.subProcArgsStorage.push_back(ostd::String("").add(profile.VideoCodec));
+	m_videoRenderState.subProcArgsStorage.push_back("-preset");
+	m_videoRenderState.subProcArgsStorage.push_back(ostd::String("").add(profile.Preset));
+	m_videoRenderState.subProcArgsStorage.push_back("-crf");
+	m_videoRenderState.subProcArgsStorage.push_back(ostd::String("").add(profile.Quality));
+	m_videoRenderState.subProcArgsStorage.push_back("-c:a");
+	m_videoRenderState.subProcArgsStorage.push_back(ostd::String("").add(profile.AudioCodec));
+	m_videoRenderState.subProcArgsStorage.push_back("-y");
+	m_videoRenderState.subProcArgsStorage.push_back("-t");
+	m_videoRenderState.subProcArgsStorage.push_back("10");
+	m_videoRenderState.subProcArgsStorage.push_back(ostd::String("").add(filePath).add(".").add(profile.Container).add(""));
+
+	for (const auto& str : m_videoRenderState.subProcArgsStorage)
+		m_videoRenderState.subProcArgs.push_back(str);
+	// m_videoRenderState.subProcArgs.push_back(nullptr);
+	// ostd::String cmd = "";
+	// for (const auto& str : m_videoRenderState.subProcArgsStorage)
+		// cmd.add(str).add(" ");
+	//
+
+	// LAUNCH FFMPEG
+    try
+    {
+        m_videoRenderState.ffmpeg_child = bp::child(
+            bp::exe = "/usr/bin/ffmpeg",
+            bp::args = m_videoRenderState.subProcArgs,
+            bp::std_in < m_videoRenderState.ffmpeg_stdin,
+            bp::std_out > bp::null,
+            bp::std_err > stderr  // ← SEE FFMPEG ERRORS IN CONSOLE
+        );
+    }
+    catch (const std::exception& e)
+    {
+        OX_ERROR("Boost.Process v1 failed: %s", e.what());
+        return nullptr;
+    }
+
+    // Convert opstream to FILE* for your fwrite()
+    int fd = m_videoRenderState.ffmpeg_stdin.pipe().native_sink();
+    FILE* pipe_file = fdopen(fd, "wb");
+    if (!pipe_file) {
+        OX_ERROR("fdopen failed");
+        m_videoRenderState.ffmpeg_child.terminate();
+        return nullptr;
+    }
+    OX_DEBUG("FFmpeg launched with Boost.Process v1");
+
+    return pipe_file;  // Your original fwrite() code works!
+
+	// FILE* pipe = POPEN(cmd.c_str(), "wb");
+
+	// auto d = m_videoRenderState.subProcArgs.data();
+	// int32_t i = 0;
+	// const char* p = nullptr;
+	// while ((p = d[i++]) != nullptr)
+	// {
+	// 	std::cout << p << " ";
+	// }
+	// std::cout << "\n";
+
+	// int result = subprocess_create(d, 0, &m_videoRenderState.subProc);
+	// if (result != 0)
+	// {
+	//     OX_ERROR("subprocess_create failed: %d (%s)", result, strerror(errno));
+	//     // On Linux: -1 often + errno=2 (ENOENT: ffmpeg not found)
+	//     // On Windows: Check GetLastError() if needed
+	//     return nullptr;
+	// }
+	// FILE* pipe = subprocess_stdin(&m_videoRenderState.subProc);
+	// usleep(1000000);
+ //    for (int i = 0; i < 600; ++i) {
+ //        sf::Image img = m_videoRenderState.flippedRenderTarget.getTexture().copyToImage();
+ //        const uint8_t* p = img.getPixelsPtr();
+ //        size_t size = m_videoRenderState.flippedRenderTarget.getSize().x * m_videoRenderState.flippedRenderTarget.getSize().y * 4;
+
+ //        if (fwrite(p, 1, size, pipe) != size) {
+ //            OX_ERROR("Frame %d failed: %s", i, strerror(errno));
+ //            break;
+ //        }
+ //        fflush(pipe);
+ //    }
+
+	// return pipe;
 }
 
 void VirtualPiano::__save_frame_to_file(const sf::RenderTexture& rt, const ostd::String& basePath, int frameIndex)
 {
 	if (!m_isRenderingToFile) return;
+	if (m_videoRenderState.mode != VideoRenderModes::ImageSequence) return;
     sf::Image img = rt.getTexture().copyToImage();
     if (!img.saveToFile(m_renderFileNames[frameIndex]))
     {
@@ -667,7 +824,18 @@ void VirtualPiano::__save_frame_to_file(const sf::RenderTexture& rt, const ostd:
     }
 }
 
-void VirtualPiano::__render_next_image_in_sequence(void)
+void VirtualPiano::__stream_frame_to_ffmpeg(void)
+{
+	if (!m_isRenderingToFile) return;
+	if (m_videoRenderState.mode != VideoRenderModes::Video) return;
+	sf::Image frame = m_videoRenderState.flippedRenderTarget.getTexture().copyToImage();
+    const uint8_t* pixels = frame.getPixelsPtr();
+    std::size_t dataSize = m_videoRenderState.flippedRenderTarget.getSize().x * m_videoRenderState.flippedRenderTarget.getSize().y * 4;
+    fwrite(pixels, 1, dataSize, m_videoRenderState.ffmpegPipe);
+    fflush(m_videoRenderState.ffmpegPipe);
+}
+
+void VirtualPiano::__render_next_output_frame(void)
 {
 	if (!m_isRenderingToFile) return;
 	updateVisualization(m_videoRenderState.currentTime);
@@ -678,7 +846,13 @@ void VirtualPiano::__render_next_image_in_sequence(void)
 	flipShader.setUniform("texture", m_videoRenderState.renderTarget.getTexture());
 	Renderer::drawTexture(m_videoRenderState.renderTarget.getTexture());
 	Renderer::useShader(nullptr);
-	__save_frame_to_file(m_videoRenderState.flippedRenderTarget, m_videoRenderState.folderPath, ++m_videoRenderState.frameIndex);
+	if (m_videoRenderState.mode == VideoRenderModes::ImageSequence)
+		__save_frame_to_file(m_videoRenderState.flippedRenderTarget, m_videoRenderState.folderPath, ++m_videoRenderState.frameIndex);
+	else if (m_videoRenderState.mode == VideoRenderModes::Video)
+	{
+		__stream_frame_to_ffmpeg();
+		++m_videoRenderState.frameIndex;
+	}
 	if (Common::wasSIGINTTriggered()) //TODO: remove from here and handle closing on SIGINT in the handler
 	{
 		Common::deleteDirectory(m_videoRenderState.folderPath);
@@ -697,7 +871,7 @@ void VirtualPiano::__render_next_image_in_sequence(void)
 	Renderer::setRenderTarget(nullptr);
 }
 
-void VirtualPiano::__finish_image_sequence_render(void)
+void VirtualPiano::__finish_output_render(void)
 {
 	if (!m_isRenderingToFile) return;
 	if (!m_videoRenderState.isFinished()) return;
@@ -705,4 +879,11 @@ void VirtualPiano::__finish_image_sequence_render(void)
 	m_parentWindow.lockFullscreenStatus(false);
 	m_parentWindow.enableResizeable(true);
 	m_isRenderingToFile = false;
+	if (m_videoRenderState.mode == VideoRenderModes::Video)
+	{
+		fclose(m_videoRenderState.ffmpegPipe);
+		subprocess_join(&m_videoRenderState.subProc, nullptr);
+		subprocess_destroy(&m_videoRenderState.subProc);
+		// PCLOSE(m_videoRenderState.ffmpegPipe);
+	}
 }
