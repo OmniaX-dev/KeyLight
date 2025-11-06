@@ -14,7 +14,7 @@ Gui
 	Gui to customize the colors of the VirtualPiano/Falling Notes
 	Gui to customize all values (sizes, defaults) of the VirtualPiano/Falling Notes
  ** Splash Screen
- 	Refresh values in export gui only every half a second
+ ** Refresh values in export gui only every half a second
 
 VirtualPiano
 	Implement Pause/Stop functionality
@@ -25,8 +25,9 @@ Core
  ** Implement getTextWidth(...) in Renderer class\
  	Implement FFMPEG::getExecutablePath() and use it instead of hardcoded value
   	Reimplement double quotes in ffmpeg paths
-   	Implement silence for ffmpeg offset
-    figure out if adding -re to ffmpeg is worth the performance loss
+ **	Implement silence for ffmpeg offset
+ ** figure out if adding -re to ffmpeg is worth the performance loss
+    Implement Settings manager class
 
 
 GFX

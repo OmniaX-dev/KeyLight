@@ -169,6 +169,7 @@ struct VideoRenderState
 
 	ostd::String baseFileName { "" };
 	ostd::String folderPath { "" };
+	ostd::String absolutePath { "" };
 
 	ostd::Vec2 oldScale { 0.0f, 0.0f };
 	ostd::UI16Point resolution { 0, 0 };

@@ -27,6 +27,7 @@
 #include <ostd/Logger.hpp>
 #include <ostd/Signals.hpp>
 #include <ostd/String.hpp>
+#include <ostd/Utils.hpp>
 #include "Common.hpp"
 #include "Renderer.hpp"
 #include "VPianoDataStructures.hpp"
@@ -72,6 +73,8 @@ Gui& Gui::init(WindowBase& window, VideoRenderState& videoRenderState, const ost
     //TODO: Error
 
     m_showSplashScreen = false; //TODO: remove
+
+    m_labelUpdateTimer.startCount(ostd::eTimeUnits::Milliseconds);
 
 	enableSignals();
 	connectSignal(ostd::tBuiltinSignals::WindowClosed);
@@ -264,8 +267,10 @@ void Gui::__draw_videoRenderGui(void)
 	{
 		case VideoRenderModes::Video:
 			label = "Rendering Video";
+			break;
 		case VideoRenderModes::ImageSequence:
 			label = "Rendering Image Sequence";
+			break;
 	}
 	auto guiBounds = __get_center_bounds(m_renderingGuiSize);
 
@@ -279,6 +284,7 @@ void Gui::__draw_videoRenderGui(void)
 	Renderer::drawString(label, pos, color1, fontSize);
 
 
+	bool updateLabels = m_labelUpdateTimer.read() >= 500;
 	ostd::String percentageStr = "";
 	percentageStr.add(vrs.percentage);
 	percentageStr.add(" %");
@@ -302,6 +308,10 @@ void Gui::__draw_videoRenderGui(void)
 	Renderer::drawString(label, pos, color1, fontSize);
 	pos.x += padx(-5, label, fontSize);
 	label.clr().add(vrs.renderFPS);
+	if (!updateLabels)
+		label = m_oldFPSLabel;
+	else
+		m_oldFPSLabel = label;
 	Renderer::drawString(label, pos, color2, fontSize);
 
 	float etaStrSize = 0;
@@ -310,6 +320,10 @@ void Gui::__draw_videoRenderGui(void)
 	if (vrs.renderFPS > 0)
 		totalSeconds = static_cast<int32_t>(((vrs.totalFrames + vrs.extraFrames) - vrs.frameIndex) / vrs.renderFPS);
 	label.clr().add(Common::secondsToFormattedString(totalSeconds));
+	if (!updateLabels || totalSeconds > m_oldETASeconds)
+		label = m_oldETALabel;
+	else
+		m_oldETALabel = label;
 	etaStrSize += Renderer::getStringSize(label, fontSize).x;
 	etaStrSize += Common::scaleX(2);
 	pos.x = pbpos.x + pbpos.w - etaStrSize;
@@ -318,16 +332,26 @@ void Gui::__draw_videoRenderGui(void)
 	pos.x -= Common::scaleX(Renderer::getStringSize(label, fontSize).x - 2);
 	Renderer::drawString(label, pos, color1, fontSize);
 
-	Renderer::drawTexture(vrs.flippedRenderTarget.getTexture(), { pbpos.x, pos.y + Common::scaleY(65) }, { Common::scaleXY(0.2f), Common::scaleXY(0.2f) }, { 140, 140, 140 });
+	Renderer::drawTexture(vrs.flippedRenderTarget.getTexture(), { pbpos.x, pos.y + Common::scaleY(110) }, { Common::scaleXY(0.2f), Common::scaleXY(0.2f) }, { 140, 140, 140 });
 	auto tmpSize = vrs.flippedRenderTarget.getTexture().getSize();
 	ostd::Vec2 previewSize = { (float)tmpSize.x * Common::scaleXY(0.2f), (float)tmpSize.y * Common::scaleXY(0.2f) };
-	Renderer::drawRoundedRect({ pbpos.x, pos.y + Common::scaleY(65), previewSize.x, previewSize.y }, { 140, 20, 120, 230 }, { 5, 5, 5, 5 }, 3);
+	Renderer::drawRoundedRect({ pbpos.x, pos.y + Common::scaleY(110), previewSize.x, previewSize.y }, { 140, 20, 120, 230 }, { 5, 5, 5, 5 }, 3);
 
 	pos = { guiBounds.x, pos.y + Common::scaleY(40) };
 	Renderer::fillRect({ pos.x, pos.y, guiBounds.w, 2 }, { 120, 120, 120, 120 });
 
+	fontSize = Common::scaleXY(22);
+	label = "File: ";
+	pos.x = pbpos.x;
+	pos.y += Common::scaleY(20);
+	Renderer::drawString(label, pos, color1, fontSize);
+	pos.x += padx(-5, label, fontSize);
+	label.clr().add(vrs.absolutePath);
+	Renderer::drawString(label, pos, color2, fontSize);
+
+	fontSize = Common::scaleXY(24);
 	color2 = { 240, 28, 180 };
-	pos = { pbpos.x + previewSize.x + Common::scaleX(10), pos.y + Common::scaleY(30) };
+	pos = { pbpos.x + previewSize.x + Common::scaleX(10), pos.y + Common::scaleY(50) };
 	label = "Resolution: ";
 	Renderer::drawString(label, pos, color1, fontSize);
 	pos.x += padx(-5, label, fontSize);
@@ -348,4 +372,12 @@ void Gui::__draw_videoRenderGui(void)
 	int32_t seconds = (int32_t)std::round(vrs.lastNoteEndTime + ((double)vrs.extraFrames / (double)vrs.targetFPS));
 	label.clr().add(Common::secondsToFormattedString(seconds));
 	Renderer::drawString(label, pos, color2, fontSize);
+
+	if (updateLabels)
+	{
+		m_labelUpdateTimer.endCount();
+		m_labelUpdateTimer.startCount(ostd::eTimeUnits::Milliseconds);
+		if (totalSeconds < m_oldETASeconds)
+			m_oldETASeconds = totalSeconds;
+	}
 }

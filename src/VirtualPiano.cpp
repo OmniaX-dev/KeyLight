@@ -25,6 +25,7 @@
 #include <SFML/Graphics/RenderTexture.hpp>
 #include <cmath>
 #include <cstdio>
+#include <filesystem>
 #include <optional>
 #include <ostd/Geometry.hpp>
 #include <ostd/Logger.hpp>
@@ -463,7 +464,6 @@ void VirtualPiano::render(std::optional<std::reference_wrapper<sf::RenderTarget>
 			if (m_videoRenderState.isFinished())
 				__finish_output_render();
 		}
-		m_vPianoData.setScale(m_videoRenderState.oldScale);
 	}
 	else
 	{
@@ -591,7 +591,11 @@ bool VirtualPiano::configFFMPEGVideoRender(const ostd::String& filePath, const o
 	m_videoRenderState.ffmpegProfile = profile;
 	m_videoRenderState.mode = VideoRenderModes::Video;
 	m_videoRenderState.resolution = resolution;
-	m_videoRenderState.folderPath = filePath;
+	ostd::String tmp = filePath.new_trim();
+	while (tmp.startsWith("./") || tmp.startsWith(".\\"))
+		tmp.substr(2).trim();
+	m_videoRenderState.folderPath = tmp;
+	m_videoRenderState.absolutePath = ostd::String(std::filesystem::absolute(m_videoRenderState.folderPath)).add(".").add(profile.Container);
 	m_videoRenderState.targetFPS = fps;
 	m_videoRenderState.lastNoteEndTime = m_lastNoteEndTime;
 	m_videoRenderState.totalFrames = (int32_t)std::ceil(m_videoRenderState.lastNoteEndTime * fps);
@@ -605,7 +609,7 @@ bool VirtualPiano::configFFMPEGVideoRender(const ostd::String& filePath, const o
 	m_parentWindow.enableResizeable(false);
 	stop();
 	m_videoRenderState.updateFpsTimer.startCount(ostd::eTimeUnits::Milliseconds);
-	m_videoRenderState.ffmpegPipe = __open_ffmpeg_pipe(filePath, resolution, fps, profile);
+	m_videoRenderState.ffmpegPipe = __open_ffmpeg_pipe(m_videoRenderState.folderPath, resolution, fps, profile);
 	if (m_videoRenderState.ffmpegPipe == nullptr) return false;
 
 	m_isRenderingToFile = true;
@@ -713,16 +717,38 @@ FILE* VirtualPiano::__open_ffmpeg_pipe(const ostd::String& filePath, const ostd:
 	{
 		if (m_firstNoteStartTime > m_autoSoundStart)
 		{
-			m_videoRenderState.subProcArgs.push_back("-itsoffset");
-			m_videoRenderState.subProcArgs.push_back(ostd::String("").add((m_firstNoteStartTime - m_autoSoundStart)));
+			// m_videoRenderState.subProcArgs.push_back("-itsoffset");
+			// m_videoRenderState.subProcArgs.push_back(ostd::String("").add((m_firstNoteStartTime - m_autoSoundStart)));
+			m_videoRenderState.subProcArgs.push_back("-f");
+			m_videoRenderState.subProcArgs.push_back("lavfi");
+			m_videoRenderState.subProcArgs.push_back("-i");
+			m_videoRenderState.subProcArgs.push_back(ostd::String("anullsrc=channel_layout=stereo:sample_rate=44100:duration=").add((m_firstNoteStartTime - m_autoSoundStart)));
+			m_videoRenderState.subProcArgs.push_back("-i");
+			m_videoRenderState.subProcArgs.push_back(ostd::String("").add(m_audioFilePath).add(""));
+			m_videoRenderState.subProcArgs.push_back("-filter_complex");
+			// m_videoRenderState.subProcArgs.push_back("[1:a][2:a]concat=n=2:v=0:a=1[aout]");
+			m_videoRenderState.subProcArgs.push_back(
+			    "[1:a]aformat=sample_fmts=s16:channel_layouts=stereo:sample_rates=44100[sil];"
+			    "[2:a]aformat=sample_fmts=s16:channel_layouts=stereo:sample_rates=44100[aud];"
+			    "[sil][aud]concat=n=2:v=0:a=1[aout]"
+			);
+			m_videoRenderState.subProcArgs.push_back("-map");
+			m_videoRenderState.subProcArgs.push_back("0:v");
+			m_videoRenderState.subProcArgs.push_back("-map");
+			m_videoRenderState.subProcArgs.push_back("[aout]");
 		}
 		else if (m_autoSoundStart > m_firstNoteStartTime)
 		{
 			m_videoRenderState.subProcArgs.push_back("-ss");
 			m_videoRenderState.subProcArgs.push_back(ostd::String("").add((m_autoSoundStart - m_firstNoteStartTime)));
+			m_videoRenderState.subProcArgs.push_back("-i");
+			m_videoRenderState.subProcArgs.push_back(ostd::String("").add(m_audioFilePath).add(""));
 		}
-		m_videoRenderState.subProcArgs.push_back("-i");
-		m_videoRenderState.subProcArgs.push_back(ostd::String("").add(m_audioFilePath).add(""));
+		else
+		{
+			m_videoRenderState.subProcArgs.push_back("-i");
+			m_videoRenderState.subProcArgs.push_back(ostd::String("").add(m_audioFilePath).add(""));
+		}
 	}
 	m_videoRenderState.subProcArgs.push_back("-c:v");
 	m_videoRenderState.subProcArgs.push_back(ostd::String("").add(profile.VideoCodec));
@@ -732,13 +758,20 @@ FILE* VirtualPiano::__open_ffmpeg_pipe(const ostd::String& filePath, const ostd:
 	m_videoRenderState.subProcArgs.push_back(ostd::String("").add(profile.Quality));
 	m_videoRenderState.subProcArgs.push_back("-c:a");
 	m_videoRenderState.subProcArgs.push_back(ostd::String("").add(profile.AudioCodec));
+	m_videoRenderState.subProcArgs.push_back("-b:a");
+	m_videoRenderState.subProcArgs.push_back("192k");
 	m_videoRenderState.subProcArgs.push_back("-y");
 	// m_videoRenderState.subProcArgs.push_back("-t");
 	// m_videoRenderState.subProcArgs.push_back("10");
+	m_videoRenderState.subProcArgs.push_back("-loglevel");
+	m_videoRenderState.subProcArgs.push_back("error");
+	m_videoRenderState.subProcArgs.push_back("-shortest");
+	m_videoRenderState.subProcArgs.push_back("-movflags");
+	m_videoRenderState.subProcArgs.push_back("+faststart");
 	m_videoRenderState.subProcArgs.push_back(ostd::String("").add(filePath).add(".").add(profile.Container).add(""));
 
 	ostd::String ffmpeg_executable = "/usr/bin/ffmpeg"; //TODO: Hardcoded, Linux only
-	ostd::String cmd = "";
+	ostd::String cmd = ffmpeg_executable.new_add(" ");
 	for (const auto& str : m_videoRenderState.subProcArgs)
 		cmd.add(str).add(" ");
 	OX_DEBUG("FFMPEG Command:\n%s", cmd.c_str());
@@ -806,6 +839,7 @@ void VirtualPiano::__render_next_output_frame(void)
 {
 	if (!m_isRenderingToFile) return;
 	updateVisualization(m_videoRenderState.currentTime);
+	// exit(0);s
 	__render_frame(m_videoRenderState.renderTarget);
 	m_videoRenderState.framTimeTimer.startCount(ostd::eTimeUnits::Milliseconds);
 	Renderer::setRenderTarget(&m_videoRenderState.flippedRenderTarget);
