@@ -23,11 +23,12 @@ VirtualPiano
 Core
  ** Implement way to render the whole thing to a file
  ** Implement getTextWidth(...) in Renderer class\
- 	Implement FFMPEG::getExecutablePath() and use it instead of hardcoded value
-  	Reimplement double quotes in ffmpeg paths
+ ** Implement FFMPEG::getExecutablePath() and use it instead of hardcoded value
+ ** Reimplement double quotes in ffmpeg paths
  **	Implement silence for ffmpeg offset
  ** figure out if adding -re to ffmpeg is worth the performance loss
-    Implement Settings manager class
+ ** Implement Settings manager class
+    Implement auto-download of ffmpeg
 
 
 GFX

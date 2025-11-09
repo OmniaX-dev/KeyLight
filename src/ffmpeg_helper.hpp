@@ -1,17 +1,27 @@
+/*
+    KeyLight - A MIDI Piano Visualizer
+    Copyright (C) 2025  OmniaX-Dev
+
+    This file is part of KeyLight.
+
+    KeyLight is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    KeyLight is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with KeyLight.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 #pragma once
 
 #include <ostd/String.hpp>
 #include <ostd/Defines.hpp>
-
-#ifdef WINDOWS_OS
-	#include <windows.h>
-    #define POPEN  _popen
-    #define PCLOSE _pclose
-#else
-    #define POPEN  popen
-    #define PCLOSE pclose
-    #include <unistd.h>
-#endif
 
 class FFMPEG
 {
@@ -78,6 +88,7 @@ class FFMPEG
 		static bool exists(void);
 		static bool isEncodeCodecAvailable(const ostd::String& codecName, bool checkEncode = true);
 		static void printDebugInfo(void);
+		static ostd::String getExecutablePath(void);
 
 	private:
 		static bool __list_contains_name(const ostd::String& output, const ostd::String& name);

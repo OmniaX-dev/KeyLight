@@ -770,7 +770,7 @@ FILE* VirtualPiano::__open_ffmpeg_pipe(const ostd::String& filePath, const ostd:
 	m_videoRenderState.subProcArgs.push_back("+faststart");
 	m_videoRenderState.subProcArgs.push_back(ostd::String("").add(filePath).add(".").add(profile.Container).add(""));
 
-	ostd::String ffmpeg_executable = "/usr/bin/ffmpeg"; //TODO: Hardcoded, Linux only
+	ostd::String ffmpeg_executable = FFMPEG::getExecutablePath();
 	ostd::String cmd = ffmpeg_executable.new_add(" ");
 	for (const auto& str : m_videoRenderState.subProcArgs)
 		cmd.add(str).add(" ");

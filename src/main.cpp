@@ -20,11 +20,12 @@
 
 #include <ostd/IOHandlers.hpp>
 #include <csignal>
+#include <ostd/Logger.hpp>
 #include <ostd/Signals.hpp>
 
 #include "Common.hpp"
 #include "Window.hpp"
-// #include "ffmpeg_helper.hpp"
+#include "ffmpeg_helper.hpp"
 
 ostd::ConsoleOutputHandler out;
 
@@ -43,7 +44,11 @@ int main(int argc, char** argv)
 	Window window;
 	window.initialize(VirtualPianoData::base_width, VirtualPianoData::base_height, "KeyLight");
 
-	// FFMPEG::printDebugInfo();
+	auto ffmpegPath = FFMPEG::getExecutablePath().trim();
+	if (ffmpegPath != "")
+		OX_DEBUG("FFMPEG found: %s", ffmpegPath.c_str());
+	else
+		OX_DEBUG("FFMPEG not found. Video export disabled.");
 
 	while (window.isRunning())
 	{
