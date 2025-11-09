@@ -21,6 +21,7 @@
 #include "Window.hpp"
 #include "Renderer.hpp"
 #include "ffmpeg_helper.hpp"
+#include "ConfigManager.hpp"
 #include <SFML/Window/WindowEnums.hpp>
 #include <ostd/Logger.hpp>
 #include <vector>
@@ -37,6 +38,8 @@ void Window::onInitialize(void)
 	connectSignal(WindowFocusGained);
 	setClearColor({ 255, 10, 10 });
 
+	ConfigManager::init("settings.json");
+
 	Renderer::init(*this, "themes/fonts/RobotoMono.ttf");
 
 	m_window.setPosition({ 30, 30 });
@@ -45,8 +48,8 @@ void Window::onInitialize(void)
 	m_windowPositionBeforeFullscreen = { (float)m_window.getPosition().x, (float)m_window.getPosition().y };
 	// enableFullscreen(true);
 	m_vpiano.init();
-	m_vpiano.loadMidiFile("res/midi/rach2.mid");
-	m_vpiano.loadAudioFile("res/music/rach2.mp3");
+	m_vpiano.loadMidiFile("res/midi/merry2.mid");
+	m_vpiano.loadAudioFile("res/music/merry2.mp3");
 
 	m_gui.init(*this, m_vpiano.getVideoRenderState(), "themes/ui/cursor.png", "themes/ui/icon.png", "themes/Dark.txt", true);
 	m_gui.showFPS(true);

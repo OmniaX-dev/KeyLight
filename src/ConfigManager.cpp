@@ -1,0 +1,412 @@
+#include "ConfigManager.hpp"
+#include <fstream>
+#include <ostd/File.hpp>
+#include <ostd/Logger.hpp>
+#include <ostd/String.hpp>
+#include <ostd/Utils.hpp>
+
+
+inline static const json DefaultSettingsJSON = R"({
+		"settings": {
+			"useSystenFFMPEG": true,
+			"ffmpegPath": "./ffmpeg/"
+		}
+})"_json;
+
+
+namespace detail
+{
+	template<class T> struct Getter;
+	// ----- bool ---------------------------------------------------------
+	template<> struct Getter<bool>
+	{
+	    static bool exec_impl(const std::string& p, const json& root)
+	    {
+	        try { return root.at(p).get<bool>(); }
+	        catch (const json::exception&) { return false; }
+	    }
+	};
+
+	// ----- int ----------------------------------------------------------
+	template<> struct Getter<int>
+	{
+	    static int exec_impl(const std::string& p, const json& root)
+	    {
+	        try { return root.at(p).get<int>(); }
+	        catch (const json::exception&) { return 0; }
+	    }
+	};
+
+	// ----- double -------------------------------------------------------
+	template<> struct Getter<double>
+	{
+	    static double exec_impl(const std::string& p, const json& root)
+	    {
+	        try { return root.at(p).get<double>(); }
+	        catch (const json::exception&) { return 0.0; }
+	    }
+	};
+
+	// ----- ostd::String -------------------------------------------------
+	template<> struct Getter<ostd::String>
+	{
+	    static ostd::String exec_impl(const std::string& p, const json& root)
+	    {
+	        try { return ostd::String(root.at(p).get<std::string>().c_str()); }
+	        catch (const json::exception&) { return ostd::String(""); }
+	    }
+	};
+	// ----- ostd::Color -------------------------------------------------
+	template<> struct Getter<ostd::Color>
+	{
+	    static ostd::Color exec_impl(const std::string& p, const json& root)
+	    {
+	        try {
+	            const json& arr = root.at(p);
+	            if (!arr.is_array() || arr.empty()) return ostd::Color();
+
+	            std::vector<int> vals;
+	            for (const auto& v : arr)
+				{
+	                if (!v.is_number_integer()) return ostd::Color();
+	                int iv = v.get<int>();
+	                if (iv < 0 || iv > 255) return ostd::Color();
+	                vals.push_back(iv);
+	            }
+
+	            switch (vals.size())
+				{
+	                case 1:  return ostd::Color(vals[0], vals[0], vals[0]);
+	                case 3:  return ostd::Color(vals[0], vals[1], vals[2]);
+	                case 4:  return ostd::Color(vals[0], vals[1], vals[2], vals[3]);
+	                default: return ostd::Color();
+	            }
+	        }
+	        catch (...) { return ostd::Color(); }
+	    }
+	};
+	// ----- std::vector<int32_t> ----------------------------------------
+	template<> struct Getter<std::vector<int32_t>>
+	{
+	    static std::vector<int32_t> exec_impl(const std::string& p, const json& root)
+	    {
+	        std::vector<int32_t> result;
+	        try
+			{
+	            const json& arr = root.at(p);
+	            if (!arr.is_array()) return result;
+	            for (const auto& v : arr)
+				{
+	                if (v.is_number_integer())
+	                    result.push_back(v.get<int32_t>());
+	            }
+	        } catch (...) {}
+	        return result;
+	    }
+	};
+	// ----- std::vector<double> -----------------------------------------
+	template<> struct Getter<std::vector<double>>
+	{
+	    static std::vector<double> exec_impl(const std::string& p, const json& root)
+	    {
+	        std::vector<double> result;
+	        try
+			{
+	            const json& arr = root.at(p);
+	            if (!arr.is_array()) return result;
+	            for (const auto& v : arr)
+				{
+	                if (v.is_number())
+	                    result.push_back(v.get<double>());
+	            }
+	        } catch (...) {}
+	        return result;
+	    }
+	};
+	// ----- std::vector<ostd::String> -----------------------------------
+	template<> struct Getter<std::vector<ostd::String>>
+	{
+	    static std::vector<ostd::String> exec_impl(const std::string& p, const json& root)
+	    {
+	        std::vector<ostd::String> result;
+	        try
+			{
+	            const json& arr = root.at(p);
+	            if (!arr.is_array()) return result;
+	            for (const auto& v : arr)
+				{
+	                if (v.is_string())
+	                    result.emplace_back(v.get<std::string>().c_str());
+	            }
+	        } catch (...) {}
+	        return result;
+	    }
+	};
+
+
+
+	template<class T> struct Setter;
+	// ----- bool ---------------------------------------------------------
+	template<> struct Setter<bool>
+	{
+	    static bool exec_impl(const std::string& p, json& root, bool value)
+	    {
+	        try
+			{
+				root[p] = value;
+	            return true;
+	        }
+			catch (...) { return false; }
+	    }
+	};
+
+	// ----- int ----------------------------------------------------------
+	template<> struct Setter<int>
+	{
+	    static bool exec_impl(const std::string& p, json& root, int value)
+	    {
+	        try
+			{
+				root[p] = value;
+	            return true;
+	        }
+			catch (...) { return false; }
+	    }
+	};
+
+	// ----- double -------------------------------------------------------
+	template<> struct Setter<double>
+	{
+	    static bool exec_impl(const std::string& p, json& root, double value)
+	    {
+	        try
+			{
+				root[p] = value;
+	            return true;
+	        }
+			catch (...) { return false; }
+	    }
+	};
+
+	// ----- ostd::String -------------------------------------------------
+	template<> struct Setter<ostd::String>
+	{
+	    static bool exec_impl(const std::string& p, json& root, const ostd::String& value)
+	    {
+	        try
+			{
+				root[p] = value;
+	            return true;
+	        }
+			catch (...) { return false; }
+	    }
+	};
+	// ----- ostd::Color -------------------------------------------------
+	template<> struct Setter<ostd::Color>
+	{
+	    static bool exec_impl(const std::string& p, json& root, const ostd::Color& value)
+	    {
+	        try
+			{
+	            json arr = json::array();
+	            arr.push_back(value.r);
+	            arr.push_back(value.g);
+	            arr.push_back(value.b);
+	            if (value.a != 255) arr.push_back(value.a);
+	            root[p] = arr;
+	            return true;
+	        } catch (...) { return false; }
+	    }
+	};
+	// ----- std::vector<int32_t> ----------------------------------------
+	template<> struct Setter<std::vector<int32_t>>
+	{
+	    static bool exec_impl(const std::string& p, json& root, const std::vector<int32_t>& value)
+	    {
+	        try
+			{
+	            json arr = json::array();
+	            for (int32_t v : value) arr.push_back(v);
+	            root[p] = arr;
+	            return true;
+	        } catch (...) { return false; }
+	    }
+	};
+	// ----- std::vector<double> -----------------------------------------
+	template<> struct Setter<std::vector<double>>
+	{
+	    static bool exec_impl(const std::string& p, json& root, const std::vector<double>& value)
+	    {
+	        try
+			{
+	            json arr = json::array();
+	            for (double v : value) arr.push_back(v);
+	            root[p] = arr;
+	            return true;
+	        } catch (...) { return false; }
+	    }
+	};
+	// ----- std::vector<ostd::String> -----------------------------------
+	template<> struct Setter<std::vector<ostd::String>>
+	{
+	    static bool exec_impl(const std::string& p, json& root, const std::vector<ostd::String>& value)
+	    {
+	        try
+			{
+	            json arr = json::array();
+	            for (const auto& s : value) arr.push_back(s.cpp_str());
+	            root[p] = arr;
+	            return true;
+	        } catch (...) { return false; }
+	    }
+	};
+} // namespace detail
+
+
+static inline bool __navigate_json_path(const ostd::String& path, json*& outSource, ostd::String& outName)
+{
+    auto tokens = path.tokenize(".");
+    if (tokens.count() <= 1)
+    {
+	    if (!outSource->contains(path))
+	        return false; // path broken
+   		outName = path;
+        return true;
+    }
+
+    ostd::String key = "";
+    while (tokens.hasNext())
+    {
+        key = tokens.next();
+        if (!outSource->contains(key))
+            return false; // path broken
+
+        if (!tokens.hasNext())
+        {
+       		outName = key;
+            return true;
+        }
+
+        const json& child = (*outSource)[key];
+        if (!child.is_object())
+            return false; // path broken
+        outSource = const_cast<json*>(&child);
+    }
+    return false;
+}
+
+template<class T>
+T ConfigManager::get(const ostd::String& name)
+{
+	json* source = m_loaded ? &m_settingsJSON["settings"] : const_cast<json*>(&DefaultSettingsJSON["settings"]);
+	ostd::String settingName = "";
+	if (__navigate_json_path(name, source, settingName))
+		return detail::Getter<T>::exec_impl(settingName, *source);
+	source = const_cast<json*>(&DefaultSettingsJSON["settings"]);
+	settingName = "";
+	if (!__navigate_json_path(name, source, settingName))
+		OX_ERROR("Setting not found: %s", name.c_str());
+    return detail::Getter<T>::exec_impl(settingName, *source);
+}
+template<class T>
+bool ConfigManager::set(const ostd::String& name, T value)
+{
+	if (!m_loaded) return false;
+
+    auto tokens = name.tokenize(".");
+    if (tokens.count() == 0) return false;
+
+    json* current = &m_settingsJSON["settings"];
+    ostd::String key;
+
+    while (tokens.hasNext())
+    {
+        key = tokens.next();
+        if (!tokens.hasNext()) break;
+
+        if (!current->contains(key.cpp_str()) || !(*current)[key.cpp_str()].is_object())
+            (*current)[key.cpp_str()] = json::object();
+        current = &(*current)[key.cpp_str()];
+    }
+
+    // Set the leaf value
+    if (detail::Setter<T>::exec_impl(key.cpp_str(), *current, value))
+        return __write_to_file();
+
+    OX_ERROR("Failed to set value for: %s", name.c_str());
+    return false;
+}
+
+bool ConfigManager::get_bool(const ostd::String& name) { return get<bool>(name); }
+int ConfigManager::get_int(const ostd::String& name) { return get<int32_t>(name); }
+double ConfigManager::get_double(const ostd::String& name) { return get<double>(name); }
+ostd::String ConfigManager::get_string(const ostd::String& name) { return get<ostd::String>(name); }
+ostd::Color ConfigManager::get_color(const ostd::String& name) { return get<ostd::Color>(name); }
+std::vector<int32_t> ConfigManager::get_int_array(const ostd::String& name) { return get<std::vector<int32_t>>(name); }
+std::vector<double> ConfigManager::get_double_array(const ostd::String& name) { return get<std::vector<double>>(name); }
+std::vector<ostd::String> ConfigManager::get_string_array(const ostd::String& name) { return get<std::vector<ostd::String>>(name); }
+
+bool ConfigManager::set_bool(const ostd::String& name, bool value) { return set<bool>(name, value); }
+bool ConfigManager::set_int(const ostd::String& name, int32_t value) { return set<int32_t>(name, value); }
+bool ConfigManager::set_double(const ostd::String& name, double value) { return set<double>(name, value); }
+bool ConfigManager::set_string(const ostd::String& name, const ostd::String& value) { return set<ostd::String>(name, value); }
+bool ConfigManager::set_color(const ostd::String& name, const ostd::Color& value) { return set<ostd::Color>(name, value); }
+bool ConfigManager::set_int_array(const ostd::String& name, const std::vector<int32_t>& value) { return set<std::vector<int32_t>>(name, value); }
+bool ConfigManager::set_double_array(const ostd::String& name, const std::vector<double>& value) { return set<std::vector<double>>(name, value); }
+bool ConfigManager::set_string_array(const ostd::String& name, const std::vector<ostd::String>& value) { return set<std::vector<ostd::String>>(name, value); }
+
+
+bool ConfigManager::init(const ostd::String& filePath)
+{
+	m_filePath = filePath;
+	m_rawJson = "";
+	m_loaded = false;
+	ostd::TextFileBuffer settingsFile(filePath);
+	if (!settingsFile.exists())
+	{
+		m_loaded = true;
+		__write_to_file(&DefaultSettingsJSON);
+		m_loaded = false;
+	}
+	settingsFile = ostd::TextFileBuffer(filePath);
+	try
+	{
+		m_settingsJSON = json::parse(settingsFile.rawContent());
+		if (!m_settingsJSON.contains("settings"))
+		{
+		   OX_ERROR("Missing \"settings\" object in settings file.");
+		   return false;
+		}
+	}
+	catch (const json::parse_error& e)
+	{
+	    OX_ERROR("JSON parse failed: %s", e.what());
+	    return false;
+	}
+	m_rawJson = settingsFile.rawContent();
+	m_loaded = true;
+	OX_DEBUG("Loaded settings file: <%s>", filePath.c_str());
+	return true;
+}
+
+bool ConfigManager::__write_to_file(const json* obj)
+{
+	if (!m_loaded) return false;
+	if (obj == nullptr)
+		obj = &m_settingsJSON;
+	try
+	{
+		std::ofstream file(m_filePath.cpp_str(), std::ios::trunc);
+		if (!file) throw std::runtime_error("Failed to open file.");
+		file << obj->dump(4);
+		if (file.fail()) throw std::runtime_error("Failed to write to file");
+		file.flush();
+    	if (file.fail()) throw std::runtime_error("Failed to flush");
+	}
+	catch (const std::exception& e)
+	{
+		OX_ERROR("Failed to write settings file: %s", e.what());
+		return false;
+	}
+	return true;
+}
