@@ -24,12 +24,15 @@
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/System/Clock.hpp>
 #include <TGUI/Loading/Theme.hpp>
+#include <TGUI/Widgets/ColorPicker.hpp>
 #include <TGUI/Widgets/Label.hpp>
 #include <TGUI/Widgets/ProgressBar.hpp>
 #include <functional>
 #include <optional>
 #include <ostd/BaseObject.hpp>
+#include <ostd/Color.hpp>
 #include <ostd/Geometry.hpp>
+#include <ostd/Signals.hpp>
 #include <ostd/String.hpp>
 
 #include <TGUI/Widgets/FileDialog.hpp>
@@ -42,15 +45,37 @@
 
 class Gui : public ostd::BaseObject
 {
+	public: class ColorPickerBlock : public ostd::Rectangle, public ostd::BaseObject
+	{
+		public:
+			inline ColorPickerBlock(Gui& parent) : m_parent(parent) { create({ 0, 0, 0 }); }
+			inline ColorPickerBlock(Gui& parent, const ostd::Color& color, const ostd::String& title = "") : m_parent(parent) { create(color, title); }
+			ColorPickerBlock& create(const ostd::Color& color, const ostd::String& title = "");
+			void handleSignal(ostd::tSignal& signal) override;
+			void render(void);
+
+			inline void setColor(const ostd::Color& color) { m_color = color; }
+			inline ostd::Color getColor(void) const { return m_color; }
+
+		private:
+			Gui& m_parent;
+			ostd::Color m_color;
+			ostd::String m_title;
+			ostd::Color m_borderColor { 150, 150, 150 };
+			ostd::Color m_borderColor_hover { 250, 250, 250 };
+			bool m_isMouseInside { false };
+	};
+
 	public:
 		using FileDialogFilterList = std::vector<std::pair<tgui::String, std::vector<tgui::String>>>;
 
 	public:
-		inline Gui(void) { invalidate(); }
-		inline Gui(WindowBase& window, VideoRenderState& videoRenderState, const ostd::String& cursorFilePath, const ostd::String& appIconFilePath, const ostd::String& themeFilePath, bool visible = true) { init(window, videoRenderState, cursorFilePath, appIconFilePath, themeFilePath, visible); }
+		inline Gui(void) : m_colorPickerTest1(*this), m_colorPickerTest2(*this) { invalidate(); }
+		inline Gui(WindowBase& window, VideoRenderState& videoRenderState, const ostd::String& cursorFilePath, const ostd::String& appIconFilePath, const ostd::String& themeFilePath, bool visible = true) : m_colorPickerTest1(*this), m_colorPickerTest2(*this) { init(window, videoRenderState, cursorFilePath, appIconFilePath, themeFilePath, visible); }
 		Gui& init(WindowBase& window, VideoRenderState& videoRenderState, const ostd::String& cursorFilePath, const ostd::String& appIconFilePath, const ostd::String& themeFilePath, bool visible = true);
 		void handleSignal(ostd::tSignal& signal) override;
 		void showFileDialog(const ostd::String& title, const FileDialogFilterList& filters, std::function<void(const std::vector<ostd::String>&, bool)> callback, bool multiselect = false);
+		void showColorPicker(const ostd::String& title, const ostd::Color& setColor, const ostd::Vec2& position, std::function<void(const ostd::Color&)> callback);
 		void showVideoRenderingGui(void);
 		void draw(void);
 
@@ -88,6 +113,8 @@ class Gui : public ostd::BaseObject
 
 		// File dialog
 		tgui::FileDialog::Ptr m_fileDialog { nullptr };
+		// Color picker
+		tgui::ColorPicker::Ptr m_colorPicker { nullptr };
 
 		// Video rendering gui
 		tgui::ProgressBar::Ptr m_renderingProgressBar { nullptr };
@@ -100,5 +127,8 @@ class Gui : public ostd::BaseObject
 		ostd::String m_oldFPSLabel { "" };
 		ostd::String m_oldETALabel { "" };
 		double m_oldETASeconds { 9999999 };
+
+		ColorPickerBlock m_colorPickerTest1;
+		ColorPickerBlock m_colorPickerTest2;
 
 };

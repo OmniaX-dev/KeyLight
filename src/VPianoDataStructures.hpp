@@ -71,10 +71,23 @@ struct VirtualPianoData
 		inline static constexpr int32_t base_width { 2080 };
 		inline static constexpr int32_t base_height { 1400 };
 
+		int32_t fallingWhiteNoteOutlineWidth { 0 };
+		float fallingWhiteNoteBorderRadius { 0 };
+
+		int32_t fallingBlackNoteOutlineWidth { 0 };
+		float fallingBlackNoteBorderRadius { 0 };
+
+		ostd::Vec2 texCoordsPos { 0, 0 };
+		ostd::Vec2 texCoordsScale { 1, 1 };
+
+		ostd::Color backgroundColor { 0, 0, 0 };
+
 		ostd::Color whiteKeyColor { 0, 0, 0 };
 		ostd::Color whiteKeyPressedColor { 0, 0, 0 };
+		ostd::Color whiteKeySplitColor = { 0, 0, 0 };
 		ostd::Color blackKeyColor { 0, 0, 0 };
 		ostd::Color blackKeyPressedColor { 0, 0, 0 };
+		ostd::Color blackKeySplitColor = { 0, 0, 0 };
 
 		ostd::Color fallingWhiteNoteColor { 0, 0, 0 };
 		ostd::Color fallingWhiteNoteOutlineColor { 0, 0, 0 };
@@ -82,6 +95,41 @@ struct VirtualPianoData
 		ostd::Color fallingBlackNoteColor { 0, 0, 0 };
 		ostd::Color fallingBlackNoteOutlineColor { 0, 0, 0 };
 		ostd::Color fallingBlackNoteGlowColor { 0, 0, 0 };
+
+		ostd::Color pianoLineColor1 = { 0, 0, 0 };
+		ostd::Color pianoLineColor2 = { 0, 0, 0 };
+
+		bool usePerNoteColors { false };
+		ostd::Color perNoteColors[36] = {
+			{ 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 },
+			{ 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 },
+			{ 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 },
+			{ 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 },
+
+			{ 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 },
+			{ 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 },
+			{ 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 },
+			{ 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 },
+
+			{ 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 },
+			{ 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 },
+			{ 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 },
+			{ 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }
+		};
+
+		enum class eNoteColor {
+			C_Main = 0, Csharp_Main, D_Main, Dsharp_Main,
+			E_Main, F_Main, Fsharp_Main, G_Main,
+			Gsharp_Main, A_Main, Asharp_Main, B_Main,
+
+			C_Outline, Csharp_Outline, D_Outline, Dsharp_Outline,
+			E_Outline, F_Outline, Fsharp_Outline, G_Outline,
+			Gsharp_Outline, A_Outline, Asharp_Outline, B_Outline,
+
+			C_Glow, Csharp_Glow, D_Glow, Dsharp_Glow,
+			E_Glow, F_Glow, Fsharp_Glow, G_Glow,
+			Gsharp_Glow, A_Glow, Asharp_Glow, B_Glow
+		};
 
 
 	public:

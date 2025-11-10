@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include <SFML/Graphics/Image.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/RenderTexture.hpp>
 #include <functional>
@@ -122,11 +123,13 @@ class VirtualPiano
 		sf::RenderTexture m_blurBuff1;
 		sf::RenderTexture m_blurBuff2;
 		sf::View m_glowView;
+		sf::Texture m_backgroundTex;
+		std::optional<sf::Sprite> m_backgroundSpr;
+		bool m_showBackground { true };
+		ostd::Vec2 m_backgroundOriginalSize { 0, 0 };
 
 		SignalListener m_sigListener;
 		VideoRenderState m_videoRenderState;
-
-		ostd::Color m_clearColor { 20, 20, 20 };
 
 	public:
 		sf::Shader noteShader;

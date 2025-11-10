@@ -21,6 +21,8 @@
 #include "Gui.hpp"
 #include <SFML/Graphics/Image.hpp>
 #include <SFML/Graphics/Sprite.hpp>
+#include <TGUI/Color.hpp>
+#include <TGUI/Widgets/ColorPicker.hpp>
 #include <algorithm>
 #include <ostd/Color.hpp>
 #include <ostd/Geometry.hpp>
@@ -30,8 +32,62 @@
 #include <ostd/Utils.hpp>
 #include "Common.hpp"
 #include "Renderer.hpp"
+#include "SFMLWindow.hpp"
 #include "VPianoDataStructures.hpp"
 #include "VirtualPiano.hpp"
+
+
+
+Gui::ColorPickerBlock& Gui::ColorPickerBlock::create(const ostd::Color& color, const ostd::String& title)
+{
+	m_color = color;
+	m_title = title;
+
+	enableSignals(true);
+	connectSignal(ostd::tBuiltinSignals::MouseReleased);
+	connectSignal(ostd::tBuiltinSignals::MouseMoved);
+	setTypeName("Gui::ColorPickerBlock");
+	validate();
+	return *this;
+}
+
+void Gui::ColorPickerBlock::handleSignal(ostd::tSignal& signal)
+{
+	auto l_contains = [this](MouseEventData& med) -> bool {
+		return this->contains((float)med.position_x, (float)med.position_y, true);
+	};
+
+	if (signal.ID == ostd::tBuiltinSignals::MouseReleased)
+	{
+		MouseEventData& med = (MouseEventData&)(signal.userData);
+		if (l_contains(med) && med.button == MouseEventData::eButton::Left)
+		{
+			m_parent.showColorPicker(m_title, m_color, { (float)med.position_x, (float)med.position_y }, [this](const ostd::Color& color){
+				this->m_color = color;
+			});
+		}
+	}
+	else if (signal.ID == ostd::tBuiltinSignals::MouseMoved)
+	{
+		MouseEventData& med = (MouseEventData&)(signal.userData);
+		if (l_contains(med))
+		{
+			m_isMouseInside = true;
+		}
+		else
+		{
+			m_isMouseInside = false;
+		}
+	}
+}
+
+void Gui::ColorPickerBlock::render(void)
+{
+	Renderer::outlineRoundedRect(*this, m_color, (m_isMouseInside ? m_borderColor_hover : m_borderColor), { 10, 10, 10, 10 }, 2);
+}
+
+
+
 
 Gui& Gui::init(WindowBase& window, VideoRenderState& videoRenderState, const ostd::String& cursorFilePath, const ostd::String& appIconFilePath, const ostd::String& themeFilePath, bool visible)
 {
@@ -130,6 +186,30 @@ void Gui::showFileDialog(const ostd::String& title, const Gui::FileDialogFilterL
 	});
 }
 
+void Gui::showColorPicker(const ostd::String& title, const ostd::Color& setColor, const ostd::Vec2& position, std::function<void(const ostd::Color&)> callback)
+{
+	if (!isValid()) return;
+	m_colorPicker->onOkPress.disconnectAll();
+	m_colorPicker->onUnfocus.disconnectAll();
+	m_colorPicker->setTitle(title.cpp_str());
+	m_colorPicker->setColor(tgui_color(setColor));
+	m_colorPicker->setPosition(position.x, position.y);
+	m_colorPicker->setWidgetName("m_colorPicker");
+	if (m_colorPicker->getParent() == nullptr)
+	    m_gui.add(m_colorPicker);
+	m_colorPicker->setVisible(true);
+	m_colorPicker->onOkPress([this, callback](const tgui::Color& color) {
+		if (!this->isValid()) return;  //This should never happen
+		callback({ color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha() });
+	});
+	m_colorPicker->onUnfocus([this](void) {
+		if (!this->isValid()) return;  //This should never happen
+		this->m_colorPicker->setVisible(false);
+		this->m_colorPicker->onOkPress.emit( this->m_colorPicker->get("m_colorPicker").get(), this->m_colorPicker->getColor() );
+	});
+	m_colorPicker->setFocused(true);
+}
+
 void Gui::showVideoRenderingGui(void)
 {
 	if (!m_videoRenderState->virtualPiano.isRenderingToFile())
@@ -181,6 +261,9 @@ void Gui::__build_gui(void)
 {
 	if (!isValid()) return;
 
+	m_colorPickerTest1.setBounds(20, 20, 100, 30);
+	m_colorPickerTest2.setBounds(20, 60, 100, 30);
+
 	m_gui.setWindow(m_window->sfWindow());
 
 	// FileDialog
@@ -189,6 +272,12 @@ void Gui::__build_gui(void)
 	m_fileDialog->setVisible(false);
 	m_fileDialog->setFileMustExist(true);
 	m_gui.add(m_fileDialog);
+
+	// Color picker
+	m_colorPicker = tgui::ColorPicker::create();
+	m_colorPicker->setRenderer(m_tguiTheme.getRenderer("ColorPicker"));
+	m_colorPicker->setVisible(false);
+	m_gui.add(m_colorPicker);
 
 	m_renderingProgressBar = tgui::ProgressBar::create();
 	m_renderingProgressBar->setRenderer(m_tguiTheme.getRenderer("ProgressBar"));
@@ -248,6 +337,9 @@ void Gui::__draw_sidebar(void)
 {
 	if (!isVisible() || m_isRenderingVideo) return;
 	Renderer::outlineRect({ 0.0f, 0.0f, Common::scaleX(600), (float)m_window->getWindowHeight()}, { 0, 0, 0, 230 }, { 230, 230, 230, 230 }, 2);
+
+	m_colorPickerTest1.render();
+	m_colorPickerTest2.render();
 }
 
 void Gui::__draw_videoRenderGui(void)

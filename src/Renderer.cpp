@@ -110,11 +110,18 @@ void Renderer::drawString(const ostd::String& str, const ostd::Vec2& position, c
 
 void Renderer::drawTexture(const sf::Texture& texture, const ostd::Vec2& position, const ostd::Vec2& scale, const ostd::Color& tint)
 {
+	if (m_window == nullptr) return;
 	sf::Sprite spr(texture);
 	spr.setPosition({ position.x, position.y });
 	spr.setScale({ scale.x, scale.y });
 	spr.setColor(sf_color(tint));
 	__draw_call(&spr);
+}
+
+void Renderer::drawSprite(const sf::Sprite& sprite)
+{
+	if (m_window == nullptr) return;
+	__draw_call(&sprite);
 }
 
 void Renderer::drawRect(const ostd::Rectangle& rect, const ostd::Color& outlineColor, int32_t outlineThickness)
@@ -210,7 +217,7 @@ void Renderer::outlineRoundedRect(const ostd::Rectangle& rect, const ostd::Color
 	__draw_call(&m_roundedRect);
 }
 
-void Renderer::__draw_call(sf::Drawable* obj)
+void Renderer::__draw_call(const sf::Drawable* obj)
 {
 	if (m_window == nullptr) return;
 	if (obj == nullptr) return;

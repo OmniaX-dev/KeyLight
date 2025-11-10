@@ -23,8 +23,8 @@
 #include "ffmpeg_helper.hpp"
 #include "ConfigManager.hpp"
 #include <SFML/Window/WindowEnums.hpp>
+#include <TGUI/Color.hpp>
 #include <ostd/Logger.hpp>
-#include <vector>
 
 void Window::onInitialize(void)
 {
@@ -36,7 +36,6 @@ void Window::onInitialize(void)
 	connectSignal(ostd::tBuiltinSignals::WindowResized);
 	connectSignal(WindowFocusLost);
 	connectSignal(WindowFocusGained);
-	setClearColor({ 255, 10, 10 });
 
 	ConfigManager::init("settings.json");
 
@@ -48,8 +47,9 @@ void Window::onInitialize(void)
 	m_windowPositionBeforeFullscreen = { (float)m_window.getPosition().x, (float)m_window.getPosition().y };
 	// enableFullscreen(true);
 	m_vpiano.init();
-	m_vpiano.loadMidiFile("res/midi/merry2.mid");
-	m_vpiano.loadAudioFile("res/music/merry2.mp3");
+	m_vpiano.loadMidiFile("res/midi/merry3.mid");
+	m_vpiano.loadAudioFile("res/music/merry3.mp3");
+	setClearColor(m_vpiano.vPianoData().backgroundColor);
 
 	m_gui.init(*this, m_vpiano.getVideoRenderState(), "themes/ui/cursor.png", "themes/ui/icon.png", "themes/Dark.txt", true);
 	m_gui.showFPS(true);
@@ -111,9 +111,12 @@ void Window::handleSignal(ostd::tSignal& signal)
 		{
 			if (!m_vpiano.isRenderingToFile())
 			{
-				m_gui.showFileDialog("Test File DIalog", { { "All file types", { "*.*" } } }, [](const std::vector<ostd::String>& fileList, bool wasCanceled){
+				// m_gui.showFileDialog("Test File DIalog", { { "All file types", { "*.*" } } }, [](const std::vector<ostd::String>& fileList, bool wasCanceled){
 
-				}, true);
+				// }, true);
+				// m_gui.showColorPicker("Test Color DIalog", { 255, 0, 0 }, [](const ostd::Color& color){
+				// 	std::cout << color << "\n";
+				// });
 			}
 		}
 	}

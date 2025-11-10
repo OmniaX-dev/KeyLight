@@ -19,6 +19,7 @@
 */
 
 #include "SFMLWindow.hpp"
+#include <SFML/Window/Mouse.hpp>
 #include <ostd/Logger.hpp>
 
 WindowBase::~WindowBase(void)
@@ -103,7 +104,6 @@ void WindowBase::handleEvents(void)
 {
 	if (!m_initialized) return;
 	auto l_getMouseState = [this](void) -> MouseEventData {
-		int32_t mx = 0, my = 0;
 		sf::Vector2i pos = sf::Mouse::getPosition(m_window);
 		bool leftPressed   = sf::Mouse::isButtonPressed(sf::Mouse::Button::Left);
 		bool rightPressed  = sf::Mouse::isButtonPressed(sf::Mouse::Button::Right);
@@ -112,7 +112,7 @@ void WindowBase::handleEvents(void)
 		if (middlePressed) button = MouseEventData::eButton::Middle;
 		if (leftPressed) button = MouseEventData::eButton::Left;
 		if (rightPressed) button = MouseEventData::eButton::Right;
-		MouseEventData mmd(*this, mx, my, button);
+		MouseEventData mmd(*this, pos.x, pos.y, button);
 		return mmd;
 	};
 	while (const std::optional event = m_window.pollEvent())
@@ -163,6 +163,13 @@ void WindowBase::handleEvents(void)
 		else if (event->is<sf::Event::MouseButtonReleased>())
 		{
 			MouseEventData mmd = l_getMouseState();
+			const auto* released = event->getIf<sf::Event::MouseButtonReleased>();
+			if (released->button == sf::Mouse::Button::Left)
+				mmd.button = MouseEventData::eButton::Left;
+			else if (released->button == sf::Mouse::Button::Right)
+				mmd.button = MouseEventData::eButton::Right;
+			else if (released->button == sf::Mouse::Button::Middle)
+				mmd.button = MouseEventData::eButton::Middle;
 			ostd::SignalHandler::emitSignal(ostd::tBuiltinSignals::MouseReleased, ostd::tSignalPriority::RealTime, mmd);
 		}
 		else if (event->is<sf::Event::KeyPressed>())
