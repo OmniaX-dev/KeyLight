@@ -52,6 +52,8 @@ class Common
 	    inline static float guiScaleX { 1.0f };
 	    inline static float guiScaleY { 1.0f };
 
+		inline static double deltaTime { 1 };
+
 	#ifdef BUILD_CONFIG_DEBUG
 		inline static constexpr bool IsDebug = true;
 	#else

@@ -58,7 +58,8 @@ if [ "$(expr substr $(uname -s) 1 10)" == "MINGW64_NT" ]; then
     # Setup environment
     pacman -Syuu --noconfirm
     pacman -S --noconfirm --needed base-devel mingw-w64-ucrt-x86_64-clang mingw-w64-ucrt-x86_64-gdb \
-    							   mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-make mingw-w64-ucrt-x86_64-boost
+    							   mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-make mingw-w64-ucrt-x86_64-boost \
+              					   mingw-w64-ucrt-x86_64-glm
 
     # Build SFML3
     pacman -S --noconfirm --needed git cmake ninja mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-libvorbis \
@@ -104,7 +105,8 @@ elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
 	    sudo pacman -S --noconfirm --needed base-devel clang gdb cmake \
 											make boost sdl2 sdl2_mixer sdl2_image \
 											sdl2_ttf sdl2_gfx ninja gcc libvorbis \
-											flac libogg openal freetype2 libjpeg-turbo
+											flac libogg openal freetype2 libjpeg-turbo \
+											glm
 	    ;;
 	  apt) # Debian Based ==================================================================================================
 	    sudo apt update
@@ -113,7 +115,7 @@ elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
 	      libsdl2-dev libsdl2-mixer-dev libsdl2-image-dev \
 	      libsdl2-ttf-dev libsdl2-gfx-dev libxcb-randr0-dev libsfml-dev \
 		  ninja-build g++ libvorbis-dev libflac-dev libogg-dev libopenal-dev \
-		  libfreetype-dev libjpeg-dev
+		  libfreetype-dev libjpeg-dev libglm-dev
 	    ;;
 	  dnf) # Fedora ==================================================================================================
 	    sudo dnf install -y clang gdb make cmake boost-devel SDL2-devel \
@@ -122,7 +124,7 @@ elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
 							libvorbis-devel flac-devel libogg-devel \
 							openal-soft-devel freetype-devel libjpeg-turbo-devel \
 							libX11-devel libXrandr-devel libXcursor-devel \
-							libXi-devel systemd-devel ncurses-devel
+							libXi-devel systemd-devel ncurses-devel glm-devel
 	    ;;
 	  *)
 	    echo "Unsupported distro. Supported distros are: Arch, EndeavourOS, Garuda, Manjaro, Ubuntu, Mint, Debian, Fedora."

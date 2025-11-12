@@ -23,6 +23,7 @@
 #include <ostd/BaseObject.hpp>
 #include <ostd/IOHandlers.hpp>
 #include <ostd/Signals.hpp>
+#include <ostd/Time.hpp>
 
 #include <SFML/Graphics.hpp>
 #include <ogfx/SDLInclude.hpp>
@@ -38,7 +39,6 @@ class WindowBase : public ostd::BaseObject
 		inline WindowBase(int32_t width, int32_t height, const ostd::String& windowTitle) { initialize(width, height, windowTitle); }
 		void initialize(int32_t width, int32_t height, const ostd::String& windowTitle);
 		void close(void);
-
 		void update(void);
 		void setSize(int32_t width, int32_t height);
 		void syncWindowSize(void);
@@ -46,8 +46,7 @@ class WindowBase : public ostd::BaseObject
 
 		inline virtual void onRender(void) { }
 		inline virtual void onUpdate(void) { }
-		inline virtual void onFixedUpdate(void) { }
-		inline virtual void onSlowUpdate(void) { }
+		inline virtual void onFixedUpdate(double frameTime_s) { }
 		inline virtual void onInitialize(void) { }
 		inline virtual void onDestroy(void) { }
 		inline virtual void onClose(void) { }
@@ -66,29 +65,31 @@ class WindowBase : public ostd::BaseObject
 		inline ostd::Color getClearColor(void) const { return m_clearColor; }
 		inline void	setClearColor(const ostd::Color& color) { m_clearColor = color; }
 		inline sf::RenderWindow& sfWindow(void) { return m_window; }
+
+	protected:
 		void __update_local_window_size(uint32_t width, uint32_t height);
 
 	private:
-		void handleEvents(void);
+		void __handle_events(void);
+
 
 	protected:
-		ostd::ConsoleOutputHandler out;
-
 		sf::RenderWindow m_window;
-		bool m_refreshScreen { true };
 
 	private:
+		ostd::Color m_clearColor { 0, 0, 0, 255 };
+
 		int32_t	m_windowWidth { 0 };
 		int32_t	m_windowHeight { 0 };
 		ostd::String m_title { "" };
 		int32_t	m_fps { 0 };
 
-		sf::Clock m_clock;
 
-		ostd::Color m_clearColor { 10, 10, 10, 255 };
-
-		float m_timeAccumulator { 0.0f };
-		float m_redrawAccumulator { 0.0f };
+		ostd::StepTimer m_fixedUpdateTImer;
+		ostd::StepTimer m_fpsUpdateTimer;
+		sf::Clock m_fpsUpdateClock;
+		double m_frameTimeAcc { 0.0 };
+		int32_t m_frameCount { 0 };
 
 		bool m_deagEventEnabled { false };
 		bool m_running { false };

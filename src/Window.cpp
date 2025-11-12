@@ -19,9 +19,12 @@
 */
 
 #include "Window.hpp"
+#include "Common.hpp"
 #include "Renderer.hpp"
 #include "ffmpeg_helper.hpp"
 #include "ConfigManager.hpp"
+#include <SFML/Graphics/Texture.hpp>
+#include <SFML/Graphics/VertexArray.hpp>
 #include <SFML/Window/WindowEnums.hpp>
 #include <TGUI/Color.hpp>
 #include <ostd/Logger.hpp>
@@ -155,13 +158,15 @@ void Window::onRender(void)
 	m_gui.draw();
 }
 
-void Window::onFixedUpdate(void)
+void Window::onFixedUpdate(double frameTime_s)
 {
+	m_vpiano.update();
 }
 
 void Window::onUpdate(void)
 {
-	m_vpiano.update();
+	Common::deltaTime = m_frameClock.restart().asSeconds();
+	m_vpiano.fastUpdate();
 }
 
 void Window::enableFullscreen(bool enable)

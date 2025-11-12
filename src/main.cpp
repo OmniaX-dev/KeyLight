@@ -18,12 +18,9 @@
     along with KeyLight.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <ostd/IOHandlers.hpp>
 #include <csignal>
 #include <ostd/Logger.hpp>
-#include <ostd/Signals.hpp>
 
-#include "Common.hpp"
 #include "Window.hpp"
 #include "ffmpeg_helper.hpp"
 

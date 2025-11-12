@@ -36,6 +36,7 @@
 #include <vector>
 #include "VPianoDataStructures.hpp"
 #include "ffmpeg_helper.hpp"
+#include "Particles.hpp"
 
 class Window;
 class VirtualPiano
@@ -60,6 +61,7 @@ class VirtualPiano
 
 		// Update and Render
 		void update(void);
+		void fastUpdate(void);
 		void calculateFallingNotes(double currentTime);
 		void updateVisualization(double currentTime);
 		void render(std::optional<std::reference_wrapper<sf::RenderTarget>> target = std::nullopt);
@@ -131,10 +133,19 @@ class VirtualPiano
 		SignalListener m_sigListener;
 		VideoRenderState m_videoRenderState;
 
+		ParticleEmitter m_part;
+		std::any m_partTex;
+		TextureRef m_partTexRef;
+		std::vector<TextureRef::TextureAtlasIndex> m_partTiles;
+		ParticleEmitter m_snow;
+		uint32_t m_windCounter { 0 };
+		ostd::Vec2 m_wind { 0.0f, 0.0f };
+
 	public:
 		sf::Shader noteShader;
 		sf::Shader blurShader;
 		sf::Shader flipShader;
+		sf::Shader particleShader;
 		sf::Texture noteTexture;
 
 	public:

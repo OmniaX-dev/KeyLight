@@ -22,6 +22,7 @@
 
 #include "SFMLWindow.hpp"
 #include "VirtualPiano.hpp"
+#include <SFML/Graphics/Texture.hpp>
 #include <ostd/Defines.hpp>
 #include <ostd/Signals.hpp>
 #include <ostd/Utils.hpp>
@@ -37,8 +38,8 @@ class Window : public WindowBase
 		void handleSignal(ostd::tSignal& signal) override;
 		void onEventPoll(const std::optional<sf::Event>& event) override;
 		void onRender(void) override;
-		void onFixedUpdate(void) override;
 		void onUpdate(void) override;
+		void onFixedUpdate(double frameTime_s) override;
 		void enableFullscreen(bool enable = true);
 		void enableResizeable(bool enable = true);
 
@@ -55,4 +56,5 @@ class Window : public WindowBase
 		bool m_lockFullscreenStatus { false };
 		VirtualPiano m_vpiano;
 		Gui m_gui;
+		sf::Clock m_frameClock;
 };

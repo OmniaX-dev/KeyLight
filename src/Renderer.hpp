@@ -22,6 +22,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <ostd/Color.hpp>
+#include "Particles.hpp"
 #include "SFMLWindow.hpp"
 #include "RoundedRectangleShape.hpp"
 
@@ -49,6 +50,7 @@ class Renderer
 		static void drawString(const ostd::String& str, const ostd::Vec2& position, const ostd::Color& color, uint32_t font_size);
 		static void drawTexture(const sf::Texture& texture, const ostd::Vec2& position = { 0, 0 }, const ostd::Vec2& scale = { 1.0f, 1.0f }, const ostd::Color& tint = { 255, 255, 255, 255 });
 		static void drawSprite(const sf::Sprite& sprite);
+		static void drawParticleSysten(ParticleEmitter& emitter);
 
 		static void drawRect(const ostd::Rectangle& rect, const ostd::Color& outlineColor, int32_t outlineThickness = -1);
 		static void fillRect(const ostd::Rectangle& rect, const ostd::Color& fillColor);

@@ -37,6 +37,7 @@
 #include "Window.hpp"
 #include "Renderer.hpp"
 #include "ffmpeg_helper.hpp"
+#include <ostd/Random.hpp>
 
 
 // VirtualPianoData
@@ -159,6 +160,8 @@ void VirtualPiano::init(void)
 		OX_ERROR("Failed to load shader");
 	if (!flipShader.loadFromFile("shaders/flip.vert", "shaders/flip.frag"))
 		OX_ERROR("Failed to load shader");
+	if (!particleShader.loadFromFile("shaders/particle.vert", "shaders/particle.frag"))
+		OX_ERROR("Failed to load shader");
 	if (!noteTexture.loadFromFile("res/tex/note.png"))
 		OX_ERROR("Failed to load texture");
 	noteTexture.setRepeated(true);
@@ -218,6 +221,21 @@ void VirtualPiano::init(void)
 			m_vPianoData.perNoteColors[i + 24] = { 255, 230, 150 };
 		}
 	}
+
+	m_partTex = sf::Texture("res/tex/simpleParticle.png");
+	sf::Texture& tex = std::any_cast<sf::Texture&>(m_partTex);
+	if (!m_partTex.has_value())
+		OX_ERROR("Unable To load texture: %s", "res/tex/simpleParticle.png");
+
+	m_partTexRef.attachTexture(m_partTex, tex.getSize().x, tex.getSize().y);
+	m_partTiles.push_back(m_partTexRef.addTileInfo(0, 0, 32, 32));
+	m_partTiles.push_back(m_partTexRef.addTileInfo(32, 0, 32, 32));
+	m_partTiles.push_back(m_partTexRef.addTileInfo(64, 0, 32, 32));
+	m_partTiles.push_back(m_partTexRef.addTileInfo(96, 0, 32, 32));
+	m_partTiles.push_back(m_partTexRef.addTileInfo(128, 0, 32, 32));
+	m_partTiles.push_back(m_partTexRef.addTileInfo(160, 0, 32, 32));
+	m_snow = ParticleFactory::basicSnowEmitter({ &m_partTexRef, m_partTiles[0] }, { (float)winSize.x, (float)winSize.y }, 0);
+	m_snow.getDefaultParticleInfo().size = { 16, 16 };
 }
 
 void VirtualPiano::onWindowResized(uint32_t width, uint32_t height)
@@ -233,6 +251,9 @@ void VirtualPiano::onWindowResized(uint32_t width, uint32_t height)
 	ostd::Vec2 scale = { m_backgroundOriginalSize.x / (float)width, m_backgroundOriginalSize.y / (float)height };
 	scale = { 1.0f / scale.x, 1.0f / scale.y };
 	m_backgroundSpr->setScale({ scale.x, scale.y });
+
+	m_snow.setEmissionRect(ostd::Rectangle(0, 0, (float)width, 1.0f));
+	m_snow.setWorkingRectangle({ 0, 0, (float)width, (float)height });
 }
 
 
@@ -384,6 +405,17 @@ void VirtualPiano::update(void)
 	{
 		updateVisualization(getPlayTime_s());
 	}
+	m_snow.emit(ostd::Random::geti32(0, 2));
+}
+
+void VirtualPiano::fastUpdate(void)
+{
+	if (m_windCounter++ > 1000)
+	{
+		m_windCounter = 0;
+		m_wind.x = ostd::Random::getf32(-0.03f, 0.03f);
+	}
+	m_snow.update(m_wind);
 }
 
 void VirtualPiano::calculateFallingNotes(double currentTime)
@@ -752,6 +784,13 @@ void VirtualPiano::__render_frame(std::optional<std::reference_wrapper<sf::Rende
 	{
 		Renderer::drawSprite(*m_backgroundSpr);
 	}
+	Renderer::useShader(&particleShader);
+	auto& tex = std::any_cast<sf::Texture&>(m_partTex);
+	particleShader.setUniform("u_texture", tex);
+	Renderer::useTexture(&tex);
+	Renderer::drawParticleSysten(m_snow);
+	Renderer::useShader(nullptr);
+	Renderer::useTexture(nullptr);
 	Renderer::drawTexture(m_blurBuff2.getTexture(), { 0, 0 }, 2);
 
 	for (const auto& note : m_fallingNoteGfx_w)

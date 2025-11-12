@@ -37,7 +37,19 @@ void WindowBase::initialize(int32_t width, int32_t height, const ostd::String& w
 	m_initialized = true;
 	m_running = true;
 
-	setTypeName("dragon::WindowBase");
+	m_fixedUpdateTImer.create(60.0, [this](double frameTime_s){
+		this->onFixedUpdate(frameTime_s);
+	});
+
+	m_fpsUpdateTimer.create(1.0, [this](double frameTime_s){
+		if (this->m_frameCount == 0) return;
+		if (this->m_frameTimeAcc == 0) return;
+		this->m_fps = (int32_t)(1.0f / (this->m_frameTimeAcc / static_cast<double>(this->m_frameCount)));
+		this->m_frameTimeAcc = 0;
+		this->m_frameCount = 0;
+	});
+
+	setTypeName("WindowBase");
 	enableSignals(true);
 	validate();
 
@@ -54,30 +66,15 @@ void WindowBase::close(void)
 void WindowBase::update(void)
 {
 	if (!m_initialized) return;
-	int64_t start = m_clock.getElapsedTime().asMicroseconds();
-	handleEvents();
-	if (m_refreshScreen)
-		m_window.clear({ m_clearColor.r, m_clearColor.g, m_clearColor.b, m_clearColor.a });
+	__handle_events();
+	m_window.clear({ m_clearColor.r, m_clearColor.g, m_clearColor.b, m_clearColor.a });
+	m_fixedUpdateTImer.update();
 	onUpdate();
 	onRender();
 	m_window.display();
-	int64_t end = m_clock.getElapsedTime().asMicroseconds();
-	double elapsed = (end - start) / (double)1'000'000.0;
-	m_redrawAccumulator += elapsed;
-	if (m_redrawAccumulator >= 0.2f)
-	{
-		onFixedUpdate();
-		m_redrawAccumulator = 0.0f;
-	}
-	end = m_clock.getElapsedTime().asMicroseconds();
-	elapsed = (end - start) / (double)1'000'000.0;
-	m_timeAccumulator += elapsed;
-	if (m_timeAccumulator >= 0.5f)
-	{
-		onSlowUpdate();
-		m_fps = (int32_t)(1.0f / elapsed);
-		m_timeAccumulator = 0.0f;
-	}
+	m_frameTimeAcc += m_fpsUpdateClock.restart().asSeconds();
+	m_frameCount++;
+	m_fpsUpdateTimer.update();
 }
 
 void WindowBase::setSize(int32_t width, int32_t height)
@@ -100,9 +97,9 @@ void WindowBase::setTitle(const ostd::String& title)
 	m_window.setTitle(m_title.cpp_str());
 }
 
-void WindowBase::handleEvents(void)
+void WindowBase::__handle_events(void)
 {
-	if (!m_initialized) return;
+	if (!isInitialized()) return;
 	auto l_getMouseState = [this](void) -> MouseEventData {
 		sf::Vector2i pos = sf::Mouse::getPosition(m_window);
 		bool leftPressed   = sf::Mouse::isButtonPressed(sf::Mouse::Button::Left);
@@ -118,7 +115,6 @@ void WindowBase::handleEvents(void)
 	while (const std::optional event = m_window.pollEvent())
 	{
 		onEventPoll(event);
-		// Close window: exit
 		if (event->is<sf::Event::Closed>())
 		{
 			m_running = false;
@@ -129,22 +125,18 @@ void WindowBase::handleEvents(void)
 		{
 			const auto* resized = event->getIf<sf::Event::Resized>();
 			WindowResizedData wrd(*this, m_windowWidth, m_windowHeight, 0, 0);
-			// OX_INFO("OLD SIZE: %d,%d", m_windowWidth, m_windowHeight);
 			m_windowWidth = resized->size.x;
 			m_windowHeight = resized->size.y;
-			// OX_INFO("NEW SIZE: %d,%d\n", m_windowWidth, m_windowHeight);
 			wrd.new_width = m_windowWidth;
 			wrd.new_height = m_windowHeight;
 			ostd::SignalHandler::emitSignal(ostd::tBuiltinSignals::WindowResized, ostd::tSignalPriority::RealTime, wrd);
 		}
 		else if (event->is<sf::Event::FocusLost>())
 		{
-			// const auto* focus = event->getIf<sf::Event::Resized>();
 			ostd::SignalHandler::emitSignal(WindowFocusLost, ostd::tSignalPriority::RealTime, *this);
 		}
 		else if (event->is<sf::Event::FocusGained>())
 		{
-			// const auto* focus = event->getIf<sf::Event::Resized>();
 			ostd::SignalHandler::emitSignal(WindowFocusGained, ostd::tSignalPriority::RealTime, *this);
 		}
 		else if (event->is<sf::Event::MouseMoved>())

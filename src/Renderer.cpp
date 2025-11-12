@@ -135,6 +135,12 @@ void Renderer::drawRect(const ostd::Rectangle& rect, const ostd::Color& outlineC
 	__draw_call(&m_rect);
 }
 
+void Renderer::drawParticleSysten(ParticleEmitter& emitter)
+{
+	if (m_window == nullptr) return;
+	__draw_call(&(emitter.getVertexArray()));
+}
+
 void Renderer::fillRect(const ostd::Rectangle& rect, const ostd::Color& fillColor)
 {
 	if (m_window == nullptr) return;

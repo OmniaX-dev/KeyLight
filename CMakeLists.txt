@@ -30,6 +30,7 @@ list(APPEND INCLUDE_DIRS
 	${CMAKE_CURRENT_LIST_DIR}/vendor/midifile
 )
 list(APPEND SOURCE_FILES
+	# MidiFile
 	${CMAKE_CURRENT_LIST_DIR}/src/vendor/midifile/Binasc.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/vendor/midifile/MidiEvent.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/vendor/midifile/MidiEventList.cpp
@@ -37,7 +38,7 @@ list(APPEND SOURCE_FILES
 	${CMAKE_CURRENT_LIST_DIR}/src/vendor/midifile/MidiMessage.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/vendor/midifile/Options.cpp
 
-
+	# ========================================== Main Code ==========================================
 	${CMAKE_CURRENT_LIST_DIR}/src/main.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/MidiParser.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/Window.cpp
@@ -48,6 +49,7 @@ list(APPEND SOURCE_FILES
 	${CMAKE_CURRENT_LIST_DIR}/src/Gui.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/ffmpeg_helper.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/ConfigManager.cpp
+	${CMAKE_CURRENT_LIST_DIR}/src/Particles.cpp
 )
 #-----------------------------------------------------------------------------------------
 
