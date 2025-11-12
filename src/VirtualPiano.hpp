@@ -91,6 +91,7 @@ class VirtualPiano
 		void __stream_frame_to_ffmpeg(void);
 		void __render_next_output_frame(void);
 		void __finish_output_render(void);
+		void __load_resources(void);
 
 	private:
 		Window& m_parentWindow;

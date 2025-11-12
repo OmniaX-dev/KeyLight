@@ -154,13 +154,13 @@ void VirtualPiano::init(void)
 		pk.pressed = false;
 		m_pianoKeys.push_back(pk);
 	}
-	if (!noteShader.loadFromFile("shaders/note.vert", "shaders/note.frag"))
+	if (!noteShader.loadFromFile("shaders/basic.vert", "shaders/note.frag"))
 		OX_ERROR("Failed to load shader");
-	if (!blurShader.loadFromFile("shaders/note.vert", "shaders/blur.frag"))
+	if (!blurShader.loadFromFile("shaders/basic.vert", "shaders/blur.frag"))
 		OX_ERROR("Failed to load shader");
-	if (!flipShader.loadFromFile("shaders/flip.vert", "shaders/flip.frag"))
+	if (!flipShader.loadFromFile("shaders/basic.vert", "shaders/flip.frag"))
 		OX_ERROR("Failed to load shader");
-	if (!particleShader.loadFromFile("shaders/particle.vert", "shaders/particle.frag"))
+	if (!particleShader.loadFromFile("shaders/basic.vert", "shaders/particle.frag"))
 		OX_ERROR("Failed to load shader");
 	if (!noteTexture.loadFromFile("res/tex/note.png"))
 		OX_ERROR("Failed to load texture");
@@ -1031,4 +1031,9 @@ void VirtualPiano::__finish_output_render(void)
 	            OX_ERROR("FFmpeg failed with exit code: %d", exit_code);
 	    }
 	}
+}
+
+void VirtualPiano::__load_resources(void)
+{
+
 }
