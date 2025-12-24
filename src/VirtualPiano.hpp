@@ -140,10 +140,6 @@ class VirtualPiano
 		std::any m_partTex;
 		TextureRef m_partTexRef;
 		std::vector<TextureRef::TextureAtlasIndex> m_partTiles;
-		uint32_t m_windCounter { 0 };
-		ostd::Vec2 m_wind { 0.0f, 0.0f };
-		ParticleEmitter m_snow;
-		// ParticleEmitter m_fire;
 
 	public:
 		sf::Shader noteShader;

@@ -165,7 +165,7 @@ void Particle::setup(tParticleInfo partInfo)
 	velocityDamping = { 0, 0 };
 
 	float angle = partInfo.angle;
-	if (partInfo.allDirectionos)
+	if (partInfo.allDirections)
 		angle = ostd::Random::getf32(0.0f, 360.0f);
 	float dirVar = angle * partInfo.randomDirection;
 	angle += ostd::Random::getf32(-dirVar, dirVar);
@@ -192,20 +192,13 @@ void Particle::setup(tParticleInfo partInfo)
 	size = partInfo.size;
 	ostd::Vec2 sizeVar { size.x * partInfo.randomSize.x, size.y * partInfo.randomSize.y };
 	size.x += ostd::Random::getf32(-sizeVar.x, sizeVar.x);
-	if (partInfo.square)
-		size.y = size.x;
-	else
-		size.y += ostd::Random::getf32(-sizeVar.y, sizeVar.y);
+	size.y += ostd::Random::getf32(-sizeVar.y, sizeVar.y);
 
 	if (partInfo.randomDamping)
 	{
 		velocityDamping.x += ostd::Random::getf32(0, partInfo.damping.x);
 		velocityDamping.y += ostd::Random::getf32(0, partInfo.damping.y);
 	}
-
-	rotationStep = partInfo.rotationStep;
-	float rotVar = rotationStep * partInfo.randomRotation;
-	rotationStep += ostd::Random::getf32(-rotVar, rotVar);
 
 	texture = partInfo.texture;
 	tileIndex = partInfo.tileIndex;
@@ -385,40 +378,6 @@ void ParticleEmitter::update(const ostd::Vec2& force)
 
         k++;
 	}
-	// m_vertexArray.clear();
-	// for (uint32_t i = 0, k = 0; i < m_particleCount; i++)
-	// {
-	// 	auto& part = m_particles[i];
-	// 	if (part.isDead()) continue;
-
- //        size_t v = k * 6;
-
- //        for (int j = 0; j < 6; ++j)
- //        {
- //        	m_vertexArray.append(sf::Vertex());
- //        	m_vertexArray[v + j].color = sf_color(part.color);
- //        }
-
- //        m_vertexArray[v + 0].position = { part.position.x, part.position.y };
- //        m_vertexArray[v + 1].position = { part.position.x + part.size.x, part.position.y };
- //        m_vertexArray[v + 2].position = { part.position.x, part.position.y + part.size.y };
- //        m_vertexArray[v + 3].position = { part.position.x + part.size.x, part.position.y };
- //        m_vertexArray[v + 4].position = { part.position.x + part.size.x, part.position.y + part.size.y };
- //        m_vertexArray[v + 5].position = { part.position.x, part.position.y + part.size.y };
-
- //        TextureRef::tTexCoords uv;
- //       	if (part.texture != nullptr)
- //        	uv = part.texture->getTile(part.tileIndex);
-
- //        m_vertexArray[v + 0].texCoords = { uv.topLeft.x,     uv.topLeft.y     };     // TL
- //        m_vertexArray[v + 1].texCoords = { uv.topRight.x,    uv.topRight.y    };    // TR
- //        m_vertexArray[v + 2].texCoords = { uv.bottomLeft.x,  uv.bottomLeft.y  };  // BL
- //        m_vertexArray[v + 3].texCoords = { uv.topRight.x,    uv.topRight.y    };    // TR
- //        m_vertexArray[v + 4].texCoords = { uv.bottomRight.x, uv.bottomRight.y }; // BR
- //        m_vertexArray[v + 5].texCoords = { uv.bottomLeft.x,  uv.bottomLeft.y  };  // BL
-
- //        k++;
-	// }
 }
 
 void ParticleEmitter::emit(tParticleInfo partInfo, int32_t count)

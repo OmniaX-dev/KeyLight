@@ -50,6 +50,7 @@ list(APPEND SOURCE_FILES
 	${CMAKE_CURRENT_LIST_DIR}/src/ffmpeg_helper.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/JSONManager.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/Particles.cpp
+	${CMAKE_CURRENT_LIST_DIR}/src/VPianoResources.cpp
 )
 #-----------------------------------------------------------------------------------------
 

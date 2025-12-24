@@ -152,7 +152,6 @@ void VirtualPiano::init(void)
 	m_paused = false;
 	m_firstNotePlayed = false;
 	m_config.init("settings.json", &Common::DefaultSettingsJSON);
-	std::cout << m_config.get_string("settings.ffmpegPath") << "\n";
 
 	__load_resources();
 
@@ -164,22 +163,11 @@ void VirtualPiano::init(void)
 
 		pk.particles = ParticleFactory::basicFireEmitter({ &m_partTexRef, m_partTiles[0] }, { 0, 0 }, 0);
 		pk.particles.useTileArray(true);
-		// pk.particles.getDefaultParticleInfo().speed = 140;
 		pk.particles.setMaxParticleCount(2500);
-		// pk.particles.getDefaultParticleInfo().lifeSpan = 1200;
 		pk.particles.addTilesToArray(m_partTiles);
 
 		auto& partInfo = pk.particles.getDefaultParticleInfo();
 		ParticleFactory::createColorGradient(partInfo, ostd::Color("#FF3D6AFF"), 10);
-		// partInfo.colorRamp.reset();
-		// partInfo.colorRamp.m_colors.clear();
-		// partInfo.addColorToGradient(ostd::Color("#001A0CFF"),   ostd::Color("#004721FF"),  0.15f);
-		// partInfo.addColorToGradient(ostd::Color("#004721FF"),   ostd::Color("#007537FF"),  0.15f);
-		// partInfo.addColorToGradient(ostd::Color("#007537FF"),   ostd::Color("#00A34CFF"),  0.15f);
-		// partInfo.addColorToGradient(ostd::Color("#00A34CFF"),   ostd::Color("#00D162FF"),  0.15f);
-		// partInfo.addColorToGradient(ostd::Color("#00D162FF"),   ostd::Color("#00FF77FF"),  0.15f);
-		// partInfo.addColorToGradient(ostd::Color("#00FF77FF"),   ostd::Color("#2EFF8FFF"),  0.15f);
-		// partInfo.addColorToGradient(ostd::Color("#2EFF8FFF"),   ostd::Color("#5CFFA8FF"),  0.1f);
 		partInfo.size = { 12.0f, 12.0f };
 		partInfo.speed = 2.6f;
 		partInfo.randomVelocity = { 0.25f, 0.7f };
@@ -248,8 +236,6 @@ void VirtualPiano::init(void)
 	// 		m_vPianoData.perNoteColors[i + 24] = { 255, 230, 150 };
 	// 	}
 	// }
-	m_snow = ParticleFactory::basicSnowEmitter({ &m_partTexRef, m_partTiles[0] }, { (float)winSize.x, (float)winSize.y }, 000);
-	// m_snow.getDefaultParticleInfo().size = { 16, 16 };
 }
 
 void VirtualPiano::onWindowResized(uint32_t width, uint32_t height)
@@ -440,13 +426,6 @@ void VirtualPiano::update(void)
 			}
 		}
 	}
-	if (m_windCounter++ > 120)
-	{
-		m_windCounter = 0;
-		m_wind.x = ostd::Random::getf32(0.0f, 0.7f);
-	}
-	// m_snow.update(m_wind / 5.0f);
-	// m_snow.emit(ostd::Random::geti32(0, 2));
 }
 
 void VirtualPiano::fastUpdate(void)
@@ -1147,6 +1126,7 @@ void VirtualPiano::__load_resources(void)
 		OX_ERROR("Unable To load texture: %s", "res/tex/simpleParticle.png");
 
 	m_partTexRef.attachTexture(m_partTex, tex.getSize().x, tex.getSize().y);
+	m_partTiles.clear();
 	m_partTiles.push_back(m_partTexRef.addTileInfo(0, 0, 32, 32));
 	m_partTiles.push_back(m_partTexRef.addTileInfo(32, 0, 32, 32));
 	m_partTiles.push_back(m_partTexRef.addTileInfo(64, 0, 32, 32));

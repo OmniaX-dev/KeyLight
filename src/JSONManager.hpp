@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include <ostd/Geometry.hpp>
 #include <ostd/String.hpp>
 #include <ostd/Color.hpp>
 #include "vendor/nlohmann/json.hpp" // IWYU pragma: keep
@@ -28,11 +29,6 @@ using json = nlohmann::json;
 
 class JSONManager
 {
-	// public: struct Settings
-	// {
-	// 	inline static const ostd::String useDefaultFFMPEG = "useSystenFFMPEG";
-	// 	inline static const ostd::String ffmpegPath = "ffmpegPath";
-	// };
 	public:
 		inline JSONManager(void) { m_loaded = false; }
 		inline JSONManager(const ostd::String& filePath) { init(filePath); }
@@ -48,9 +44,12 @@ class JSONManager
         double get_double(const ostd::String& name);
         ostd::String get_string(const ostd::String& name);
         ostd::Color get_color(const ostd::String& name);
+        ostd::Rectangle get_rect(const ostd::String& name);
         std::vector<int32_t> get_int_array(const ostd::String& name);
         std::vector<double> get_double_array(const ostd::String& name);
         std::vector<ostd::String> get_string_array(const ostd::String& name);
+        std::vector<ostd::Color> get_color_array(const ostd::String& name);
+        std::vector<ostd::Rectangle> get_rect_array(const ostd::String& name);
 
         // --- SETTERS ---
        	bool set_bool(const ostd::String& name, bool value);
@@ -58,9 +57,12 @@ class JSONManager
         bool set_double(const ostd::String& name, double value);
         bool set_string(const ostd::String& name, const ostd::String& value);
         bool set_color(const ostd::String& name, const ostd::Color& value);
+        bool set_rect(const ostd::String& name, const ostd::Rectangle& value);
         bool set_int_array(const ostd::String& name, const std::vector<int32_t>& value);
         bool set_double_array(const ostd::String& name, const std::vector<double>& value);
         bool set_string_array(const ostd::String& name, const std::vector<ostd::String>& value);
+        bool set_color_array(const ostd::String& name, const std::vector<ostd::Color>& value);
+        bool set_rect_array(const ostd::String& name, const std::vector<ostd::Rectangle>& value);
 
 	private:
 		void __validate_settings(void);

@@ -1,0 +1,109 @@
+{
+	"style": {
+		"colors": {
+			"fallingWhiteNote": "#FFB0F7FF",
+			"fallingWhiteNoteOutline": "#FFB0F7FF",
+			"fallingWhiteNoteGlow": "#FFB0F7FF",
+			"fallingBlackNote": "#63132EFF",
+			"fallingBlackNoteOutline": "#63132EFF",
+			"fallingBlackNoteGlow": "#63132EFF",
+			"background": "#0A0205FF",
+			"whiteKeyPressed": "#FF7ACEFF",
+			"blackKeyPressed": "#873568FF",
+			"whiteKey": [200, 200, 200],
+			"blackKey": [20, 20, 20],
+			"whiteKeySeparator": [0, 0, 0],
+			"blackKeySeparator": [0, 0, 0],
+			"pianoLine1": [60, 10, 10],
+			"pianoLine2": [160, 10, 10],
+			"perNote": {
+				"C": {
+					"main": [0, 0, 0],
+					"outline": [0, 0, 0],
+					"glow": [0, 0, 0]
+				},
+				"C#": {
+					"main": [0, 0, 0],
+					"outline": [0, 0, 0],
+					"glow": [0, 0, 0]
+				},
+				"D": {
+					"main": [0, 0, 0],
+					"outline": [0, 0, 0],
+					"glow": [0, 0, 0]
+				},
+				"D#": {
+					"main": [0, 0, 0],
+					"outline": [0, 0, 0],
+					"glow": [0, 0, 0]
+				},
+				"E": {
+					"main": [0, 0, 0],
+					"outline": [0, 0, 0],
+					"glow": [0, 0, 0]
+				},
+				"F": {
+					"main": [0, 0, 0],
+					"outline": [0, 0, 0],
+					"glow": [0, 0, 0]
+				},
+				"F#": {
+					"main": [0, 0, 0],
+					"outline": [0, 0, 0],
+					"glow": [0, 0, 0]
+				},
+				"G": {
+					"main": [0, 0, 0],
+					"outline": [0, 0, 0],
+					"glow": [0, 0, 0]
+				},
+				"G#": {
+					"main": [0, 0, 0],
+					"outline": [0, 0, 0],
+					"glow": [0, 0, 0]
+				},
+				"A": {
+					"main": [0, 0, 0],
+					"outline": [0, 0, 0],
+					"glow": [0, 0, 0]
+				},
+				"A#": {
+					"main": [0, 0, 0],
+					"outline": [0, 0, 0],
+					"glow": [0, 0, 0]
+				},
+				"B": {
+					"main": [0, 0, 0],
+					"outline": [0, 0, 0],
+					"glow": [0, 0, 0]
+				}
+			}
+		},
+		"dimensions": {
+			"whiteKeyWidth": 40.0,
+			"whiteKeyHeightMultiplier": 8.0,
+			"blackKeyWidth": 40.0,
+			"blackKeyHeightMultiplier": 9.0,
+			"blackKeyOffset": 4.0,
+			"virtualPianoX": 0.0,
+			"glowMargins": [4, 4, 4, 4],
+			"whiteKeyShrinkFactor": 8.0,
+			"blackKeyShrinkFactor": 0.0,
+			"fallingWhiteNoteOutlineWidth": 2,
+			"fallingWhiteNoteBorderRadius": 5.0,
+			"fallingBlackNoteOutlineWidth": 2,
+			"fallingBlackNoteBorderRadius": 5.0,
+			"textureCoordsPosition": [0.0, 0.0],
+			"textureCoordsScale": [1.0, 1.0],
+			"pixelsPerSecond": 250.0,
+			"noteFallingTime_seconds": 4.5
+		},
+		"particles": {
+			"configFile": "styles/particles/Default.json",
+			"pressedVelocityMultiplier": 8.0
+		},
+		"usePerNoteColors": false,
+		"noteTextureFile": "res/tex/note.png",
+		"backgroundTextureFile": ""
+	}
+}

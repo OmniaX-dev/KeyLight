@@ -21,6 +21,7 @@
 #include "JSONManager.hpp"
 #include <fstream>
 #include <ostd/File.hpp>
+#include <ostd/Geometry.hpp>
 #include <ostd/Logger.hpp>
 #include <ostd/String.hpp>
 #include <ostd/Utils.hpp>
@@ -39,7 +40,6 @@ namespace detail
 	        catch (const json::exception&) { return false; }
 	    }
 	};
-
 	// ----- int ----------------------------------------------------------
 	template<> struct Getter<int>
 	{
@@ -49,7 +49,6 @@ namespace detail
 	        catch (const json::exception&) { return 0; }
 	    }
 	};
-
 	// ----- double -------------------------------------------------------
 	template<> struct Getter<double>
 	{
@@ -59,7 +58,6 @@ namespace detail
 	        catch (const json::exception&) { return 0.0; }
 	    }
 	};
-
 	// ----- ostd::String -------------------------------------------------
 	template<> struct Getter<ostd::String>
 	{
@@ -75,27 +73,70 @@ namespace detail
 	    static ostd::Color exec_impl(const std::string& p, const json& root)
 	    {
 	        try {
-	            const json& arr = root.at(p);
-	            if (!arr.is_array() || arr.empty()) return ostd::Color();
+				const json& node = root.at(p);
 
-	            std::vector<int> vals;
-	            for (const auto& v : arr)
-				{
-	                if (!v.is_number_integer()) return ostd::Color();
-	                int iv = v.get<int>();
-	                if (iv < 0 || iv > 255) return ostd::Color();
-	                vals.push_back(iv);
+	            // Case 1: Hex string ("#RRGGBBAA")
+	            if (node.is_string())
+	            {
+	                const std::string& hex = node.get<std::string>();
+	                if (hex.starts_with("#") && hex.size() == 9)  // 9 for #RRGGBBAA
+		                return ostd::Color(hex);
+	                return ostd::Color();  // Not a valid hex format
 	            }
 
-	            switch (vals.size())
-				{
-	                case 1:  return ostd::Color(vals[0], vals[0], vals[0]);
-	                case 3:  return ostd::Color(vals[0], vals[1], vals[2]);
-	                case 4:  return ostd::Color(vals[0], vals[1], vals[2], vals[3]);
-	                default: return ostd::Color();
+				// Case 2: Array of integers
+	            if (node.is_array() && !node.empty())
+	            {
+	                std::vector<int> vals;
+	                for (const auto& v : node)
+	                {
+	                    if (!v.is_number_integer()) return ostd::Color();
+	                    int iv = v.get<int>();
+	                    if (iv < 0 || iv > 255) return ostd::Color();
+	                    vals.push_back(iv);
+	                }
+
+	                switch (vals.size())
+	                {
+	                    case 1: return ostd::Color(vals[0], vals[0], vals[0]);
+	                    case 3: return ostd::Color(vals[0], vals[1], vals[2]);
+	                    case 4: return ostd::Color(vals[0], vals[1], vals[2], vals[3]);
+	                    default: return ostd::Color();
+	                }
 	            }
+
+	            // Anything else → default color
+	            return ostd::Color();
 	        }
 	        catch (...) { return ostd::Color(); }
+	    }
+	};
+	// ----- ostd::Rectangle -------------------------------------------------
+	template<> struct Getter<ostd::Rectangle>
+	{
+	    static ostd::Rectangle exec_impl(const std::string& p, const json& root)
+	    {
+	        try
+	        {
+	            const json& node = root.at(p);
+	            if (node.is_array() && node.size() == 4)
+	            {
+	                std::vector<float> vals;
+	                vals.reserve(4);
+	                for (const auto& v : node)
+	                {
+	                    if (!v.is_number_float() && !v.is_number_integer())
+	                        return ostd::Rectangle();
+	                    vals.push_back(v.get<float>());
+	                }
+	                return ostd::Rectangle(vals[0], vals[1], vals[2], vals[3]);
+	            }
+	            return ostd::Rectangle();
+	        }
+	        catch (...)
+	        {
+	            return ostd::Rectangle();
+	        }
 	    }
 	};
 	// ----- std::vector<int32_t> ----------------------------------------
@@ -155,6 +196,64 @@ namespace detail
 	        return result;
 	    }
 	};
+	// ----- std::vector<ostd::Color> -----------------------------------
+	template<> struct Getter<std::vector<ostd::Color>>
+	{
+	    static std::vector<ostd::Color> exec_impl(const std::string& p, const json& root)
+	    {
+	        std::vector<ostd::Color> result;
+	        try
+	        {
+	            const json& node = root.at(p);
+	            if (!node.is_array() || node.empty())
+	                return result;
+	            result.reserve(node.size());
+	            for (const auto& element : node)
+	            {
+	                // We temporarily create a fake "sub-root" that only contains one key "color"
+	                // This lets us call the existing Getter<ostd::Color> without modifying it
+	                json fake_root = { { "color", element } };
+	                ostd::Color color = Getter<ostd::Color>::exec_impl("color", fake_root);
+	                result.push_back(color);
+	            }
+	            return result;
+	        }
+	        catch (...)
+	        {
+	            return {};
+	        }
+	    }
+	};
+	// ----- std::vector<ostd::Rectangle> -----------------------------------
+	template<> struct Getter<std::vector<ostd::Rectangle>>
+	{
+	    static std::vector<ostd::Rectangle> exec_impl(const std::string& p, const json& root)
+	    {
+	        std::vector<ostd::Rectangle> result;
+	        try
+	        {
+	            const json& node = root.at(p);
+	            if (!node.is_array() || node.empty())
+	                return result;
+	            result.reserve(node.size());
+	            for (const auto& element : node)
+	            {
+	                json fake_root = { { "rect", element } };
+	                ostd::Rectangle rect = Getter<ostd::Rectangle>::exec_impl("rect", fake_root);
+	                result.push_back(rect);
+	            }
+	            return result;
+	        }
+	        catch (...)
+	        {
+	            return {};
+	        }
+	    }
+	};
+
+
+
+
 
 
 
@@ -231,6 +330,27 @@ namespace detail
 	        } catch (...) { return false; }
 	    }
 	};
+	// ----- ostd::Rectangle -------------------------------------------------
+	template<> struct Setter<ostd::Rectangle>
+	{
+	    static bool exec_impl(const std::string& p, json& root, const ostd::Rectangle& value)
+	    {
+	        try
+	        {
+	            json arr = json::array();
+	            arr.push_back(value.x);
+	            arr.push_back(value.y);
+	            arr.push_back(value.w);
+	            arr.push_back(value.h);
+	            root[p] = arr;
+	            return true;
+	        }
+	        catch (...)
+	        {
+	            return false;
+	        }
+	    }
+	};
 	// ----- std::vector<int32_t> ----------------------------------------
 	template<> struct Setter<std::vector<int32_t>>
 	{
@@ -271,6 +391,51 @@ namespace detail
 	            root[p] = arr;
 	            return true;
 	        } catch (...) { return false; }
+	    }
+	};
+	// ----- std::vector<ostd::Color> -----------------------------------
+	template<> struct Setter<std::vector<ostd::Color>>
+	{
+	    static bool exec_impl(const std::string& p, json& root, const std::vector<ostd::Color>& value)
+	    {
+	        try
+	        {
+	            json arr = json::array();
+	            for (const auto& color : value)
+	                arr.push_back(color.hexString(true, "#").cpp_str());
+	            root[p] = arr;
+	            return true;
+	        }
+	        catch (...)
+	        {
+	            return false;
+	        }
+	    }
+	};
+	// ----- std::vector<ostd::Rectangle> -----------------------------------
+	template<> struct Setter<std::vector<ostd::Rectangle>>
+	{
+	    static bool exec_impl(const std::string& p, json& root, const std::vector<ostd::Rectangle>& value)
+	    {
+	        try
+	        {
+	            json arr = json::array();
+	            for (const auto& rect : value)
+	            {
+	                json rect_arr = json::array();
+	                rect_arr.push_back(rect.x);
+	                rect_arr.push_back(rect.y);
+	                rect_arr.push_back(rect.w);
+	                rect_arr.push_back(rect.h);
+	                arr.push_back(rect_arr);
+	            }
+	            root[p] = arr;
+	            return true;
+	        }
+	        catch (...)
+	        {
+	            return false;
+	        }
 	    }
 	};
 } // namespace detail
@@ -353,18 +518,24 @@ int JSONManager::get_int(const ostd::String& name) { return get<int32_t>(name); 
 double JSONManager::get_double(const ostd::String& name) { return get<double>(name); }
 ostd::String JSONManager::get_string(const ostd::String& name) { return get<ostd::String>(name); }
 ostd::Color JSONManager::get_color(const ostd::String& name) { return get<ostd::Color>(name); }
+ostd::Rectangle JSONManager::get_rect(const ostd::String& name) { return get<ostd::Rectangle>(name); }
 std::vector<int32_t> JSONManager::get_int_array(const ostd::String& name) { return get<std::vector<int32_t>>(name); }
 std::vector<double> JSONManager::get_double_array(const ostd::String& name) { return get<std::vector<double>>(name); }
 std::vector<ostd::String> JSONManager::get_string_array(const ostd::String& name) { return get<std::vector<ostd::String>>(name); }
+std::vector<ostd::Color> JSONManager::get_color_array(const ostd::String& name) { return get<std::vector<ostd::Color>>(name); }
+std::vector<ostd::Rectangle> JSONManager::get_rect_array(const ostd::String& name) { return get<std::vector<ostd::Rectangle>>(name); }
 
 bool JSONManager::set_bool(const ostd::String& name, bool value) { return set<bool>(name, value); }
 bool JSONManager::set_int(const ostd::String& name, int32_t value) { return set<int32_t>(name, value); }
 bool JSONManager::set_double(const ostd::String& name, double value) { return set<double>(name, value); }
 bool JSONManager::set_string(const ostd::String& name, const ostd::String& value) { return set<ostd::String>(name, value); }
 bool JSONManager::set_color(const ostd::String& name, const ostd::Color& value) { return set<ostd::Color>(name, value); }
+bool JSONManager::set_rect(const ostd::String& name, const ostd::Rectangle& value) { return set<ostd::Rectangle>(name, value); }
 bool JSONManager::set_int_array(const ostd::String& name, const std::vector<int32_t>& value) { return set<std::vector<int32_t>>(name, value); }
 bool JSONManager::set_double_array(const ostd::String& name, const std::vector<double>& value) { return set<std::vector<double>>(name, value); }
 bool JSONManager::set_string_array(const ostd::String& name, const std::vector<ostd::String>& value) { return set<std::vector<ostd::String>>(name, value); }
+bool JSONManager::set_color_array(const ostd::String& name, const std::vector<ostd::Color>& value) { return set<std::vector<ostd::Color>>(name, value); }
+bool JSONManager::set_rect_array(const ostd::String& name, const std::vector<ostd::Rectangle>& value) { return set<std::vector<ostd::Rectangle>>(name, value); }
 
 
 bool JSONManager::init(const ostd::String& filePath, const json* obj)

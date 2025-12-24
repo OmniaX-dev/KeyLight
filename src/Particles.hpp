@@ -211,7 +211,6 @@ struct tParticleInfo
 	float randomDirection { 0.2f };
 	float randomSpeed { 0.2f };
 	float randomAlpha { 0.2f };
-	float randomRotation { 0.2f };
 	ostd::Vec2 randomSize { 0.2f, 0.2f  };
 	bool randomDamping { true };
 
@@ -220,11 +219,9 @@ struct tParticleInfo
 	TextureRef::TextureAtlasIndex tileIndex { TextureRef::FullTextureCoords };
 	ostd::Color color { 120, 120, 120, 80 };
 	ostd::Vec2 size { 16.0f, 16.0f };
-	float rotationStep { 1.0f };
 
 	bool fadeIn { true };
-	bool allDirectionos { false };
-	bool square { true };
+	bool allDirections { false };
 
 	float angle { 0.0f };
 	float speed { 1.0f };
