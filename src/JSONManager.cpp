@@ -18,20 +18,13 @@
     along with KeyLight.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "ConfigManager.hpp"
+#include "JSONManager.hpp"
 #include <fstream>
 #include <ostd/File.hpp>
 #include <ostd/Logger.hpp>
 #include <ostd/String.hpp>
 #include <ostd/Utils.hpp>
 
-
-inline static const json DefaultSettingsJSON = R"({
-		"settings": {
-			"useSystenFFMPEG": true,
-			"ffmpegPath": "./ffmpeg/"
-		}
-})"_json;
 
 
 namespace detail
@@ -316,27 +309,25 @@ static inline bool __navigate_json_path(const ostd::String& path, json*& outSour
 }
 
 template<class T>
-T ConfigManager::get(const ostd::String& name)
+T JSONManager::get(const ostd::String& name)
 {
-	json* source = m_loaded ? &m_settingsJSON["settings"] : const_cast<json*>(&DefaultSettingsJSON["settings"]);
+	json* source = &m_json;
 	ostd::String settingName = "";
 	if (__navigate_json_path(name, source, settingName))
 		return detail::Getter<T>::exec_impl(settingName, *source);
-	source = const_cast<json*>(&DefaultSettingsJSON["settings"]);
-	settingName = "";
-	if (!__navigate_json_path(name, source, settingName))
+	else
 		OX_ERROR("Setting not found: %s", name.c_str());
     return detail::Getter<T>::exec_impl(settingName, *source);
 }
 template<class T>
-bool ConfigManager::set(const ostd::String& name, T value)
+bool JSONManager::set(const ostd::String& name, T value)
 {
 	if (!m_loaded) return false;
 
     auto tokens = name.tokenize(".");
     if (tokens.count() == 0) return false;
 
-    json* current = &m_settingsJSON["settings"];
+    json* current = &m_json;
     ostd::String key;
 
     while (tokens.hasNext())
@@ -357,63 +348,60 @@ bool ConfigManager::set(const ostd::String& name, T value)
     return false;
 }
 
-bool ConfigManager::get_bool(const ostd::String& name) { return get<bool>(name); }
-int ConfigManager::get_int(const ostd::String& name) { return get<int32_t>(name); }
-double ConfigManager::get_double(const ostd::String& name) { return get<double>(name); }
-ostd::String ConfigManager::get_string(const ostd::String& name) { return get<ostd::String>(name); }
-ostd::Color ConfigManager::get_color(const ostd::String& name) { return get<ostd::Color>(name); }
-std::vector<int32_t> ConfigManager::get_int_array(const ostd::String& name) { return get<std::vector<int32_t>>(name); }
-std::vector<double> ConfigManager::get_double_array(const ostd::String& name) { return get<std::vector<double>>(name); }
-std::vector<ostd::String> ConfigManager::get_string_array(const ostd::String& name) { return get<std::vector<ostd::String>>(name); }
+bool JSONManager::get_bool(const ostd::String& name) { return get<bool>(name); }
+int JSONManager::get_int(const ostd::String& name) { return get<int32_t>(name); }
+double JSONManager::get_double(const ostd::String& name) { return get<double>(name); }
+ostd::String JSONManager::get_string(const ostd::String& name) { return get<ostd::String>(name); }
+ostd::Color JSONManager::get_color(const ostd::String& name) { return get<ostd::Color>(name); }
+std::vector<int32_t> JSONManager::get_int_array(const ostd::String& name) { return get<std::vector<int32_t>>(name); }
+std::vector<double> JSONManager::get_double_array(const ostd::String& name) { return get<std::vector<double>>(name); }
+std::vector<ostd::String> JSONManager::get_string_array(const ostd::String& name) { return get<std::vector<ostd::String>>(name); }
 
-bool ConfigManager::set_bool(const ostd::String& name, bool value) { return set<bool>(name, value); }
-bool ConfigManager::set_int(const ostd::String& name, int32_t value) { return set<int32_t>(name, value); }
-bool ConfigManager::set_double(const ostd::String& name, double value) { return set<double>(name, value); }
-bool ConfigManager::set_string(const ostd::String& name, const ostd::String& value) { return set<ostd::String>(name, value); }
-bool ConfigManager::set_color(const ostd::String& name, const ostd::Color& value) { return set<ostd::Color>(name, value); }
-bool ConfigManager::set_int_array(const ostd::String& name, const std::vector<int32_t>& value) { return set<std::vector<int32_t>>(name, value); }
-bool ConfigManager::set_double_array(const ostd::String& name, const std::vector<double>& value) { return set<std::vector<double>>(name, value); }
-bool ConfigManager::set_string_array(const ostd::String& name, const std::vector<ostd::String>& value) { return set<std::vector<ostd::String>>(name, value); }
+bool JSONManager::set_bool(const ostd::String& name, bool value) { return set<bool>(name, value); }
+bool JSONManager::set_int(const ostd::String& name, int32_t value) { return set<int32_t>(name, value); }
+bool JSONManager::set_double(const ostd::String& name, double value) { return set<double>(name, value); }
+bool JSONManager::set_string(const ostd::String& name, const ostd::String& value) { return set<ostd::String>(name, value); }
+bool JSONManager::set_color(const ostd::String& name, const ostd::Color& value) { return set<ostd::Color>(name, value); }
+bool JSONManager::set_int_array(const ostd::String& name, const std::vector<int32_t>& value) { return set<std::vector<int32_t>>(name, value); }
+bool JSONManager::set_double_array(const ostd::String& name, const std::vector<double>& value) { return set<std::vector<double>>(name, value); }
+bool JSONManager::set_string_array(const ostd::String& name, const std::vector<ostd::String>& value) { return set<std::vector<ostd::String>>(name, value); }
 
 
-bool ConfigManager::init(const ostd::String& filePath)
+bool JSONManager::init(const ostd::String& filePath, const json* obj)
 {
 	m_filePath = filePath;
 	m_rawJson = "";
 	m_loaded = false;
-	ostd::TextFileBuffer settingsFile(filePath);
-	if (!settingsFile.exists())
+	if (obj != nullptr)
+		m_json = *obj;
+	ostd::TextFileBuffer jsonFile(filePath);
+	if (!jsonFile.exists())
 	{
 		m_loaded = true;
-		__write_to_file(&DefaultSettingsJSON);
+		__write_to_file();
 		m_loaded = false;
 	}
-	settingsFile = ostd::TextFileBuffer(filePath);
+	jsonFile = ostd::TextFileBuffer(filePath);
 	try
 	{
-		m_settingsJSON = json::parse(settingsFile.rawContent());
-		if (!m_settingsJSON.contains("settings"))
-		{
-		   OX_ERROR("Missing \"settings\" object in settings file.");
-		   return false;
-		}
+		m_json = json::parse(jsonFile.rawContent());
 	}
 	catch (const json::parse_error& e)
 	{
 	    OX_ERROR("JSON parse failed: %s", e.what());
 	    return false;
 	}
-	m_rawJson = settingsFile.rawContent();
+	m_rawJson = jsonFile.rawContent();
 	m_loaded = true;
-	OX_DEBUG("Loaded settings file: <%s>", filePath.c_str());
+	OX_DEBUG("Loaded JSON file: <%s>", filePath.c_str());
 	return true;
 }
 
-bool ConfigManager::__write_to_file(const json* obj)
+bool JSONManager::__write_to_file(const json* obj)
 {
 	if (!m_loaded) return false;
 	if (obj == nullptr)
-		obj = &m_settingsJSON;
+		obj = &m_json;
 	try
 	{
 		std::ofstream file(m_filePath.cpp_str(), std::ios::trunc);
@@ -425,7 +413,7 @@ bool ConfigManager::__write_to_file(const json* obj)
 	}
 	catch (const std::exception& e)
 	{
-		OX_ERROR("Failed to write settings file: %s", e.what());
+		OX_ERROR("Failed to write JSON file: %s", e.what());
 		return false;
 	}
 	return true;

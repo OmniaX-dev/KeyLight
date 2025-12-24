@@ -81,7 +81,7 @@ void WindowBase::setSize(int32_t width, int32_t height)
 {
 	if (!isInitialized()) return;
 	m_window.setSize({ static_cast<uint32_t>(width), static_cast<uint32_t>(height) });
-	ostd::SignalHandler::emitSignal(ostd::tBuiltinSignals::WindowResized, ostd::tSignalPriority::RealTime);
+	syncWindowSize();
 }
 
 void WindowBase::syncWindowSize(void)

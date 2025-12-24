@@ -21,6 +21,7 @@
 #pragma once
 
 #include <SFML/Graphics/VertexArray.hpp>
+#include <ostd/BaseObject.hpp>
 #include <ostd/Color.hpp>
 #include <ostd/Defines.hpp>
 #include <ostd/Spline.hpp>
@@ -76,7 +77,6 @@ class TextureRef : public ostd::BaseObject
 
         inline static constexpr TextureAtlasIndex FullTextureCoords = 0;
         inline static constexpr ID InvalidTexture = 0;
-
 };
 
 class PhysicsObject
@@ -112,88 +112,6 @@ class PhysicsObject
 		bool m_skipUpdate;
 		bool m_skipApplyForce;
 		bool m_static;
-};
-
-class Transform2D
-{
-    private:
-        float m_rotation { 0.0f };
-        ostd::Vec2 m_translation { 0.0f, 0.0f };
-        ostd::Vec2 m_scale { 1.0f, 1.0f };
-        bool m_centeredOrigin { false };
-        ostd::Vec2 m_baseSize { 0.0f, 0.0f };
-
-        bool m_applied { true };
-        glm::mat4 m_matrix;
-        std::vector<ostd::Vec2> m_vertices { {}, {}, {}, {} };
-
-    public:
-        inline Transform2D& resetRotation(float newValue = 0.0f) { m_applied = (m_rotation == newValue && m_applied); m_rotation = newValue; return *this; }
-        inline Transform2D& resetTranslation(ostd::Vec2 newValue = { 0.0f, 0.0f }) { m_applied = (m_translation == newValue && m_applied); m_translation = newValue; return *this; }
-        inline Transform2D& resetScale(ostd::Vec2 newValue = { 1.0f, 1.0f }) { m_applied = (m_scale == newValue && m_applied); m_scale = newValue; return *this; }
-        inline Transform2D& reset(float _rotation = 0.0f, ostd::Vec2 _translation = { 0.0f, 0.0f }, ostd::Vec2 _scale = { 1.0f,1.0f }) { resetRotation(_rotation); resetTranslation(_translation); return resetScale(_scale); }
-
-        inline Transform2D& rotate(float value) { m_applied = (value == 0.0f && m_applied); m_rotation += value; return *this; }
-        inline Transform2D& translate(ostd::Vec2 value) { m_applied = (value == ostd::Vec2(0.0f, 0.0f) && m_applied); m_translation += value; return *this; }
-        inline Transform2D& scale(ostd::Vec2 value) { m_applied = (value == ostd::Vec2(0.0f, 0.0f) && m_applied); m_scale += value; return *this; }
-
-        inline float getRotation(void) const { return m_rotation; }
-        inline ostd::Vec2 getTranslation(void) const { return m_translation; }
-        inline ostd::Vec2 getScale(void) const { return m_scale; }
-        inline bool isOriginCentered(void) const { return m_centeredOrigin; }
-        inline bool isApplied(void) const { return m_applied; }
-        inline glm::mat4 getMatrix(void) const { return m_matrix; }
-        inline std::vector<ostd::Vec2> getVertices(void) const { return m_vertices; }
-        inline std::vector<ostd::Vec2>& getVerticesRef(void) { return m_vertices; }
-        inline ostd::Vec2 getBaseSize(void) const { return m_baseSize; }
-
-        inline Transform2D& setOriginCentered(bool b = true) { m_applied = (m_centeredOrigin == b && m_applied); m_centeredOrigin = b; return *this; }
-        inline Transform2D& setBaseSize(ostd::Vec2 baseSize) { m_applied = (m_baseSize == baseSize && m_applied); m_baseSize = baseSize; return *this; }
-
-        inline Transform2D& apply(void)
-        {
-            if (m_applied) return *this;
-
-            glm::vec4 npos(0.0f, 0.0f, 0.0f, 1.0f);
-            glm::mat4 model = glm::translate(glm::mat4(1.0f), { m_translation.x, m_translation.y, 0.0f });
-            model = glm::rotate(model, DEG_TO_RAD(m_rotation), { 0.0f, 0.0f, 1.0f });
-            model = glm::scale(model, { m_scale.x, m_scale.y, 1.0f });
-
-            m_vertices.clear();
-            if (m_centeredOrigin)
-            {
-                npos = { -(m_baseSize.x / 2.0f), -(m_baseSize.y / 2.0f), 0.0f, 1.0f };
-                npos = model * npos;
-                m_vertices.push_back({ npos.x, npos.y });
-                npos = { m_baseSize.x / 2.0f, -(m_baseSize.y / 2.0f), 0.0f, 1.0f };
-                npos = model * npos;
-                m_vertices.push_back({ npos.x, npos.y });
-                npos = { m_baseSize.x / 2.0f, m_baseSize.y / 2.0f, 0.0f, 1.0f };
-                npos = model * npos;
-                m_vertices.push_back({ npos.x, npos.y });
-                npos = { -(m_baseSize.x / 2.0f), m_baseSize.y / 2.0f, 0.0f, 1.0f };
-                npos = model * npos;
-                m_vertices.push_back({ npos.x, npos.y });
-            }
-            else
-            {
-                npos = { 0.0f, 0.0f, 0.0f, 1.0f };
-                npos = model * npos;
-                m_vertices.push_back({ npos.x, npos.y });
-                npos = { m_baseSize.x, 0.0f, 0.0f, 1.0f };
-                npos = model * npos;
-                m_vertices.push_back({ npos.x, npos.y });
-                npos = { m_baseSize.x, m_baseSize.y, 0.0f, 1.0f };
-                npos = model * npos;
-                m_vertices.push_back({ npos.x, npos.y });
-                npos = { 0.0f, m_baseSize.y, 0.0f, 1.0f };
-                npos = model * npos;
-                m_vertices.push_back({ npos.x, npos.y });
-            }
-
-            m_applied = true;
-            return *this;
-        }
 };
 
 struct tColorInterpolator
@@ -237,7 +155,7 @@ struct tColorInterpolator
 			done = true;
 			return;
 		}
-		float t = (float)currentFrame / (length - 1);
+		float t = std::min((float)currentFrame / length, 1.0f);
 		uint8_t r = (int)std::round(std::lerp(start.r, end.r, t));
 		uint8_t g = (int)std::round(std::lerp(start.g, end.g, t));
 		uint8_t b = (int)std::round(std::lerp(start.b, end.b, t));
@@ -284,43 +202,6 @@ class ColorRamp
 		bool done { false };
 };
 
-class TransformableObject : public ostd::BaseObject
-{
-	public:
-		TransformableObject(ostd::Rectangle rect = { 0.0f, 0.0f, 16.0f, 16.0f });
-		inline virtual ~TransformableObject(void) {  }
-
-		TransformableObject& rotate(float angle);
-		TransformableObject& translate(ostd::Vec2 translation);
-		TransformableObject& scale(ostd::Vec2 scale);
-
-		inline virtual void draw(void) {  }
-		inline virtual void update(const ostd::Vec2& force = { 0.0f, 0.0f }) {  }
-
-		inline ostd::Color getTintColor(void) const { return m_tintColor; }
-		inline void setTintColor(ostd::Color color) { m_tintColor = color; }
-		inline const Transform2D getTransform(void) const { return m_transform; }
-		inline ostd::Rectangle getBounds(void) const { return m_bounds; }
-		inline ostd::Rectangle getBaseRect(void) const { return m_rect; }
-		inline void originCentered(bool b = true) { m_transform.setOriginCentered(b); }
-		inline bool isOriginCentered(void) { return m_transform.isOriginCentered(); }
-		inline bool isVisible(void) { return m_visible; }
-		inline const std::vector<ostd::Vec2>& getVertices(void) { return m_vertices; }
-		inline void setBaseRect(ostd::Rectangle r) { m_rect = r; update_transform(); }
-
-	protected:
-		void update_transform(void);
-		inline virtual void setVisible(bool v) { m_visible = v; }
-
-	private:
-		std::vector<ostd::Vec2> m_vertices;
-		ostd::Color m_tintColor;
-		Transform2D m_transform;
-		ostd::Rectangle m_rect;
-		ostd::Rectangle m_bounds;
-		bool m_visible;
-};
-
 struct tParticleInfo
 {
 	float lifeSpan { 100 };
@@ -336,7 +217,6 @@ struct tParticleInfo
 
 	ostd::Vec2 damping { 0.005f, 0.005f };
 	TextureRef* texture { nullptr };
-	// TextureRef::ID texture { TextureRef::InvalidTexture };
 	TextureRef::TextureAtlasIndex tileIndex { TextureRef::FullTextureCoords };
 	ostd::Color color { 120, 120, 120, 80 };
 	ostd::Vec2 size { 16.0f, 16.0f };
@@ -365,7 +245,6 @@ class Particle : public PhysicsObject
 		inline Particle(void) { m_ready = false; }
 		void setup(tParticleInfo partInfo);
 		void beforeUpdate(void) override;
-		void afterUpdate(void) override;
 		void kill(void);
 		inline bool isReady(void) { return m_ready; }
 		inline bool isDead(void) { return m_dead; }
@@ -386,9 +265,7 @@ class Particle : public PhysicsObject
 		ostd::Color color { 10, 110, 255 };
 		ostd::Vec2 size { 30.0f, 30.0f };
 		TextureRef* texture { nullptr };
-		// TextureRef::ID texture { TextureRef::InvalidTexture };
 		TextureRef::TextureAtlasIndex tileIndex { TextureRef::FullTextureCoords };
-		Transform2D transform;
 		float alpha { 0.0f };
 
 		bool dead { false };
@@ -397,7 +274,7 @@ class Particle : public PhysicsObject
 		ColorRamp colorRamp;
 };
 
-class ParticleEmitter : public TransformableObject
+class ParticleEmitter : public ostd::BaseObject
 {
 	public:
 		ParticleEmitter(void);
@@ -405,31 +282,27 @@ class ParticleEmitter : public TransformableObject
 		ParticleEmitter(ostd::Vec2 position, uint32_t maxParticles = 400);
 		ParticleEmitter& create(ostd::Rectangle emissionRect, uint32_t maxParticles = 400);
 
-		void update(const ostd::Vec2& force = { 0.0f, 0.0f }) override;
+		void update(const ostd::Vec2& force = { 0.0f, 0.0f });
 
 		void emit(tParticleInfo partInfo, int32_t count = 1);
 		void emit(int32_t count = 1);
 
 		void setDefaultParticleInfo(tParticleInfo info);
 		inline tParticleInfo& getDefaultParticleInfo(void) { return m_defaultParticle; }
-		inline void setEmissionRect(ostd::Rectangle rect) { setBaseRect(rect); }
-		inline ostd::Rectangle getEmissionRect(void) { return getBaseRect(); }
+		inline void setEmissionRect(ostd::Rectangle rect) { m_emissionRect = rect; }
+		inline ostd::Rectangle getEmissionRect(void) { return m_emissionRect; }
 		inline void setWorkingRectangle(ostd::Rectangle rect) { m_workingRect = rect; }
 		inline ostd::Rectangle getWorkingRectangle(void) { return m_workingRect; }
-		inline bool isParticleTransformEnabled(void) { return m_useParticleTransform; }
-		inline void useParticleTransform(bool p = true) { m_useParticleTransform = p; }
-		inline void setMaxParticleCount(uint32_t maxParticles) { m_particleCount = maxParticles; m_particles.resize(m_particleCount); }
+		inline void setMaxParticleCount(uint32_t maxParticles) { m_particleCount = maxParticles; m_particles.resize(m_particleCount); m_vertexArray.resize(m_particleCount); }
 		inline uint32_t getMaxParticleCount(void) { return m_particleCount; }
 		inline void useTileArray(bool u = true) { m_useTileArray = u; }
 		inline bool isTileArrayUsed(void) { return m_useTileArray; }
 		void addTilesToArray(const std::vector<TextureRef::TextureAtlasIndex>& array);
 
-		// inline void setPath(Spline& path) { m_path = path; m_path.enable(); }
 		inline void enablePath(bool e = true) { m_path.enable(e); }
 		inline void addPathPoint(ostd::Vec2 point) { m_path.addPoint(point); }
 		inline void enableEditablePath(bool e = true) { m_path.setEditable(e); if (e) m_path.connectSignals(); }
 
-		// inline ParticleVertexArray& getParticleVertexArray(void) { return m_particleVertexArray; }
 		inline sf::VertexArray& getVertexArray(void) { return m_vertexArray; }
 
 	private:
@@ -438,19 +311,17 @@ class ParticleEmitter : public TransformableObject
 	private:
 		tParticleInfo m_defaultParticle;
 		std::vector<Particle> m_particles;
+		sf::VertexArray m_vertexArray;
 		uint32_t m_particleCount;
 		ostd::Rectangle m_workingRect;
+		ostd::Rectangle m_emissionRect;
 		std::vector<TextureRef::TextureAtlasIndex> m_tileArray;
+		bool m_useTileArray { false };
 
 		ostd::Spline m_path;
 		float m_currentPathValue { 0.0f };
 		float m_pathStep { 15.0f };
 		ostd::tSplineNode m_currentPathPoint { { 0.0f, 0.0f }, 0.0f };
-		bool m_useParticleTransform { true };
-		bool m_useTileArray { false };
-
-		// ParticleVertexArray m_particleVertexArray;
-		sf::VertexArray m_vertexArray;
 };
 
 class ParticleFactory
@@ -461,6 +332,8 @@ class ParticleFactory
 
 		static ParticleEmitter basicFireEmitter(TextureRef::TextureInfo texture, ostd::Vec2 position, uint32_t pre_emit_cycles = 0);
 		static ParticleEmitter basicSnowEmitter(TextureRef::TextureInfo texture, ostd::Vec2 windowSize, uint32_t pre_emit_cycles = 0);
+
+		static void createColorGradient(tParticleInfo& partInfo, const ostd::Color& startColor, uint8_t nColors);
 
 	private:
 		static void __pre_emit(ParticleEmitter& emitter, uint32_t pre_emit_cycles, ostd::Vec2 rand_force_range);

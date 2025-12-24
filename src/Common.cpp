@@ -26,6 +26,8 @@
 
 #include <SFML/Audio.hpp>
 
+#include <math.h>
+
 double Common::getCurrentTIme_ns(void)
 {
 	return std::chrono::duration_cast<std::chrono::nanoseconds> (std::chrono::high_resolution_clock::now().time_since_epoch()).count();
@@ -118,4 +120,47 @@ ostd::String Common::secondsToFormattedString(int32_t totalSeconds)
 	fmtstr.add(ostd::String("").add(minutes).addLeftPadding(2, '0')).add(":");
 	fmtstr.add(ostd::String("").add(seconds).addLeftPadding(2, '0'));
 	return fmtstr;
+}
+
+void Common::RGBtoHSV(float r, float g, float b, float& h, float& s, float& v)
+{
+    float max = std::max({r, g, b});
+    float min = std::min({r, g, b});
+    float d = max - min;
+
+    v = max;
+
+    if (max == 0)
+    {
+        s = 0;
+        h = 0;
+        return;
+    }
+
+    s = d / max;
+
+    if (max == r)      h = std::fmod((g - b) / d + 6.0f, 6.0f);
+    else if (max == g) h = (b - r) / d + 2.0f;
+    else               h = (r - g) / d + 4.0f;
+
+    h /= 6.0f;
+}
+
+void Common::HSVtoRGB(float h, float s, float v, float& r, float& g, float& b)
+{
+    int i = static_cast<int>(h * 6);
+    float f = h * 6 - i;
+    float p = v * (1 - s);
+    float q = v * (1 - f * s);
+    float t = v * (1 - (1 - f) * s);
+
+    switch (i % 6)
+    {
+        case 0: r = v, g = t, b = p; break;
+        case 1: r = q, g = v, b = p; break;
+        case 2: r = p, g = v, b = t; break;
+        case 3: r = p, g = q, b = v; break;
+        case 4: r = t, g = p, b = v; break;
+        case 5: r = v, g = p, b = q; break;
+    }
 }

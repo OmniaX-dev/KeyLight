@@ -37,6 +37,7 @@
 #include "VPianoDataStructures.hpp"
 #include "ffmpeg_helper.hpp"
 #include "Particles.hpp"
+#include "JSONManager.hpp"
 
 class Window;
 class VirtualPiano
@@ -47,6 +48,7 @@ class VirtualPiano
 		inline VirtualPiano(Window& parentWindow) : m_sigListener(*this), m_parentWindow(parentWindow), m_videoRenderState(*this) {  }
 		void init(void);
 		void onWindowResized(uint32_t width, uint32_t height);
+		void onSignal(ostd::tSignal& signal);
 
 		// Playback functionality
 		void play(void);
@@ -95,6 +97,7 @@ class VirtualPiano
 
 	private:
 		Window& m_parentWindow;
+		JSONManager m_config;
 		VirtualPianoData m_vPianoData;
 		sf::Music m_audioFile;
 		ostd::String m_audioFilePath;
@@ -134,13 +137,13 @@ class VirtualPiano
 		SignalListener m_sigListener;
 		VideoRenderState m_videoRenderState;
 
-		ParticleEmitter m_part;
 		std::any m_partTex;
 		TextureRef m_partTexRef;
 		std::vector<TextureRef::TextureAtlasIndex> m_partTiles;
-		ParticleEmitter m_snow;
 		uint32_t m_windCounter { 0 };
 		ostd::Vec2 m_wind { 0.0f, 0.0f };
+		ParticleEmitter m_snow;
+		// ParticleEmitter m_fire;
 
 	public:
 		sf::Shader noteShader;

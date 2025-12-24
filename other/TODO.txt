@@ -29,6 +29,7 @@ Core
  ** figure out if adding -re to ffmpeg is worth the performance loss
  ** Implement Settings manager class
     Implement auto-download of ffmpeg
+    Handle SIGINT correctly
 
 
 GFX

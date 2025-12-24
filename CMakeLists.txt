@@ -48,7 +48,7 @@ list(APPEND SOURCE_FILES
 	${CMAKE_CURRENT_LIST_DIR}/src/Renderer.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/Gui.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/ffmpeg_helper.cpp
-	${CMAKE_CURRENT_LIST_DIR}/src/ConfigManager.cpp
+	${CMAKE_CURRENT_LIST_DIR}/src/JSONManager.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/Particles.cpp
 )
 #-----------------------------------------------------------------------------------------

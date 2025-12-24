@@ -31,6 +31,7 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include "Common.hpp"
+#include "Particles.hpp"
 #include "ffmpeg_helper.hpp"
 #include <boost/process/v1.hpp>
 
@@ -44,7 +45,9 @@ enum class ImageType { PNG = 0, BMP = 1, JPG = 2 };
 struct PianoKey
 {
 	MidiParser::NoteInfo noteInfo;
+	ParticleEmitter particles;
 	bool pressed { false };
+	ostd::Vec2 pressedForce { 0.0f, 0.0f };
 };
 struct VirtualPianoData
 {
@@ -70,6 +73,8 @@ struct VirtualPianoData
 	public:
 		inline static constexpr int32_t base_width { 2080 };
 		inline static constexpr int32_t base_height { 1400 };
+
+		float pressedVelocityMultiplier { 0.0f };
 
 		int32_t fallingWhiteNoteOutlineWidth { 0 };
 		float fallingWhiteNoteBorderRadius { 0 };

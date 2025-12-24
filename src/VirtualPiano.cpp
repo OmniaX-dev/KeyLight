@@ -23,16 +23,19 @@
 #include <SFML/Graphics/RenderStates.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/RenderTexture.hpp>
+#include <SFML/Window/Keyboard.hpp>
 #include <cmath>
 #include <cstdio>
 #include <filesystem>
 #include <optional>
+#include <ostd/Color.hpp>
 #include <ostd/Geometry.hpp>
 #include <ostd/Logger.hpp>
 #include <ostd/Signals.hpp>
 #include <ostd/String.hpp>
 #include <ostd/Utils.hpp>
 #include "MidiParser.hpp"
+#include "Particles.hpp"
 #include "VPianoDataStructures.hpp"
 #include "Window.hpp"
 #include "Renderer.hpp"
@@ -90,6 +93,8 @@ VirtualPianoData::VirtualPianoData(void)
 	texCoordsScale = { 1, 1 };
 
 	backgroundColor = { 20, 20, 20 };
+
+	pressedVelocityMultiplier = 8.0f;
 }
 
 void VirtualPianoData::recalculateKeyOffsets(void)
@@ -146,40 +151,46 @@ void VirtualPiano::init(void)
 	m_playing = false;
 	m_paused = false;
 	m_firstNotePlayed = false;
+	m_config.init("settings.json", &Common::DefaultSettingsJSON);
+	std::cout << m_config.get_string("settings.ffmpegPath") << "\n";
+
+	__load_resources();
 
 	for (int midiNote = 21; midiNote <= 108; ++midiNote)
 	{
 		PianoKey pk;
 		pk.noteInfo = MidiParser::getNoteInfo(midiNote);
 		pk.pressed = false;
-		m_pianoKeys.push_back(pk);
-	}
-	if (!noteShader.loadFromFile("shaders/basic.vert", "shaders/note.frag"))
-		OX_ERROR("Failed to load shader");
-	if (!blurShader.loadFromFile("shaders/basic.vert", "shaders/blur.frag"))
-		OX_ERROR("Failed to load shader");
-	if (!flipShader.loadFromFile("shaders/basic.vert", "shaders/flip.frag"))
-		OX_ERROR("Failed to load shader");
-	if (!particleShader.loadFromFile("shaders/basic.vert", "shaders/particle.frag"))
-		OX_ERROR("Failed to load shader");
-	if (!noteTexture.loadFromFile("res/tex/note.png"))
-		OX_ERROR("Failed to load texture");
-	noteTexture.setRepeated(true);
 
-	ostd::String backgroundPath = "res/background.png";
-	sf::Image background;
-	if (!background.loadFromFile(backgroundPath))
-		OX_WARN("Unable to load background image.");
-	else
-	{
-		(void)m_backgroundTex.loadFromImage(background);
-		m_backgroundOriginalSize = { (float)m_backgroundTex.getSize().x, (float)m_backgroundTex.getSize().y };
-		m_backgroundSpr = sf::Sprite(m_backgroundTex);
-		m_backgroundSpr->setPosition({ 0, 0 });
-		ostd::Vec2 scale = { m_backgroundOriginalSize.x / (float)m_parentWindow.getWindowWidth(), m_backgroundOriginalSize.y / (float)m_parentWindow.getWindowHeight() };
-		scale = { 1.0f / scale.x, 1.0f / scale.y };
-		m_backgroundSpr->setScale({ scale.x, scale.y });
-		OX_DEBUG("Loaded background image: <%s>", backgroundPath.c_str());
+		pk.particles = ParticleFactory::basicFireEmitter({ &m_partTexRef, m_partTiles[0] }, { 0, 0 }, 0);
+		pk.particles.useTileArray(true);
+		// pk.particles.getDefaultParticleInfo().speed = 140;
+		pk.particles.setMaxParticleCount(2500);
+		// pk.particles.getDefaultParticleInfo().lifeSpan = 1200;
+		pk.particles.addTilesToArray(m_partTiles);
+
+		auto& partInfo = pk.particles.getDefaultParticleInfo();
+		ParticleFactory::createColorGradient(partInfo, ostd::Color("#FF3D6AFF"), 10);
+		// partInfo.colorRamp.reset();
+		// partInfo.colorRamp.m_colors.clear();
+		// partInfo.addColorToGradient(ostd::Color("#001A0CFF"),   ostd::Color("#004721FF"),  0.15f);
+		// partInfo.addColorToGradient(ostd::Color("#004721FF"),   ostd::Color("#007537FF"),  0.15f);
+		// partInfo.addColorToGradient(ostd::Color("#007537FF"),   ostd::Color("#00A34CFF"),  0.15f);
+		// partInfo.addColorToGradient(ostd::Color("#00A34CFF"),   ostd::Color("#00D162FF"),  0.15f);
+		// partInfo.addColorToGradient(ostd::Color("#00D162FF"),   ostd::Color("#00FF77FF"),  0.15f);
+		// partInfo.addColorToGradient(ostd::Color("#00FF77FF"),   ostd::Color("#2EFF8FFF"),  0.15f);
+		// partInfo.addColorToGradient(ostd::Color("#2EFF8FFF"),   ostd::Color("#5CFFA8FF"),  0.1f);
+		partInfo.size = { 12.0f, 12.0f };
+		partInfo.speed = 2.6f;
+		partInfo.randomVelocity = { 0.25f, 0.7f };
+		partInfo.randomDirection = 0.15f;
+		partInfo.randomDamping = true;
+		partInfo.damping = { 0.0f, 0.2f };
+		partInfo.fadeIn = false;
+		partInfo.lifeSpan = 250;
+
+
+		m_pianoKeys.push_back(pk);
 	}
 
 	sf::Vector2u winSize = { m_parentWindow.sfWindow().getSize().x, m_parentWindow.sfWindow().getSize().y };
@@ -192,50 +203,53 @@ void VirtualPiano::init(void)
 	m_glowView.setCenter({ winSize.x / 2.f, winSize.y / 2.f });
 	m_glowBuffer.setView(m_glowView);
 
-	m_vPianoData.whiteKeyColor = { 0, 0, 0 };
-	m_vPianoData.whiteKeyPressedColor = { 80, 80, 80 };
-	m_vPianoData.whiteKeySplitColor = { 20, 20, 20 };
+	// m_vPianoData.whiteKeyColor = { 0, 0, 0 };
+	// m_vPianoData.whiteKeyPressedColor = { 80, 80, 80 };
+	// m_vPianoData.whiteKeySplitColor = { 20, 20, 20 };
+	// m_vPianoData.blackKeyColor = { 20, 20, 20 };
+	// m_vPianoData.blackKeyPressedColor = { 80, 80, 80 };
+	// m_vPianoData.blackKeySplitColor = { 40, 40, 40 };
+	// m_vPianoData.pianoLineColor1 = { 20, 2, 2 };
+	// m_vPianoData.pianoLineColor2 = { 40, 2, 2 };
+	// m_vPianoData.backgroundColor = { 5, 5, 20 };
+	//
+
+	m_vPianoData.fallingWhiteNoteColor = { "#FFB0F7FF" };
+	m_vPianoData.fallingWhiteNoteOutlineColor = { "#FFB0F7FF" };
+	m_vPianoData.fallingWhiteNoteGlowColor = { "#FFB0F7FF" };
+	m_vPianoData.fallingBlackNoteColor = { "#63132EFF" };
+	m_vPianoData.fallingBlackNoteOutlineColor = { "#63132EFF" };
+	m_vPianoData.fallingBlackNoteGlowColor = { "#63132EFF" };
+	m_vPianoData.backgroundColor = { "#0A0205FF" };
+	m_vPianoData.whiteKeyPressedColor = { "#FF7ACEFF" };
+	m_vPianoData.blackKeyPressedColor = { "#873568FF" };
+	m_vPianoData.whiteKeyColor = { 200, 200, 200 };
 	m_vPianoData.blackKeyColor = { 20, 20, 20 };
-	m_vPianoData.blackKeyPressedColor = { 80, 80, 80 };
-	m_vPianoData.blackKeySplitColor = { 40, 40, 40 };
-	m_vPianoData.pianoLineColor1 = { 20, 2, 2 };
-	m_vPianoData.pianoLineColor2 = { 40, 2, 2 };
 
-	m_vPianoData.usePerNoteColors = true;
-	for (int32_t i = 0; i < 12; i++)
-	{
-		if (i == (int)VirtualPianoData::eNoteColor::Asharp_Main ||
-			i == (int)VirtualPianoData::eNoteColor::Csharp_Main ||
-			i == (int)VirtualPianoData::eNoteColor::Dsharp_Main ||
-			i == (int)VirtualPianoData::eNoteColor::Fsharp_Main ||
-			i == (int)VirtualPianoData::eNoteColor::Gsharp_Main)
-		{
-			m_vPianoData.perNoteColors[i] = { 190, 140, 80 };
-			m_vPianoData.perNoteColors[i + 12] = { 190, 140, 80 };
-			m_vPianoData.perNoteColors[i + 24] = { 190, 140, 80 };
-		}
-		else
-		{
-			m_vPianoData.perNoteColors[i] = { 255, 230, 150 };
-			m_vPianoData.perNoteColors[i + 12] = { 255, 230, 150 };
-			m_vPianoData.perNoteColors[i + 24] = { 255, 230, 150 };
-		}
-	}
+	m_showBackground = false;
 
-	m_partTex = sf::Texture("res/tex/simpleParticle.png");
-	sf::Texture& tex = std::any_cast<sf::Texture&>(m_partTex);
-	if (!m_partTex.has_value())
-		OX_ERROR("Unable To load texture: %s", "res/tex/simpleParticle.png");
-
-	m_partTexRef.attachTexture(m_partTex, tex.getSize().x, tex.getSize().y);
-	m_partTiles.push_back(m_partTexRef.addTileInfo(0, 0, 32, 32));
-	m_partTiles.push_back(m_partTexRef.addTileInfo(32, 0, 32, 32));
-	m_partTiles.push_back(m_partTexRef.addTileInfo(64, 0, 32, 32));
-	m_partTiles.push_back(m_partTexRef.addTileInfo(96, 0, 32, 32));
-	m_partTiles.push_back(m_partTexRef.addTileInfo(128, 0, 32, 32));
-	m_partTiles.push_back(m_partTexRef.addTileInfo(160, 0, 32, 32));
-	m_snow = ParticleFactory::basicSnowEmitter({ &m_partTexRef, m_partTiles[0] }, { (float)winSize.x, (float)winSize.y }, 0);
-	m_snow.getDefaultParticleInfo().size = { 16, 16 };
+	// m_vPianoData.usePerNoteColors = true;
+	// for (int32_t i = 0; i < 12; i++)
+	// {
+	// 	if (i == (int)VirtualPianoData::eNoteColor::Asharp_Main ||
+	// 		i == (int)VirtualPianoData::eNoteColor::Csharp_Main ||
+	// 		i == (int)VirtualPianoData::eNoteColor::Dsharp_Main ||
+	// 		i == (int)VirtualPianoData::eNoteColor::Fsharp_Main ||
+	// 		i == (int)VirtualPianoData::eNoteColor::Gsharp_Main)
+	// 	{
+	// 		m_vPianoData.perNoteColors[i] = { 190, 140, 80 };
+	// 		m_vPianoData.perNoteColors[i + 12] = { 190, 140, 80 };
+	// 		m_vPianoData.perNoteColors[i + 24] = { 190, 140, 80 };
+	// 	}
+	// 	else
+	// 	{
+	// 		m_vPianoData.perNoteColors[i] = { 255, 230, 150 };
+	// 		m_vPianoData.perNoteColors[i + 12] = { 255, 230, 150 };
+	// 		m_vPianoData.perNoteColors[i + 24] = { 255, 230, 150 };
+	// 	}
+	// }
+	m_snow = ParticleFactory::basicSnowEmitter({ &m_partTexRef, m_partTiles[0] }, { (float)winSize.x, (float)winSize.y }, 000);
+	// m_snow.getDefaultParticleInfo().size = { 16, 16 };
 }
 
 void VirtualPiano::onWindowResized(uint32_t width, uint32_t height)
@@ -248,12 +262,20 @@ void VirtualPiano::onWindowResized(uint32_t width, uint32_t height)
 	m_glowView.setCenter({ width / 2.f, height / 2.f });
 	m_glowBuffer.setView(m_glowView);
 
-	ostd::Vec2 scale = { m_backgroundOriginalSize.x / (float)width, m_backgroundOriginalSize.y / (float)height };
-	scale = { 1.0f / scale.x, 1.0f / scale.y };
-	m_backgroundSpr->setScale({ scale.x, scale.y });
+	if (m_showBackground)
+	{
+		ostd::Vec2 scale = { m_backgroundOriginalSize.x / (float)width, m_backgroundOriginalSize.y / (float)height };
+		scale = { 1.0f / scale.x, 1.0f / scale.y };
+		m_backgroundSpr->setScale({ scale.x, scale.y });
+	}
 
-	m_snow.setEmissionRect(ostd::Rectangle(0, 0, (float)width, 1.0f));
-	m_snow.setWorkingRectangle({ 0, 0, (float)width, (float)height });
+	// m_snow.setEmissionRect(ostd::Rectangle(0, 0, (float)width, 1.0f));
+	// m_snow.setWorkingRectangle({ 0, 0, (float)width, (float)height });
+}
+
+void VirtualPiano::onSignal(ostd::tSignal& signal)
+{
+	return;
 }
 
 
@@ -288,7 +310,9 @@ void VirtualPiano::stop(void)
 	m_nextFallingNoteIndex = 0;
 	m_activeFallingNotes.clear();
 	for (auto& pk : m_pianoKeys)
+	{
 		pk.pressed = false;
+	}
 	update();
 	m_playing = false;
 }
@@ -405,21 +429,49 @@ void VirtualPiano::update(void)
 	{
 		updateVisualization(getPlayTime_s());
 	}
-	m_snow.emit(ostd::Random::geti32(0, 2));
+	if (m_playing || m_isRenderingToFile)
+	{
+		for (auto& pk : m_pianoKeys)
+		{
+			pk.particles.update(pk.pressedForce);
+			if (pk.pressed)
+			{
+				pk.particles.emit(70);//ostd::Random::geti32(5, 20));
+			}
+		}
+	}
+	if (m_windCounter++ > 120)
+	{
+		m_windCounter = 0;
+		m_wind.x = ostd::Random::getf32(0.0f, 0.7f);
+	}
+	// m_snow.update(m_wind / 5.0f);
+	// m_snow.emit(ostd::Random::geti32(0, 2));
 }
 
 void VirtualPiano::fastUpdate(void)
 {
-	if (m_windCounter++ > 1000)
-	{
-		m_windCounter = 0;
-		m_wind.x = ostd::Random::getf32(-0.03f, 0.03f);
-	}
-	m_snow.update(m_wind);
+	// if (m_playing || m_isRenderingToFile)
+	// {
+	// 	for (auto& pk : m_pianoKeys)
+	// 	{
+	// 		pk.particles.update(m_wind + pk.pressedForce);
+	// 	}
+	// }
+	// if (m_windCounter++ > 1000)
+	// {
+	// 	m_windCounter = 0;
+	// 	m_wind.x = ostd::Random::getf32(0.0f, 0.7f);
+	// }
+	// m_snow.update(m_wind / 5.0f);
 }
 
 void VirtualPiano::calculateFallingNotes(double currentTime)
 {
+	auto l_calcPressedVelocity = [this](int32_t midiVelocity) -> ostd::Vec2 {
+		return { 0.0f, -((float)(midiVelocity / 128.0f)) * (float)m_vPianoData.pressedVelocityMultiplier };
+	};
+
 	m_fallingNoteGfx_w.clear();
 	m_fallingNoteGfx_b.clear();
 	for (auto& note : m_activeFallingNotes)
@@ -439,6 +491,7 @@ void VirtualPiano::calculateFallingNotes(double currentTime)
 		{
 			auto& key = m_pianoKeys[noteInfo.keyIndex];
 			key.pressed = false;
+			key.pressedForce = { 0.0f, 0.0f };
 			NoteEventData ned(key);
 			ned.eventType = NoteEventData::eEventType::NoteOFF;
 			ned.note = note;
@@ -448,6 +501,7 @@ void VirtualPiano::calculateFallingNotes(double currentTime)
 		{
 			auto& key = m_pianoKeys[noteInfo.keyIndex];
 			key.pressed = true;
+			key.pressedForce = l_calcPressedVelocity(note.velocity);
 			NoteEventData ned(key);
 			ned.eventType = NoteEventData::eEventType::NoteON;
 			ned.note = note;
@@ -495,6 +549,7 @@ void VirtualPiano::calculateFallingNotes(double currentTime)
 		{
 			auto& key = m_pianoKeys[noteInfo.keyIndex];
 			key.pressed = false;
+			key.pressedForce = { 0.0f, 0.0f };
 			NoteEventData ned(key);
 			ned.eventType = NoteEventData::eEventType::NoteOFF;
 			ned.note = note;
@@ -504,6 +559,7 @@ void VirtualPiano::calculateFallingNotes(double currentTime)
 		{
 			auto& key = m_pianoKeys[noteInfo.keyIndex];
 			key.pressed = true;
+			key.pressedForce = l_calcPressedVelocity(note.velocity);
 			NoteEventData ned(key);
 			ned.eventType = NoteEventData::eEventType::NoteON;
 			ned.note = note;
@@ -543,6 +599,7 @@ void VirtualPiano::updateVisualization(double currentTime)
 		auto note = m_activeFallingNotes.front();
 		auto info = MidiParser::getNoteInfo(note.pitch);
 		m_pianoKeys[info.keyIndex].pressed = false;
+		m_pianoKeys[info.keyIndex].pressedForce = { 0.0f, 0.0f };
 		if (note.last)
 		{
 			auto& key = m_pianoKeys[info.keyIndex];
@@ -598,6 +655,16 @@ void VirtualPiano::renderVirtualKeyboard(std::optional<std::reference_wrapper<sf
 	if (target)
 		__target = &target->get();
 	Renderer::setRenderTarget(__target);
+	for (auto& pk : m_pianoKeys)
+	{
+		auto& tex = std::any_cast<sf::Texture&>(m_partTex);
+		Renderer::useShader(&particleShader);
+		particleShader.setUniform("u_texture", tex);
+		Renderer::useTexture(&tex);
+		Renderer::drawParticleSysten(pk.particles);
+	}
+	Renderer::useShader(nullptr);
+	Renderer::useTexture(nullptr);
 	auto& vpd = m_vPianoData;
 	int whiteKeyCount = 0;
 	for (int midiNote = 21; midiNote <= 108; ++midiNote)
@@ -606,10 +673,11 @@ void VirtualPiano::renderVirtualKeyboard(std::optional<std::reference_wrapper<sf
 		if (MidiParser::NoteInfo::isWhiteKey(noteInOctave)) // Draw white key
 		{
 			auto info = MidiParser::getNoteInfo(midiNote);
-			PianoKey pk = m_pianoKeys[info.keyIndex];
+			PianoKey& pk = m_pianoKeys[info.keyIndex];
 			ostd::Color keyColor = (pk.pressed ? vpd.whiteKeyPressedColor : vpd.whiteKeyColor);
 			float x = vpd.vpx() + (whiteKeyCount * vpd.whiteKey_w());
 			float y = vpd.vpy();
+			pk.particles.setEmissionRect({ x + (vpd.whiteKey_w() / 2.0f) - (vpd.whiteKey_w() / 8.0f), y - 2.0f, vpd.whiteKey_w() / 4.0f, 2.0f });
 			Renderer::outlineRect({ x, y, vpd.whiteKey_w(), vpd.whiteKey_h() }, keyColor, vpd.whiteKeySplitColor, 1 );
 			whiteKeyCount++;
 		}
@@ -627,13 +695,44 @@ void VirtualPiano::renderVirtualKeyboard(std::optional<std::reference_wrapper<sf
 		else // Draw black key
 		{
 			auto info = MidiParser::getNoteInfo(midiNote);
-			PianoKey pk = m_pianoKeys[info.keyIndex];
+			PianoKey& pk = m_pianoKeys[info.keyIndex];
 			ostd::Color keyColor = (pk.pressed ? vpd.blackKeyPressedColor : vpd.blackKeyColor);
 			float x = vpd.vpx() + ((whiteKeyCount - 1) * vpd.whiteKey_w() + (vpd.whiteKey_w() - vpd.blackKey_w() / 2.0f)) - vpd.blackKey_offset();
 			float y = vpd.vpy();
+			pk.particles.setEmissionRect({ x + (vpd.blackKey_w() / 2.0f) - (vpd.blackKey_w() / 8.0f), y - 2.0f, vpd.blackKey_w() / 4.0f, 2.0f });
 			Renderer::outlineRoundedRect({ x, y, vpd.blackKey_w(), vpd.blackKey_h() }, keyColor, vpd.blackKeySplitColor, { 0, 0, 5, 5 }, 1);
 		}
 	}
+
+
+	// DEBUG
+	// whiteKeyCount = 0;
+	// for (int midiNote = 21; midiNote <= 108; ++midiNote)
+	// {
+	// 	int noteInOctave = midiNote % 12;
+	// 	if (MidiParser::NoteInfo::isWhiteKey(noteInOctave))
+	// 	{
+	// 		float x = vpd.vpx() + (whiteKeyCount * vpd.whiteKey_w());
+	// 		float y = vpd.vpy();
+	// 		Renderer::fillRect({ x + (vpd.whiteKey_w() / 2.0f) - (vpd.whiteKey_w() / 8.0f), y - 2.0f, vpd.whiteKey_w() / 4.0f, 2.0f }, { 255, 255, 0, 100 });
+	// 		whiteKeyCount++;
+	// 	}
+	// }
+	// whiteKeyCount = 0;
+	// for (int midiNote = 21; midiNote <= 108; ++midiNote)
+	// {
+	// 	int noteInOctave = midiNote % 12;
+	// 	if (MidiParser::NoteInfo::isWhiteKey(noteInOctave))
+	// 	{
+	// 		whiteKeyCount++;
+	// 	}
+	// 	else // Draw black key
+	// 	{
+	// 		float x = vpd.vpx() + ((whiteKeyCount - 1) * vpd.whiteKey_w() + (vpd.whiteKey_w() - vpd.blackKey_w() / 2.0f)) - vpd.blackKey_offset();
+	// 		float y = vpd.vpy();
+	// 		Renderer::fillRect({ x + (vpd.blackKey_w() / 2.0f) - (vpd.blackKey_w() / 8.0f), y - 2.0f, vpd.blackKey_w() / 4.0f, 2.0f }, { 0, 0, 255, 100 });
+	// 	}
+	// }
 }
 
 void VirtualPiano::drawFallingNote(const FallingNoteGraphicsData& noteData)
@@ -692,6 +791,7 @@ bool VirtualPiano::configImageSequenceRender(const ostd::String& folderPath, con
 	__preallocate_file_names_for_rendering(m_videoRenderState.totalFrames, m_videoRenderState.baseFileName, m_videoRenderState.folderPath, m_videoRenderState.imageType);
 	Common::ensureDirectory(folderPath);
 	m_vPianoData.updateScale(resolution.x, resolution.y);
+	onWindowResized(resolution.x, resolution.y);
 	m_parentWindow.lockFullscreenStatus();
 	m_parentWindow.enableResizeable(false);
 	stop();
@@ -726,6 +826,7 @@ bool VirtualPiano::configFFMPEGVideoRender(const ostd::String& filePath, const o
 	m_videoRenderState.frameTime = 1.0 / (float)fps;
 	m_videoRenderState.renderFPS = 1;
 	m_vPianoData.updateScale(resolution.x, resolution.y);
+	onWindowResized(resolution.x, resolution.y);
 	m_parentWindow.lockFullscreenStatus();
 	m_parentWindow.enableResizeable(false);
 	stop();
@@ -788,7 +889,7 @@ void VirtualPiano::__render_frame(std::optional<std::reference_wrapper<sf::Rende
 	auto& tex = std::any_cast<sf::Texture&>(m_partTex);
 	particleShader.setUniform("u_texture", tex);
 	Renderer::useTexture(&tex);
-	Renderer::drawParticleSysten(m_snow);
+	// Renderer::drawParticleSysten(m_snow);
 	Renderer::useShader(nullptr);
 	Renderer::useTexture(nullptr);
 	Renderer::drawTexture(m_blurBuff2.getTexture(), { 0, 0 }, 2);
@@ -807,9 +908,6 @@ void VirtualPiano::__render_frame(std::optional<std::reference_wrapper<sf::Rende
 		drawFallingNote(note);
 		drawFallingNoteOutline(note);
 	}
-
-	Renderer::useShader(nullptr);
-	Renderer::useTexture(nullptr);
 
 	renderVirtualKeyboard(target);
 }
@@ -971,7 +1069,6 @@ void VirtualPiano::__render_next_output_frame(void)
 {
 	if (!m_isRenderingToFile) return;
 	updateVisualization(m_videoRenderState.currentTime);
-	// exit(0);s
 	__render_frame(m_videoRenderState.renderTarget);
 	m_videoRenderState.framTimeTimer.startCount(ostd::eTimeUnits::Milliseconds);
 	Renderer::setRenderTarget(&m_videoRenderState.flippedRenderTarget);
@@ -985,11 +1082,6 @@ void VirtualPiano::__render_next_output_frame(void)
 	{
 		__stream_frame_to_ffmpeg();
 		++m_videoRenderState.frameIndex;
-	}
-	if (Common::wasSIGINTTriggered()) //TODO: remove from here and handle closing on SIGINT in the handler
-	{
-		Common::deleteDirectory(m_videoRenderState.folderPath);
-		m_parentWindow.close();
 	}
 	double _frame_render_time = (double)m_videoRenderState.framTimeTimer.endCount();
 	if (m_videoRenderState.updateFpsTimer.read() > 1000 == 0)
@@ -1008,7 +1100,8 @@ void VirtualPiano::__finish_output_render(void)
 {
 	if (!m_isRenderingToFile) return;
 	if (!m_videoRenderState.isFinished()) return;
-	m_vPianoData.setScale(m_videoRenderState.oldScale);
+	m_vPianoData.updateScale(m_parentWindow.getWindowWidth(), m_parentWindow.getWindowHeight());
+	onWindowResized(m_parentWindow.getWindowWidth(), m_parentWindow.getWindowHeight());
 	m_parentWindow.lockFullscreenStatus(false);
 	m_parentWindow.enableResizeable(true);
 	m_isRenderingToFile = false;
@@ -1035,5 +1128,45 @@ void VirtualPiano::__finish_output_render(void)
 
 void VirtualPiano::__load_resources(void)
 {
+	if (!noteShader.loadFromFile("shaders/basic.vert", "shaders/note.frag"))
+		OX_ERROR("Failed to load shader");
+	if (!blurShader.loadFromFile("shaders/basic.vert", "shaders/blur.frag"))
+		OX_ERROR("Failed to load shader");
+	if (!flipShader.loadFromFile("shaders/basic.vert", "shaders/flip.frag"))
+		OX_ERROR("Failed to load shader");
+	if (!particleShader.loadFromFile("shaders/basic.vert", "shaders/particle.frag"))
+		OX_ERROR("Failed to load shader");
 
+	if (!noteTexture.loadFromFile("res/tex/note.png"))
+		OX_ERROR("Failed to load texture");
+	noteTexture.setRepeated(true);
+
+	m_partTex = sf::Texture("res/tex/simpleParticle.png");
+	sf::Texture& tex = std::any_cast<sf::Texture&>(m_partTex);
+	if (!m_partTex.has_value())
+		OX_ERROR("Unable To load texture: %s", "res/tex/simpleParticle.png");
+
+	m_partTexRef.attachTexture(m_partTex, tex.getSize().x, tex.getSize().y);
+	m_partTiles.push_back(m_partTexRef.addTileInfo(0, 0, 32, 32));
+	m_partTiles.push_back(m_partTexRef.addTileInfo(32, 0, 32, 32));
+	m_partTiles.push_back(m_partTexRef.addTileInfo(64, 0, 32, 32));
+	m_partTiles.push_back(m_partTexRef.addTileInfo(96, 0, 32, 32));
+	m_partTiles.push_back(m_partTexRef.addTileInfo(128, 0, 32, 32));
+	m_partTiles.push_back(m_partTexRef.addTileInfo(160, 0, 32, 32));
+
+	ostd::String backgroundPath = "res/background.png";
+	sf::Image background;
+	if (!background.loadFromFile(backgroundPath))
+		OX_WARN("Unable to load background image.");
+	else
+	{
+		(void)m_backgroundTex.loadFromImage(background);
+		m_backgroundOriginalSize = { (float)m_backgroundTex.getSize().x, (float)m_backgroundTex.getSize().y };
+		m_backgroundSpr = sf::Sprite(m_backgroundTex);
+		m_backgroundSpr->setPosition({ 0, 0 });
+		ostd::Vec2 scale = { m_backgroundOriginalSize.x / (float)m_parentWindow.getWindowWidth(), m_backgroundOriginalSize.y / (float)m_parentWindow.getWindowHeight() };
+		scale = { 1.0f / scale.x, 1.0f / scale.y };
+		m_backgroundSpr->setScale({ scale.x, scale.y });
+		OX_DEBUG("Loaded background image: <%s>", backgroundPath.c_str());
+	}
 }

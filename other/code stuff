@@ -1,0 +1,84 @@
+
+/*
+class Transform2D
+{
+    private:
+        float m_rotation { 0.0f };
+        ostd::Vec2 m_translation { 0.0f, 0.0f };
+        ostd::Vec2 m_scale { 1.0f, 1.0f };
+        bool m_centeredOrigin { false };
+        ostd::Vec2 m_baseSize { 0.0f, 0.0f };
+
+        bool m_applied { true };
+        glm::mat4 m_matrix;
+        std::vector<ostd::Vec2> m_vertices { {}, {}, {}, {} };
+
+    public:
+        inline Transform2D& resetRotation(float newValue = 0.0f) { m_applied = (m_rotation == newValue && m_applied); m_rotation = newValue; return *this; }
+        inline Transform2D& resetTranslation(ostd::Vec2 newValue = { 0.0f, 0.0f }) { m_applied = (m_translation == newValue && m_applied); m_translation = newValue; return *this; }
+        inline Transform2D& resetScale(ostd::Vec2 newValue = { 1.0f, 1.0f }) { m_applied = (m_scale == newValue && m_applied); m_scale = newValue; return *this; }
+        inline Transform2D& reset(float _rotation = 0.0f, ostd::Vec2 _translation = { 0.0f, 0.0f }, ostd::Vec2 _scale = { 1.0f,1.0f }) { resetRotation(_rotation); resetTranslation(_translation); return resetScale(_scale); }
+
+        inline Transform2D& rotate(float value) { m_applied = (value == 0.0f && m_applied); m_rotation += value; return *this; }
+        inline Transform2D& translate(ostd::Vec2 value) { m_applied = (value == ostd::Vec2(0.0f, 0.0f) && m_applied); m_translation += value; return *this; }
+        inline Transform2D& scale(ostd::Vec2 value) { m_applied = (value == ostd::Vec2(0.0f, 0.0f) && m_applied); m_scale += value; return *this; }
+
+        inline float getRotation(void) const { return m_rotation; }
+        inline ostd::Vec2 getTranslation(void) const { return m_translation; }
+        inline ostd::Vec2 getScale(void) const { return m_scale; }
+        inline bool isOriginCentered(void) const { return m_centeredOrigin; }
+        inline bool isApplied(void) const { return m_applied; }
+        inline glm::mat4 getMatrix(void) const { return m_matrix; }
+        inline std::vector<ostd::Vec2> getVertices(void) const { return m_vertices; }
+        inline std::vector<ostd::Vec2>& getVerticesRef(void) { return m_vertices; }
+        inline ostd::Vec2 getBaseSize(void) const { return m_baseSize; }
+
+        inline Transform2D& setOriginCentered(bool b = true) { m_applied = (m_centeredOrigin == b && m_applied); m_centeredOrigin = b; return *this; }
+        inline Transform2D& setBaseSize(ostd::Vec2 baseSize) { m_applied = (m_baseSize == baseSize && m_applied); m_baseSize = baseSize; return *this; }
+
+        inline Transform2D& apply(void)
+        {
+            if (m_applied) return *this;
+
+            glm::vec4 npos(0.0f, 0.0f, 0.0f, 1.0f);
+            glm::mat4 model = glm::translate(glm::mat4(1.0f), { m_translation.x, m_translation.y, 0.0f });
+            model = glm::rotate(model, DEG_TO_RAD(m_rotation), { 0.0f, 0.0f, 1.0f });
+            model = glm::scale(model, { m_scale.x, m_scale.y, 1.0f });
+
+            m_vertices.clear();
+            if (m_centeredOrigin)
+            {
+                npos = { -(m_baseSize.x / 2.0f), -(m_baseSize.y / 2.0f), 0.0f, 1.0f };
+                npos = model * npos;
+                m_vertices.push_back({ npos.x, npos.y });
+                npos = { m_baseSize.x / 2.0f, -(m_baseSize.y / 2.0f), 0.0f, 1.0f };
+                npos = model * npos;
+                m_vertices.push_back({ npos.x, npos.y });
+                npos = { m_baseSize.x / 2.0f, m_baseSize.y / 2.0f, 0.0f, 1.0f };
+                npos = model * npos;
+                m_vertices.push_back({ npos.x, npos.y });
+                npos = { -(m_baseSize.x / 2.0f), m_baseSize.y / 2.0f, 0.0f, 1.0f };
+                npos = model * npos;
+                m_vertices.push_back({ npos.x, npos.y });
+            }
+            else
+            {
+                npos = { 0.0f, 0.0f, 0.0f, 1.0f };
+                npos = model * npos;
+                m_vertices.push_back({ npos.x, npos.y });
+                npos = { m_baseSize.x, 0.0f, 0.0f, 1.0f };
+                npos = model * npos;
+                m_vertices.push_back({ npos.x, npos.y });
+                npos = { m_baseSize.x, m_baseSize.y, 0.0f, 1.0f };
+                npos = model * npos;
+                m_vertices.push_back({ npos.x, npos.y });
+                npos = { 0.0f, m_baseSize.y, 0.0f, 1.0f };
+                npos = model * npos;
+                m_vertices.push_back({ npos.x, npos.y });
+            }
+
+            m_applied = true;
+            return *this;
+        }
+};
+*/

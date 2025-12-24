@@ -26,11 +26,13 @@
 #include <ostd/Signals.hpp>
 #include <ostd/String.hpp>
 #include <ostd/Defines.hpp>
+#include "vendor/nlohmann/json.hpp" // IWYU pragma: keep
 
 #define sf_color(ostd_color) sf::Color { ostd_color.r, ostd_color.g, ostd_color.b, ostd_color.a }
 #define tgui_color(ostd_color) tgui::Color { ostd_color.r, ostd_color.g, ostd_color.b, ostd_color.a }
 #define color_to_glsl(ostd_color) sf::Glsl::Vec4(ostd_color.r / 255.0f, ostd_color.g / 255.0f, ostd_color.b / 255.0f, ostd_color.a / 255.0f)
 #define sf_intRect(ostd_rect) sf::IntRect { { (int)ostd_rect.x, (int)ostd_rect.y }, { (int)ostd_rect.w, (int)ostd_rect.h } }
+#define sfvec_to_ostd(sfVec) ostd::Vec2 { (float)sfVec.x, (float)sfVec.y }
 
 class Common
 {
@@ -48,11 +50,21 @@ class Common
 		inline static float scaleY(float value) { return value * guiScaleY; }
 		inline static float scaleXY(float value) { return value * 0.5f * (guiScaleX + guiScaleY); }
 
+		static void RGBtoHSV(float r, float g, float b, float& h, float& s, float& v);
+		static void HSVtoRGB(float h, float s, float v, float& r, float& g, float& b);
+
 	public:
 	    inline static float guiScaleX { 1.0f };
 	    inline static float guiScaleY { 1.0f };
 
 		inline static double deltaTime { 1 };
+
+		inline static const nlohmann::json DefaultSettingsJSON = R"({
+						"settings": {
+							"useSystenFFMPEG": true,
+							"ffmpegPath": "./ffmpeg/"
+						}
+		})"_json;
 
 	#ifdef BUILD_CONFIG_DEBUG
 		inline static constexpr bool IsDebug = true;

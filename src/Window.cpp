@@ -22,7 +22,6 @@
 #include "Common.hpp"
 #include "Renderer.hpp"
 #include "ffmpeg_helper.hpp"
-#include "ConfigManager.hpp"
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/Graphics/VertexArray.hpp>
 #include <SFML/Window/WindowEnums.hpp>
@@ -33,14 +32,13 @@ void Window::onInitialize(void)
 {
 	enableSignals();
 	connectSignal(ostd::tBuiltinSignals::KeyReleased);
+	connectSignal(ostd::tBuiltinSignals::KeyPressed);
 	connectSignal(VirtualPiano::NoteOnSignal);
 	connectSignal(VirtualPiano::NoteOffSignal);
 	connectSignal(VirtualPiano::MidiStartSignal);
 	connectSignal(ostd::tBuiltinSignals::WindowResized);
 	connectSignal(WindowFocusLost);
 	connectSignal(WindowFocusGained);
-
-	ConfigManager::init("settings.json");
 
 	Renderer::init(*this, "themes/fonts/RobotoMono.ttf");
 
@@ -50,12 +48,15 @@ void Window::onInitialize(void)
 	m_windowPositionBeforeFullscreen = { (float)m_window.getPosition().x, (float)m_window.getPosition().y };
 	// enableFullscreen(true);
 	m_vpiano.init();
-	m_vpiano.loadMidiFile("res/midi/merry3.mid");
-	m_vpiano.loadAudioFile("res/music/merry3.mp3");
+	m_vpiano.loadMidiFile("res/midi/chop_64_2_2.mid");
+	m_vpiano.loadAudioFile("res/music/chop_64_2_2.mp3");
 	setClearColor(m_vpiano.vPianoData().backgroundColor);
 
 	m_gui.init(*this, m_vpiano.getVideoRenderState(), "themes/ui/cursor.png", "themes/ui/icon.png", "themes/Dark.txt", true);
 	m_gui.showFPS(true);
+	// setSize(1920, 1080);
+
+	m_gui.toggleVisibility();
 }
 
 void Window::handleSignal(ostd::tSignal& signal)
@@ -145,6 +146,7 @@ void Window::handleSignal(ostd::tSignal& signal)
 			m_vpiano.getAudioFile().setPlayingOffset(sf::seconds(m_vpiano.getAutoSoundStart()));
 		}
 	}
+	m_vpiano.onSignal(signal);
 }
 
 void Window::onEventPoll(const std::optional<sf::Event>& event)
@@ -154,6 +156,7 @@ void Window::onEventPoll(const std::optional<sf::Event>& event)
 
 void Window::onRender(void)
 {
+	Common::deltaTime = 1.0 / 60.0; //m_frameClock.restart().asSeconds();
 	m_vpiano.render();
 	m_gui.draw();
 }
@@ -165,7 +168,6 @@ void Window::onFixedUpdate(double frameTime_s)
 
 void Window::onUpdate(void)
 {
-	Common::deltaTime = m_frameClock.restart().asSeconds();
 	m_vpiano.fastUpdate();
 }
 

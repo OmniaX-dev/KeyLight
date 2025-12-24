@@ -29,6 +29,7 @@
 #include "Common.hpp"
 
 
+// ============================================== TextureRef ==============================================
 TextureRef::~TextureRef(void)
 {
 	setID(InvalidTexture);
@@ -52,7 +53,6 @@ TextureRef::ID TextureRef::attachTexture(std::any& texture, uint32_t width, uint
 		m_width = width;
 		m_height = height;
 	}
-
 	return getID();
 }
 
@@ -87,10 +87,15 @@ TextureRef::tTexCoords TextureRef::getTile(TextureAtlasIndex index)
 	}
 	return m_tiles[index];
 }
+// =====================================================================================================
 
 
 
 
+
+
+
+// =========================================== PhysicsObject ==========================================
 PhysicsObject::PhysicsObject(void)
 {
 	velocity = { 0, 0 };
@@ -143,63 +148,15 @@ void PhysicsObject::physicsUpdate(void)
 	skipNextUpdate(false);
 	afterUpdate();
 }
+// =====================================================================================================
 
 
 
 
-TransformableObject::TransformableObject(ostd::Rectangle rect)
-{
-	m_rect = rect;
-	m_tintColor = { 255, 255, 255, 255 };
-	m_visible = true;
-	m_transform.setOriginCentered(true);
-	update_transform();
-}
-
-TransformableObject& TransformableObject::rotate(float angle)
-{
-	m_transform.rotate(angle);
-	update_transform();
-	return *this;
-}
-
-TransformableObject& TransformableObject::translate(ostd::Vec2 translation)
-{
-	m_transform.translate(translation);
-	update_transform();
-	return *this;
-}
-
-TransformableObject& TransformableObject::scale(ostd::Vec2 scale)
-{
-	m_transform.scale(scale);
-	update_transform();
-	return *this;
-}
-
-void TransformableObject::update_transform(void)
-{
-	m_transform.setBaseSize(m_rect.getSize());
-	m_transform.translate(m_rect.getPosition());
-	m_transform.apply();
-	m_vertices = m_transform.getVertices();
-	float min_x = m_vertices[0].x;
-	float min_y = m_vertices[0].y;
-	float max_x = m_vertices[m_vertices.size() - 1].x;
-	float max_y = m_vertices[m_vertices.size() - 1].y;
-	for (auto& vert : m_vertices)
-	{
-		if (vert.x < min_x) min_x = vert.x;
-		else if (vert.x > max_x) max_x = vert.x;
-		if (vert.y < min_y) min_y = vert.y;
-		else if (vert.y > max_y) max_y = vert.y;
-	}
-	m_bounds = { min_x, min_y, max_x - min_x, max_y - min_y };
-}
 
 
 
-
+// ============================================= Particle ==============================================
 void Particle::setup(tParticleInfo partInfo)
 {
 	maxVelocity = 5.0f;
@@ -253,8 +210,6 @@ void Particle::setup(tParticleInfo partInfo)
 	texture = partInfo.texture;
 	tileIndex = partInfo.tileIndex;
 
-	transform = Transform2D();
-	transform.setOriginCentered(true);
 	m_ready = true;
 	m_dead = false;
 
@@ -268,21 +223,22 @@ void Particle::setup(tParticleInfo partInfo)
 		life /= 2.0f;
 	}
 	else
+	{
 		m_alpha_dec = color.a / life;
+		alpha = color.a;
+	}
 
 	fullLife = life;
 	fulLAlpha = color.a;
 	m_fade_in_mult = (partInfo.lifeSpan / 100.0f);
 	colorRamp = partInfo.colorRamp;
 
-	velocity *= Common::deltaTime;
+	// velocity *= Common::deltaTime;
 }
 
 void Particle::beforeUpdate(void)
 {
 	if (isDead()) return;
-	transform.rotate(ostd::Random::getf32(0.0f, rotationStep) * Common::deltaTime);
-	if (transform.getRotation() > 360.0f) transform.rotate(-360.0f);
 	if (colorRamp.count() > 0)
 	{
 		color.r = colorRamp.current().r;
@@ -311,18 +267,19 @@ void Particle::beforeUpdate(void)
 	else color.a = std::round(alpha);
 }
 
-void Particle::afterUpdate(void)
-{
-	transform.translate(position);
-}
-
 void Particle::kill(void)
 {
 	 m_dead = true;
 }
+// =====================================================================================================
 
 
 
+
+
+
+
+// ========================================= ParticleEmitter ===========================================
 ParticleEmitter::ParticleEmitter(void)
 {
 	invalidate();
@@ -347,17 +304,13 @@ ParticleEmitter& ParticleEmitter::create(ostd::Rectangle emissionRect, uint32_t 
 	m_particleCount = maxParticles;
 	m_currentPathValue = 0.0f;
 
-	// m_particleVertexArray.vertices.resize(maxParticles * 6); // 6 because it is for two triangles per particles
 	m_vertexArray.resize(maxParticles * 6); // 6 because it is for two triangles per particles
 	m_vertexArray.setPrimitiveType(sf::PrimitiveType::Triangles);
 
-
-	useParticleTransform(false);
 	enablePath(false);
 
 	setTypeName("ox::ParticleEmitter");
 	validate();
-	setVisible(false);
 	return *this;
 }
 
@@ -375,7 +328,8 @@ void ParticleEmitter::update(const ostd::Vec2& force)
 		setEmissionRect({ m_currentPathPoint.position, 10.0f, 10.0f });
 	}
 	int32_t activeParticleCount = 0;
-	for (uint32_t i = 0; i < m_particleCount; i++)
+	m_vertexArray.clear();
+	for (uint32_t i = 0, k = 0; i < m_particleCount; i++)
 	{
 		auto& part = m_particles[i];
 		if (part.isDead()) continue;
@@ -402,18 +356,8 @@ void ParticleEmitter::update(const ostd::Vec2& force)
 		activeParticleCount++;
 		part.applyForce(force);
 		part.physicsUpdate();
-		if (m_useParticleTransform)
-       		part.transform.setBaseSize(part.size).apply();
-	}
-	// m_vertexArray.resize(activeParticleCount);
-	m_vertexArray.clear();
-	for (uint32_t i = 0, k = 0; i < m_particleCount; i++)
-	{
-		auto& part = m_particles[i];
-		if (part.isDead()) continue;
 
-		const auto& q = m_particles[i].transform.getVerticesRef();
-        size_t v = k * 6;
+		size_t v = k * 6;
 
         for (int j = 0; j < 6; ++j)
         {
@@ -441,7 +385,40 @@ void ParticleEmitter::update(const ostd::Vec2& force)
 
         k++;
 	}
+	// m_vertexArray.clear();
+	// for (uint32_t i = 0, k = 0; i < m_particleCount; i++)
+	// {
+	// 	auto& part = m_particles[i];
+	// 	if (part.isDead()) continue;
 
+ //        size_t v = k * 6;
+
+ //        for (int j = 0; j < 6; ++j)
+ //        {
+ //        	m_vertexArray.append(sf::Vertex());
+ //        	m_vertexArray[v + j].color = sf_color(part.color);
+ //        }
+
+ //        m_vertexArray[v + 0].position = { part.position.x, part.position.y };
+ //        m_vertexArray[v + 1].position = { part.position.x + part.size.x, part.position.y };
+ //        m_vertexArray[v + 2].position = { part.position.x, part.position.y + part.size.y };
+ //        m_vertexArray[v + 3].position = { part.position.x + part.size.x, part.position.y };
+ //        m_vertexArray[v + 4].position = { part.position.x + part.size.x, part.position.y + part.size.y };
+ //        m_vertexArray[v + 5].position = { part.position.x, part.position.y + part.size.y };
+
+ //        TextureRef::tTexCoords uv;
+ //       	if (part.texture != nullptr)
+ //        	uv = part.texture->getTile(part.tileIndex);
+
+ //        m_vertexArray[v + 0].texCoords = { uv.topLeft.x,     uv.topLeft.y     };     // TL
+ //        m_vertexArray[v + 1].texCoords = { uv.topRight.x,    uv.topRight.y    };    // TR
+ //        m_vertexArray[v + 2].texCoords = { uv.bottomLeft.x,  uv.bottomLeft.y  };  // BL
+ //        m_vertexArray[v + 3].texCoords = { uv.topRight.x,    uv.topRight.y    };    // TR
+ //        m_vertexArray[v + 4].texCoords = { uv.bottomRight.x, uv.bottomRight.y }; // BR
+ //        m_vertexArray[v + 5].texCoords = { uv.bottomLeft.x,  uv.bottomLeft.y  };  // BL
+
+ //        k++;
+	// }
 }
 
 void ParticleEmitter::emit(tParticleInfo partInfo, int32_t count)
@@ -484,28 +461,33 @@ ostd::Vec2 ParticleEmitter::getRandomEmissionPoint(void)
 {
 	return ostd::Random::getVec2({ 0, getEmissionRect().w }, { 0, getEmissionRect().h });
 }
+// =====================================================================================================
 
 
 
+
+
+
+
+// ======================================== basicFireParticle ==========================================
 tParticleInfo ParticleFactory::basicFireParticle(TextureRef::TextureInfo texture)
 {
 	tParticleInfo info;
 	info.texture = texture.texture;
 	info.tileIndex = texture.tile;
-	info.speed = 0.45f;
-	info.randomVelocity = { 0.2f, 0.3f };
-	info.randomDirection = 0.24f;
-	info.randomAlpha = 0.45f;
+	info.speed = 2.0f;
+	info.randomVelocity = { 0.2f, 0.5f };
+	info.randomDirection = 0.14f;
+	info.randomAlpha = 0.25;
 	info.randomSize = { 0.8f, 0.8f };
 	info.size = { 40.0f, 40.0f };
-	info.lifeSpan = 600.0f;
-	info.addColorToGradient({ 255, 255, 255 }, { 255, 193, 31 }, 0.05f);
-	info.addColorToGradient({ 255, 247, 93 }, { 255, 193, 31 }, 0.05f);
-	info.addColorToGradient({ 255, 193, 31 }, { 254, 101, 13 }, 0.1f);
-	info.addColorToGradient({ 254, 101, 13 }, { 243, 60, 4 }, 0.4f);
-	info.addColorToGradient({ 243, 60, 4 }, { 218, 31, 5 }, 0.3f);
-	info.addColorToGradient({ 218, 31, 5 }, { 161, 1, 0 }, 0.05f);
-	info.addColorToGradient({ 161, 1, 0 }, { 161, 1, 0 }, 0.05f);
+	info.lifeSpan = 120.0f;
+	info.color = { 255, 255, 255, 255 };
+	info.addColorToGradient({ 161, 1, 0 },   { 218, 31, 5 },  0.08f);  // Bright core → orange
+	info.addColorToGradient({ 218, 31, 5 },   { 243, 60, 4 },  0.45f);  // Orange → deep orange
+	info.addColorToGradient({ 243, 60, 4 },   { 254, 101, 13 },  0.25f);  // Deep orange → red
+	info.addColorToGradient({ 254, 101, 13 },   { 255, 193, 31 },  0.2f);  // Red → dark red
+	info.addColorToGradient({ 255, 193, 31 },   { 255, 247, 93 },  0.02f);  // Dark red → ember
 	info.angle = 90.0f;
 	return info;
 }
@@ -515,7 +497,7 @@ tParticleInfo ParticleFactory::basicSnowParticle(TextureRef::TextureInfo texture
 	tParticleInfo info;
 	info.texture = texture.texture;
 	info.tileIndex = texture.tile;
-	info.speed = 100.2f;
+	info.speed = 3.0f;
 	info.color = { 132, 165, 216 };
 	info.randomVelocity.x = 0.0f;
 	info.randomDirection = 0.0f;
@@ -562,3 +544,57 @@ void ParticleFactory::__pre_emit(ParticleEmitter& emitter, uint32_t pre_emit_cyc
 		emitter.update(wind);
 	}
 }
+
+void ParticleFactory::createColorGradient(tParticleInfo& partInfo, const ostd::Color& startColor, uint8_t nColors)
+{
+	if (nColors == 0) return;
+
+    partInfo.colorRamp.reset();
+    partInfo.colorRamp.m_colors.clear();
+
+    if (nColors == 1)
+    {
+        partInfo.addColorToGradient(startColor, startColor, 1.0f);
+        return;
+    }
+
+    const float percentPerStep = 1.0f / static_cast<float>(nColors - 1);
+
+    // Convert to HSV
+    float h, s, v;
+    Common::RGBtoHSV(startColor.r / 255.0f, startColor.g / 255.0f, startColor.b / 255.0f, h, s, v);
+
+    for (uint8_t i = 0; i < nColors - 1; ++i)
+    {
+        float t = static_cast<float>(i) / static_cast<float>(nColors - 1);
+        float t_next = static_cast<float>(i + 1) / static_cast<float>(nColors - 1);
+
+        // Brightness: start high (light), peak higher, end slightly lower (soft glow)
+        float brightness     = 0.85f + 0.15f * std::sin(t * 3.14159f);         // 0.85 → 1.0 → 0.85
+        float brightnessNext = 0.85f + 0.15f * std::sin(t_next * 3.14159f);
+
+        // Saturation: slightly increase then decrease for warmth
+        float saturation     = s * (0.7f + 0.3f * std::sin(t * 3.14159f));
+        float saturationNext = s * (0.7f + 0.3f * std::sin(t_next * 3.14159f));
+
+        // Clamp
+        brightness = std::min(brightness, 1.0f);
+        brightnessNext = std::min(brightnessNext, 1.0f);
+        saturation = std::min(saturation, 1.0f);
+        saturationNext = std::min(saturationNext, 1.0f);
+
+        float r1, g1, b1, r2, g2, b2;
+        Common::HSVtoRGB(h, saturation,     brightness,     r1, g1, b1);
+        Common::HSVtoRGB(h, saturationNext, brightnessNext, r2, g2, b2);
+
+        ostd::Color current (static_cast<uint8_t>(r1 * 255), static_cast<uint8_t>(g1 * 255),
+                             static_cast<uint8_t>(b1 * 255), 255);
+        ostd::Color next    (static_cast<uint8_t>(r2 * 255), static_cast<uint8_t>(g2 * 255),
+                             static_cast<uint8_t>(b2 * 255), 255);
+
+        partInfo.addColorToGradient(current, next, percentPerStep);
+    }
+        // std::cout << current << "\n" << next << "\n\n";
+    // exit(0);
+}
+// =====================================================================================================
