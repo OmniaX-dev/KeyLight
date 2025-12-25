@@ -74,6 +74,7 @@ struct VirtualPianoData
 		inline static constexpr int32_t base_width { 2080 };
 		inline static constexpr int32_t base_height { 1400 };
 
+		double fallingTime_s { 0 };
 		float pressedVelocityMultiplier { 0.0f };
 
 		int32_t fallingWhiteNoteOutlineWidth { 0 };
@@ -190,6 +191,11 @@ class SignalListener : public ostd::BaseObject
 
 	public:
 		VirtualPiano& parent;
+
+		inline static const uint64_t NoteOnSignal = ostd::SignalHandler::newCustomSignal(5000);
+		inline static const uint64_t NoteOffSignal = ostd::SignalHandler::newCustomSignal(5001);
+		inline static const uint64_t MidiStartSignal = ostd::SignalHandler::newCustomSignal(5002);
+		inline static const uint64_t MidiEndSignal = ostd::SignalHandler::newCustomSignal(5003);
 };
 struct VideoRenderState
 {

@@ -100,7 +100,8 @@
 		},
 		"particles": {
 			"configFile": "styles/particles/Default.json",
-			"pressedVelocityMultiplier": 8.0
+			"pressedVelocityMultiplier": 8.0,
+			"emitPerFrame": 70
 		},
 		"usePerNoteColors": false,
 		"noteTextureFile": "res/tex/note.png",

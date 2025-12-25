@@ -33,7 +33,7 @@
 #include "Common.hpp"
 #include "Renderer.hpp"
 #include "SFMLWindow.hpp"
-#include "VPianoDataStructures.hpp"
+#include "VPianoData.hpp"
 #include "VirtualPiano.hpp"
 
 
@@ -212,7 +212,7 @@ void Gui::showColorPicker(const ostd::String& title, const ostd::Color& setColor
 
 void Gui::showVideoRenderingGui(void)
 {
-	if (!m_videoRenderState->virtualPiano.isRenderingToFile())
+	if (!m_videoRenderState->virtualPiano.getVideoRenderer().isRenderingToFile())
 		return;
 
 	m_isRenderingVideo = true;

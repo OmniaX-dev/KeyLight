@@ -21,6 +21,7 @@
 #include "Window.hpp"
 #include "Common.hpp"
 #include "Renderer.hpp"
+#include "VPianoData.hpp"
 #include "ffmpeg_helper.hpp"
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/Graphics/VertexArray.hpp>
@@ -33,9 +34,9 @@ void Window::onInitialize(void)
 	enableSignals();
 	connectSignal(ostd::tBuiltinSignals::KeyReleased);
 	connectSignal(ostd::tBuiltinSignals::KeyPressed);
-	connectSignal(VirtualPiano::NoteOnSignal);
-	connectSignal(VirtualPiano::NoteOffSignal);
-	connectSignal(VirtualPiano::MidiStartSignal);
+	connectSignal(SignalListener::NoteOnSignal);
+	connectSignal(SignalListener::NoteOffSignal);
+	connectSignal(SignalListener::MidiStartSignal);
 	connectSignal(ostd::tBuiltinSignals::WindowResized);
 	connectSignal(WindowFocusLost);
 	connectSignal(WindowFocusGained);
@@ -48,11 +49,9 @@ void Window::onInitialize(void)
 	m_windowPositionBeforeFullscreen = { (float)m_window.getPosition().x, (float)m_window.getPosition().y };
 	// enableFullscreen(true);
 	m_vpiano.init();
-	m_vpiano.loadMidiFile("res/midi/chop_64_2_2.mid");
-	m_vpiano.loadAudioFile("res/music/chop_64_2_2.mp3");
 	setClearColor(m_vpiano.vPianoData().backgroundColor);
 
-	m_gui.init(*this, m_vpiano.getVideoRenderState(), "themes/ui/cursor.png", "themes/ui/icon.png", "themes/Dark.txt", true);
+	m_gui.init(*this, m_vpiano.getVideoRenderer().getVideoRenderState(), "themes/ui/cursor.png", "themes/ui/icon.png", "themes/Dark.txt", true);
 	m_gui.showFPS(true);
 	// setSize(1920, 1080);
 
@@ -68,7 +67,7 @@ void Window::handleSignal(ostd::tSignal& signal)
 			close();
 		if (evtData.keyCode == (int32_t)sf::Keyboard::Key::Space)
 		{
-			if (!m_vpiano.isRenderingToFile())
+			if (!m_vpiano.getVideoRenderer().isRenderingToFile())
 			{
 				if (!m_vpiano.isPlaying())
 					m_vpiano.play();
@@ -78,18 +77,18 @@ void Window::handleSignal(ostd::tSignal& signal)
 		}
 		else if (evtData.keyCode == (int32_t)sf::Keyboard::Key::Enter)
 		{
-			if (!m_vpiano.isRenderingToFile())
+			if (!m_vpiano.getVideoRenderer().isRenderingToFile())
 			{
 				m_vpiano.stop();
 			}
 		}
 		else if (evtData.keyCode == (int32_t)sf::Keyboard::Key::F9)
 		{
-			if (!m_vpiano.isRenderingToFile())
+			if (!m_vpiano.getVideoRenderer().isRenderingToFile())
 			{
 				// if (!m_vpiano.configImageSequenceRender("tmp", { 1920, 1080 }, 60))
 				// 	OX_ERROR("Unable to start image sequence render.");
-				if (!m_vpiano.configFFMPEGVideoRender("./output", { 1920, 1080 }, 60, FFMPEG::Profiles::GeneralPurpose))
+				if (!m_vpiano.getVideoRenderer().configFFMPEGVideoRender("./output", { 1920, 1080 }, 60, FFMPEG::Profiles::GeneralPurpose))
 					OX_ERROR("Unable to start video render.");
 				else
 				{
@@ -99,21 +98,21 @@ void Window::handleSignal(ostd::tSignal& signal)
 		}
 		else if (evtData.keyCode == (int32_t)sf::Keyboard::Key::F11)
 		{
-			if (!m_vpiano.isRenderingToFile())
+			if (!m_vpiano.getVideoRenderer().isRenderingToFile())
 			{
 				enableFullscreen(!m_isFullscreen);
 			}
 		}
 		else if (evtData.keyCode == (int32_t)sf::Keyboard::Key::F2)
 		{
-			if (!m_vpiano.isRenderingToFile())
+			if (!m_vpiano.getVideoRenderer().isRenderingToFile())
 			{
 				m_gui.toggleVisibility();
 			}
 		}
 		else if (evtData.keyCode == (int32_t)sf::Keyboard::Key::F3)
 		{
-			if (!m_vpiano.isRenderingToFile())
+			if (!m_vpiano.getVideoRenderer().isRenderingToFile())
 			{
 				// m_gui.showFileDialog("Test File DIalog", { { "All file types", { "*.*" } } }, [](const std::vector<ostd::String>& fileList, bool wasCanceled){
 
@@ -126,7 +125,7 @@ void Window::handleSignal(ostd::tSignal& signal)
 	}
 	else if (signal.ID == ostd::tBuiltinSignals::WindowResized)
 	{
-		if (!m_vpiano.isRenderingToFile())
+		if (!m_vpiano.getVideoRenderer().isRenderingToFile())
 		{
 			auto& evtData = (WindowResizedData&)signal.userData;
 			sf::View view	 = m_window.getView();
@@ -138,15 +137,14 @@ void Window::handleSignal(ostd::tSignal& signal)
 			__update_local_window_size((uint32_t)evtData.new_width, (uint32_t)evtData.new_height);
 		}
 	}
-	else if (signal.ID == VirtualPiano::MidiStartSignal)
+	else if (signal.ID == SignalListener::MidiStartSignal)
 	{
-		if (m_vpiano.hasAudioFile() && !m_vpiano.isRenderingToFile())
+		if (m_vpiano.vPianoRes().hasAudioFile() && !m_vpiano.getVideoRenderer().isRenderingToFile())
 		{
-			m_vpiano.getAudioFile().play();
-			m_vpiano.getAudioFile().setPlayingOffset(sf::seconds(m_vpiano.getAutoSoundStart()));
+			m_vpiano.vPianoRes().getAudioFile().play();
+			m_vpiano.vPianoRes().getAudioFile().setPlayingOffset(sf::seconds(m_vpiano.vPianoRes().getAutoSoundStart()));
 		}
 	}
-	m_vpiano.onSignal(signal);
 }
 
 void Window::onEventPoll(const std::optional<sf::Event>& event)
@@ -168,7 +166,6 @@ void Window::onFixedUpdate(double frameTime_s)
 
 void Window::onUpdate(void)
 {
-	m_vpiano.fastUpdate();
 }
 
 void Window::enableFullscreen(bool enable)

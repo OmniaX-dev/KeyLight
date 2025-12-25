@@ -28,16 +28,14 @@
 #include <ostd/BaseObject.hpp>
 #include <ostd/Signals.hpp>
 #include <ostd/Utils.hpp>
-#include <deque>
-#include "MidiParser.hpp"
 #include <ostd/Geometry.hpp>
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
-#include <vector>
-#include "VPianoDataStructures.hpp"
-#include "ffmpeg_helper.hpp"
-#include "Particles.hpp"
+#include "VPianoData.hpp"
+#include "VideoRenderer.hpp"
 #include "JSONManager.hpp"
+#include "VPianoResources.hpp"
+#include "VirtualKeyboard.hpp"
 
 class Window;
 class VirtualPiano
@@ -45,10 +43,9 @@ class VirtualPiano
 
 	public:
 		// Core functionality
-		inline VirtualPiano(Window& parentWindow) : m_sigListener(*this), m_parentWindow(parentWindow), m_videoRenderState(*this) {  }
+		inline VirtualPiano(Window& parentWindow) : m_vPianoRes(*this), m_sigListener(*this), m_parentWindow(parentWindow), m_videoRenderer(*this), m_vKeyboard(*this) {  }
 		void init(void);
 		void onWindowResized(uint32_t width, uint32_t height);
-		void onSignal(ostd::tSignal& signal);
 
 		// Playback functionality
 		void play(void);
@@ -56,104 +53,40 @@ class VirtualPiano
 		void stop(void);
 		double getPlayTime_s(void);
 
-		// Audio functionality
-		bool loadMidiFile(const ostd::String& filePath);
-		bool loadAudioFile(const ostd::String& filePath);
-		float scanMusicStartPoint(const ostd::String& filePath, float thresholdPercent = 0.02f, float minDuration = 0.05f);
-
 		// Update and Render
 		void update(void);
-		void fastUpdate(void);
-		void calculateFallingNotes(double currentTime);
-		void updateVisualization(double currentTime);
 		void render(std::optional<std::reference_wrapper<sf::RenderTarget>> target = std::nullopt);
-		void renderVirtualKeyboard(std::optional<std::reference_wrapper<sf::RenderTarget>> target = std::nullopt);
-		void drawFallingNote(const FallingNoteGraphicsData& noteData);
-		void drawFallingNoteOutline(const FallingNoteGraphicsData& noteData);
-		void drawFallingNoteGlow(const FallingNoteGraphicsData& noteData);
-
-		// File rendering
-		bool configImageSequenceRender(const ostd::String& folderPath, const ostd::UI16Point& resolution, uint8_t fps);
-		bool configFFMPEGVideoRender(const ostd::String& filePath, const ostd::UI16Point& resolution, uint8_t fps, const FFMPEG::tProfile& profile);
+		void renderFrame(std::optional<std::reference_wrapper<sf::RenderTarget>> target = std::nullopt);
 
 		// Getters and Setters
 		inline VirtualPianoData& vPianoData(void) { return m_vPianoData; }
-		inline sf::Music& getAudioFile(void) { return m_audioFile; }
-		inline float getAutoSoundStart(void) { return m_autoSoundStart; }
-		inline bool hasAudioFile(void) { return m_hasAudioFile; }
+		inline VPianoResources& vPianoRes(void) { return m_vPianoRes; }
+		inline VirtualKeyboard& vKeyboard(void) { return m_vKeyboard; }
+		inline VideoRenderer& getVideoRenderer(void) { return m_videoRenderer; }
 		inline bool isPlaying(void) { return m_playing; }
-		inline bool isRenderingToFile(void) { return m_isRenderingToFile; }
-		inline VideoRenderState& getVideoRenderState(void) { return m_videoRenderState; }
-
-	private:
-		void __render_frame(std::optional<std::reference_wrapper<sf::RenderTarget>> target = std::nullopt);
-		void __preallocate_file_names_for_rendering(uint32_t frameCount, const ostd::String& baseFileName, const ostd::String& basePath, ImageType imageType, const uint16_t marginFrames = 200);
-		FILE* __open_ffmpeg_pipe(const ostd::String& filePath, const ostd::UI16Point& resolution, uint8_t fps, const FFMPEG::tProfile& profile);
-		void __save_frame_to_file(const sf::RenderTexture& rt, const ostd::String& basePath, int frameIndex);
-		void __stream_frame_to_ffmpeg(void);
-		void __render_next_output_frame(void);
-		void __finish_output_render(void);
-		void __load_resources(void);
+		inline Window& getParentWindow(void) { return m_parentWindow; }
 
 	private:
 		Window& m_parentWindow;
 		JSONManager m_config;
 		VirtualPianoData m_vPianoData;
-		sf::Music m_audioFile;
-		ostd::String m_audioFilePath;
-
-		std::vector<PianoKey> m_pianoKeys;
-		std::vector<MidiParser::NoteEvent> m_midiNotes;
-		std::deque<MidiParser::NoteEvent> m_activeFallingNotes;
-		std::vector<FallingNoteGraphicsData> m_fallingNoteGfx_w;
-		std::vector<FallingNoteGraphicsData> m_fallingNoteGfx_b;
-
-		std::vector<ostd::String> m_renderFileNames;
+		VPianoResources m_vPianoRes;
+		VideoRenderer m_videoRenderer;
+		SignalListener m_sigListener;
+		VirtualKeyboard m_vKeyboard;
 
 		bool m_playing { false };
 		bool m_paused { false };
-		bool m_isRenderingToFile { false };
 		bool m_firstNotePlayed { false };
-		bool m_hasAudioFile { false };
-
-		int32_t m_nextFallingNoteIndex { 0 };
-		float m_autoSoundStart { 0.0f };
-
-		double m_fallingTime_s { 4.5 };
 		double m_startTimeOffset_ns { 0.0 };
-
-		double m_firstNoteStartTime { 0.0 };
-		double m_lastNoteEndTime { 0.0 };
 
 		sf::RenderTexture m_glowBuffer;
 		sf::RenderTexture m_blurBuff1;
 		sf::RenderTexture m_blurBuff2;
 		sf::View m_glowView;
-		sf::Texture m_backgroundTex;
-		std::optional<sf::Sprite> m_backgroundSpr;
 		bool m_showBackground { true };
-		ostd::Vec2 m_backgroundOriginalSize { 0, 0 };
-
-		SignalListener m_sigListener;
-		VideoRenderState m_videoRenderState;
-
-		std::any m_partTex;
-		TextureRef m_partTexRef;
-		std::vector<TextureRef::TextureAtlasIndex> m_partTiles;
-
-	public:
-		sf::Shader noteShader;
-		sf::Shader blurShader;
-		sf::Shader flipShader;
-		sf::Shader particleShader;
-		sf::Texture noteTexture;
-
-	public:
-		inline static const uint64_t NoteOnSignal = ostd::SignalHandler::newCustomSignal(5000);
-		inline static const uint64_t NoteOffSignal = ostd::SignalHandler::newCustomSignal(5001);
-		inline static const uint64_t MidiStartSignal = ostd::SignalHandler::newCustomSignal(5002);
-		inline static const uint64_t MidiEndSignal = ostd::SignalHandler::newCustomSignal(5003);
 
 		friend class SignalListener;
-
+		friend class VPianoResources;
+		friend class VirtualKeyboard;
 };

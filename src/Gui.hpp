@@ -41,7 +41,7 @@
 #include <ostd/Utils.hpp>
 
 #include "SFMLWindow.hpp"
-#include "VPianoDataStructures.hpp"
+#include "VPianoData.hpp"
 
 class Gui : public ostd::BaseObject
 {

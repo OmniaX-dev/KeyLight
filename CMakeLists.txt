@@ -51,6 +51,9 @@ list(APPEND SOURCE_FILES
 	${CMAKE_CURRENT_LIST_DIR}/src/JSONManager.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/Particles.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/VPianoResources.cpp
+	${CMAKE_CURRENT_LIST_DIR}/src/VideoRenderer.cpp
+	${CMAKE_CURRENT_LIST_DIR}/src/VPianoData.cpp
+	${CMAKE_CURRENT_LIST_DIR}/src/VirtualKeyboard.cpp
 )
 #-----------------------------------------------------------------------------------------
 
