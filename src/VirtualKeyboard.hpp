@@ -30,6 +30,7 @@ class VirtualKeyboard
 	public:
 		VirtualKeyboard(VirtualPiano& vpiano);
 		void init(void);
+		void loadFromStyleJSON(JSONManager& styleJson);
 		void calculateFallingNotes(double currentTime);
 		void updateVisualization(double currentTime);
 		void render(std::optional<std::reference_wrapper<sf::RenderTarget>> target = std::nullopt);

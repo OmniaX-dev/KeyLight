@@ -56,6 +56,8 @@ void Window::onInitialize(void)
 	// setSize(1920, 1080);
 
 	m_gui.toggleVisibility();
+
+	m_vpiano.loadProjectFile("TestProject.klp");
 }
 
 void Window::handleSignal(ostd::tSignal& signal)

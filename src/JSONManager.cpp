@@ -224,6 +224,24 @@ namespace detail
 	        }
 	    }
 	};
+	// ----- std::vector<ostd::Vec2> -----------------------------------
+	template<> struct Getter<ostd::Vec2>
+	{
+	    static ostd::Vec2 exec_impl(const std::string& p, const json& root)
+	    {
+	        try
+			{
+	            const json& arr = root.at(p);
+	            if (!arr.is_array() || arr.size() != 2)
+	                return ostd::Vec2();
+	            return ostd::Vec2(arr[0].get<float>(), arr[1].get<float>());
+	        }
+	        catch (...)
+			{
+	            return ostd::Vec2();
+	        }
+	    }
+	};
 	// ----- std::vector<ostd::Rectangle> -----------------------------------
 	template<> struct Getter<std::vector<ostd::Rectangle>>
 	{
@@ -328,6 +346,25 @@ namespace detail
 	            root[p] = arr;
 	            return true;
 	        } catch (...) { return false; }
+	    }
+	};
+	// ----- std::vector<ostd::Vec2> -----------------------------------
+	template<> struct Setter<ostd::Vec2>
+	{
+	    static bool exec_impl(const std::string& p, json& root, const ostd::Vec2& value)
+	    {
+	        try
+			{
+	            json arr = json::array();
+	            arr.push_back(value.x);
+	            arr.push_back(value.y);
+	            root[p] = arr;
+	            return true;
+	        }
+	        catch (...)
+			{
+	            return false;
+	        }
 	    }
 	};
 	// ----- ostd::Rectangle -------------------------------------------------
@@ -488,6 +525,7 @@ template<class T>
 bool JSONManager::set(const ostd::String& name, T value)
 {
 	if (!m_loaded) return false;
+	if (!m_writeable) return false;
 
     auto tokens = name.tokenize(".");
     if (tokens.count() == 0) return false;
@@ -518,6 +556,7 @@ int JSONManager::get_int(const ostd::String& name) { return get<int32_t>(name); 
 double JSONManager::get_double(const ostd::String& name) { return get<double>(name); }
 ostd::String JSONManager::get_string(const ostd::String& name) { return get<ostd::String>(name); }
 ostd::Color JSONManager::get_color(const ostd::String& name) { return get<ostd::Color>(name); }
+ostd::Vec2 JSONManager::get_vec2(const ostd::String& name) { return get<ostd::Vec2>(name); }
 ostd::Rectangle JSONManager::get_rect(const ostd::String& name) { return get<ostd::Rectangle>(name); }
 std::vector<int32_t> JSONManager::get_int_array(const ostd::String& name) { return get<std::vector<int32_t>>(name); }
 std::vector<double> JSONManager::get_double_array(const ostd::String& name) { return get<std::vector<double>>(name); }
@@ -530,6 +569,7 @@ bool JSONManager::set_int(const ostd::String& name, int32_t value) { return set<
 bool JSONManager::set_double(const ostd::String& name, double value) { return set<double>(name, value); }
 bool JSONManager::set_string(const ostd::String& name, const ostd::String& value) { return set<ostd::String>(name, value); }
 bool JSONManager::set_color(const ostd::String& name, const ostd::Color& value) { return set<ostd::Color>(name, value); }
+bool JSONManager::set_vec2(const ostd::String& name, const ostd::Vec2& value) { return set<ostd::Vec2>(name, value); }
 bool JSONManager::set_rect(const ostd::String& name, const ostd::Rectangle& value) { return set<ostd::Rectangle>(name, value); }
 bool JSONManager::set_int_array(const ostd::String& name, const std::vector<int32_t>& value) { return set<std::vector<int32_t>>(name, value); }
 bool JSONManager::set_double_array(const ostd::String& name, const std::vector<double>& value) { return set<std::vector<double>>(name, value); }
@@ -538,16 +578,22 @@ bool JSONManager::set_color_array(const ostd::String& name, const std::vector<os
 bool JSONManager::set_rect_array(const ostd::String& name, const std::vector<ostd::Rectangle>& value) { return set<std::vector<ostd::Rectangle>>(name, value); }
 
 
-bool JSONManager::init(const ostd::String& filePath, const json* obj)
+bool JSONManager::init(const ostd::String& filePath, bool writeable, const json* obj)
 {
 	m_filePath = filePath;
 	m_rawJson = "";
 	m_loaded = false;
+	m_writeable = writeable;
 	if (obj != nullptr)
 		m_json = *obj;
 	ostd::TextFileBuffer jsonFile(filePath);
 	if (!jsonFile.exists())
 	{
+		if (!writeable)
+		{
+		   OX_ERROR("JSON read-only file doesn't exist: %s", filePath.c_str());
+		   return false;
+		}
 		m_loaded = true;
 		__write_to_file();
 		m_loaded = false;

@@ -19,25 +19,9 @@
 */
 
 #include "VirtualPiano.hpp"
-#include "Common.hpp"
-#include <SFML/Graphics/RenderStates.hpp>
-#include <SFML/Graphics/RenderTarget.hpp>
-#include <SFML/Graphics/RenderTexture.hpp>
-#include <SFML/Window/Keyboard.hpp>
-#include <optional>
-#include <ostd/Color.hpp>
-#include <ostd/Geometry.hpp>
-#include <ostd/Logger.hpp>
-#include <ostd/Signals.hpp>
-#include <ostd/String.hpp>
-#include <ostd/Utils.hpp>
-#include "Particles.hpp"
-#include "VPianoData.hpp"
 #include "Window.hpp"
 #include "Renderer.hpp"
-#include <ostd/Random.hpp>
-
-
+#include <ostd/Logger.hpp>
 
 // Core functionality
 void VirtualPiano::init(void)
@@ -45,21 +29,8 @@ void VirtualPiano::init(void)
 	m_playing = false;
 	m_paused = false;
 	m_firstNotePlayed = false;
-	m_config.init("settings.json", &Common::DefaultSettingsJSON);
-
 	m_vPianoRes.loadShaders();
-	m_vPianoRes.loadBackgroundImage("res/background.png");
-	m_vPianoRes.loadParticleTexture("res/tex/simpleParticle.png", {
-		{ 0, 0, 32, 32 },
-		{ 32, 0, 32, 32 },
-		{ 64, 0, 32, 32 },
-		{ 96, 0, 32, 32 },
-		{ 128, 0, 32, 32 },
-		{ 160, 0, 32, 32 }
- 	});
-	m_vPianoRes.loadNoteTexture("res/tex/note.png");
-	m_vPianoRes.loadMidiFile("res/midi/chop_64_2_2.mid");
-	m_vPianoRes.loadAudioFile("res/music/chop_64_2_2.mp3");
+	m_configJson.init("settings.json", true, &Common::DefaultSettingsJSON);
 	m_vKeyboard.init();
 
 	sf::Vector2u winSize = { m_parentWindow.sfWindow().getSize().x, m_parentWindow.sfWindow().getSize().y };
@@ -70,20 +41,64 @@ void VirtualPiano::init(void)
 	m_glowView.setSize({ (float)winSize.x, (float)winSize.y });
 	m_glowView.setCenter({ winSize.x / 2.f, winSize.y / 2.f });
 	m_glowBuffer.setView(m_glowView);
+}
 
-	m_vPianoData.fallingWhiteNoteColor = { "#FFB0F7FF" };
-	m_vPianoData.fallingWhiteNoteOutlineColor = { "#FFB0F7FF" };
-	m_vPianoData.fallingWhiteNoteGlowColor = { "#FFB0F7FF" };
-	m_vPianoData.fallingBlackNoteColor = { "#63132EFF" };
-	m_vPianoData.fallingBlackNoteOutlineColor = { "#63132EFF" };
-	m_vPianoData.fallingBlackNoteGlowColor = { "#63132EFF" };
-	m_vPianoData.backgroundColor = { "#0A0205FF" };
-	m_vPianoData.whiteKeyPressedColor = { "#FF7ACEFF" };
-	m_vPianoData.blackKeyPressedColor = { "#873568FF" };
-	m_vPianoData.whiteKeyColor = { 200, 200, 200 };
-	m_vPianoData.blackKeyColor = { 20, 20, 20 };
+void VirtualPiano::loadProjectFile(const ostd::String& filePath)
+{
+	if (!m_projJson.init(filePath, false))
+	{
+		OX_ERROR("Invalid project file: %s", filePath.c_str());
+		return;
+	}
 
-	m_showBackground = false;
+	enum class eDefaultPathType { Texture, Music, Style, Particle };
+	auto resolveFilePath_l = [](const ostd::String& _path, eDefaultPathType pathType) -> ostd::String {
+		ostd::String path = _path.new_trim();
+		if (!path.startsWith("@/"))
+			return path;
+		path.substr(1);
+		switch (pathType)
+		{
+			case eDefaultPathType::Music:
+				path = "./music" + path;
+			break;
+			case eDefaultPathType::Particle:
+				path = "./styles/particles" + path;
+			break;
+			case eDefaultPathType::Style:
+				path = "./styles" + path;
+			break;
+			case eDefaultPathType::Texture:
+				path = "./texture" + path;
+			break;
+			default: return path;
+		}
+		return path;
+	};
+
+	ostd::String tmp = resolveFilePath_l(m_projJson.get_string("project.graphics.styleFile"), eDefaultPathType::Style);
+	if (!m_styleJson.init(tmp, false))
+	{
+		OX_ERROR("Invalid style file: %s", tmp.c_str());
+		return;
+	}
+	tmp = resolveFilePath_l(m_projJson.get_string("project.particles.configFile"), eDefaultPathType::Particle);
+	if (!m_partJson.init(tmp, false))
+	{
+		OX_ERROR("Invalid particle config file: %s", tmp.c_str());
+		return;
+	}
+	m_showBackground = m_projJson.get_bool("project.useBackgroundImage");
+	m_vPianoRes.loadBackgroundImage(resolveFilePath_l(m_projJson.get_string("project.graphics.backgroundImageFile"), eDefaultPathType::Texture));
+	m_vPianoRes.loadParticleTexture(resolveFilePath_l(m_projJson.get_string("project.particles.texture.file"), eDefaultPathType::Texture), m_projJson.get_rect_array("project.particles.texture.tiles"));
+	m_vPianoRes.loadNoteTexture(resolveFilePath_l(m_projJson.get_string("project.graphics.noteTextureFile"), eDefaultPathType::Texture));
+	m_vPianoRes.loadMidiFile(resolveFilePath_l(m_projJson.get_string("project.audio.midiFile"), eDefaultPathType::Music));
+	m_vPianoRes.loadAudioFile(resolveFilePath_l(m_projJson.get_string("project.audio.audioFile"), eDefaultPathType::Music));
+	m_partPerFrame = m_projJson.get_int("project.particles.emitPerFrame");
+	m_vPianoData.pressedVelocityMultiplier = m_projJson.get_float("project.particles.pressedVelocityMultiplier");
+
+	m_vPianoData.loadFromStyleJSON(m_styleJson);
+	m_vKeyboard.loadFromStyleJSON(m_partJson);
 }
 
 void VirtualPiano::onWindowResized(uint32_t width, uint32_t height)
@@ -164,9 +179,11 @@ void VirtualPiano::update(void)
 		for (auto& pk : m_vKeyboard.m_pianoKeys)
 		{
 			pk.particles.update(pk.pressedForce);
+			if (pk.pressedForce.y != 0)
+				std::cout << pk.pressedForce << "\n";
 			if (pk.pressed)
 			{
-				pk.particles.emit(70);
+				pk.particles.emit(m_partPerFrame);
 			}
 		}
 	}

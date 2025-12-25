@@ -82,7 +82,7 @@
 		"dimensions": {
 			"whiteKeyWidth": 40.0,
 			"whiteKeyHeightMultiplier": 8.0,
-			"blackKeyWidth": 40.0,
+			"blackKeyWidth": 22.0,
 			"blackKeyHeightMultiplier": 9.0,
 			"blackKeyOffset": 4.0,
 			"virtualPianoX": 0.0,
@@ -98,13 +98,6 @@
 			"pixelsPerSecond": 250.0,
 			"noteFallingTime_seconds": 4.5
 		},
-		"particles": {
-			"configFile": "styles/particles/Default.json",
-			"pressedVelocityMultiplier": 8.0,
-			"emitPerFrame": 70
-		},
-		"usePerNoteColors": false,
-		"noteTextureFile": "res/tex/note.png",
-		"backgroundTextureFile": ""
+		"usePerNoteColors": false
 	}
 }

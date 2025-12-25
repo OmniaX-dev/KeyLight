@@ -1,16 +1,16 @@
 {
 	"particles": {
-		"lifeSpan": 120.0,
-		"damping": [0.005, 0.005],
+		"lifeSpan": 250.0,
+		"damping": [0.01, 0.2],
 		"tileIndex": 0,
-		"color": [255, 255, 255, 255],
-		"size": [16.0, 16.0],
-		"fadeIn": true,
+		"color": "#FF3D6AFF",
+		"size": [12.0, 12.0],
+		"fadeIn": false,
 		"allDirections": false,
-		"speed": 2.0,
-		"randomVelocity": [0.2, 0.5],
+		"speed": 2.6,
+		"randomVelocity": [0.25, 0.7],
 		"randomLifeSpan": 0.2,
-		"randomDirection": 0.14,
+		"randomDirection": 0.15,
 		"randomSpeed": 0.2,
 		"randomAlpha": 0.25,
 		"randomSize": [0.8, 0.8],
@@ -24,7 +24,7 @@
 		"colorRamp": []
 	},
 	"emitter": {
-		"maxParticles": 1000,
+		"maxParticles": 2500,
 		"useTileArray": true,
 		"emissionRect": {
 			"x": 0,
@@ -32,16 +32,5 @@
 			"w": 0,
 			"h": 0
 		}
-	},
-	"texture": {
-		"file": "res/tex/simpleParticle.png",
-		"tiles": [
-			[0, 0, 32, 32],
-			[32, 0, 32, 32],
-			[64, 0, 32, 32],
-			[96, 0, 32, 32],
-			[128, 0, 32, 32],
-			[160, 0, 32, 32]
-		]
 	}
 }

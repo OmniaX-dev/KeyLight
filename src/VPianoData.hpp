@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include "JSONManager.hpp"
 #include "MidiParser.hpp"
 #include <SFML/Graphics/RenderTexture.hpp>
 #include <boost/process/v1/pipe.hpp>
@@ -140,6 +141,7 @@ struct VirtualPianoData
 
 	public:
 		VirtualPianoData(void);
+		void loadFromStyleJSON(JSONManager& styleJson);
 		void recalculateKeyOffsets(void);
 		void updateScale(int32_t width, int32_t height);
 

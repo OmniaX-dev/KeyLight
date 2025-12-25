@@ -27,12 +27,14 @@
 #include <any>
 #include "Particles.hpp"
 #include "MidiParser.hpp"
+#include "JSONManager.hpp"
 
 class VirtualPiano;
 class VPianoResources
 {
 	public:
 		VPianoResources(VirtualPiano& vpiano);
+		void loadStyleFromJson(JSONManager& style, JSONManager& particles);
 		bool loadShaders(void);
 		bool loadBackgroundImage(const ostd::String& filePath);
 		bool loadParticleTexture(const ostd::String& filePath, const std::vector<ostd::Rectangle>& tiles);

@@ -30,27 +30,66 @@ VirtualKeyboard::VirtualKeyboard(VirtualPiano& vpiano) : m_vpiano(vpiano)
 
 void VirtualKeyboard::init(void)
 {
+}
+
+
+void VirtualKeyboard::loadFromStyleJSON(JSONManager& styleJson)
+{
+	m_pianoKeys.clear();
 	for (int midiNote = 21; midiNote <= 108; ++midiNote)
 	{
 		PianoKey pk;
 		pk.noteInfo = MidiParser::getNoteInfo(midiNote);
 		pk.pressed = false;
 
-		pk.particles = ParticleFactory::basicFireEmitter({ &m_vpiano.vPianoRes().partTexRef, m_vpiano.vPianoRes().partTiles[0] }, { 0, 0 }, 0);
-		pk.particles.useTileArray(true);
-		pk.particles.setMaxParticleCount(2500);
-		pk.particles.addTilesToArray(m_vpiano.vPianoRes().partTiles);
+		uint32_t tileIndex = styleJson.get_int("particles.tileIndex");
+		pk.particles = ParticleFactory::basicFireEmitter({ &m_vpiano.vPianoRes().partTexRef, tileIndex }, { 0, 0 }, 0);
+		bool useTileArray = styleJson.get_bool("emitter.useTileArray");
+		pk.particles.useTileArray(useTileArray);
+		pk.particles.setMaxParticleCount(styleJson.get_int("emitter.maxParticles"));
+		if (useTileArray && m_vpiano.vPianoRes().partTiles.size() > 0)
+			pk.particles.addTilesToArray(m_vpiano.vPianoRes().partTiles);
+		pk.particles.setEmissionRect(styleJson.get_rect("emitter.emissionRect"));
 
 		auto& partInfo = pk.particles.getDefaultParticleInfo();
-		ParticleFactory::createColorGradient(partInfo, ostd::Color("#FF3D6AFF"), 10);
-		partInfo.size = { 12.0f, 12.0f };
-		partInfo.speed = 2.6f;
-		partInfo.randomVelocity = { 0.25f, 0.7f };
-		partInfo.randomDirection = 0.15f;
-		partInfo.randomDamping = true;
-		partInfo.damping = { 0.0f, 0.2f };
-		partInfo.fadeIn = false;
-		partInfo.lifeSpan = 250;
+		bool useAutoColorRamp = styleJson.get_bool("particles.automaticColorRamp.use");
+		bool useColorRamp = styleJson.get_bool("particles.useColorRamp");
+		if (useAutoColorRamp && useColorRamp)
+		{
+			int32_t colorCount = styleJson.get_int("particles.automaticColorRamp.colorCount");
+			ParticleFactory::createColorGradient(partInfo, styleJson.get_color("particles.color"), colorCount);
+		}
+		else if (useColorRamp)
+		{
+			auto colArr = styleJson.get_color_array("particles.colorRamp");
+			if (colArr.size() > 0)
+			{
+				size_t count = colArr.size();
+				if (count > 1)
+				{
+				    float percentPerSegment = 1.0f / static_cast<float>(count - 1);
+				    for (size_t i = 0; i < count - 1; ++i)
+				        partInfo.addColorToGradient(colArr[i], colArr[i + 1], percentPerSegment);
+				}
+				else
+					partInfo.addColorToGradient(colArr[0], colArr[0], 1.0f);
+			}
+		}
+		partInfo.size = styleJson.get_vec2("particles.size");
+		partInfo.speed = styleJson.get_float("particles.speed");
+		partInfo.randomVelocity = styleJson.get_vec2("particles.randomVelocity");
+		partInfo.randomDirection = styleJson.get_float("particles.randomDirection");
+		partInfo.randomDamping = styleJson.get_bool("particles.randomDamping");
+		partInfo.damping = styleJson.get_vec2("particles.damping");
+		partInfo.fadeIn = styleJson.get_bool("particles.fadeIn");
+		partInfo.lifeSpan = styleJson.get_float("particles.lifeSpan");
+		partInfo.color = styleJson.get_color("particles.color");
+		partInfo.allDirections = styleJson.get_bool("particles.allDirections");
+		partInfo.randomLifeSpan = styleJson.get_float("particles.randomLifeSpan");
+		partInfo.randomSpeed = styleJson.get_float("particles.randomSpeed");
+		partInfo.randomAlpha = styleJson.get_float("particles.randomAlpha");
+		partInfo.randomSize = styleJson.get_vec2("particles.randomSize");
+		partInfo.angle = styleJson.get_float("particles.angle");
 
 		m_pianoKeys.push_back(pk);
 	}

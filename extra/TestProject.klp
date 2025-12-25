@@ -1,0 +1,30 @@
+{
+	"project": {
+		"audio": {
+			"midiFile": "@/chopin_waltz_64_2.mid",
+			"audioFile": "@/chopin_waltz_64_2.mp3"
+		},
+		"graphics": {
+			"styleFile": "@/DefaultStyle.json",
+			"backgroundImageFile": "@/background.png",
+			"noteTextureFile": "@/note.png"
+		},
+		"particles": {
+			"configFile": "@/DefaultParticles.json",
+			"pressedVelocityMultiplier": 8.0,
+			"emitPerFrame": 70,
+			"texture": {
+				"file": "@/simpleParticle.png",
+				"tiles": [
+					[0, 0, 32, 32],
+					[32, 0, 32, 32],
+					[64, 0, 32, 32],
+					[96, 0, 32, 32],
+					[128, 0, 32, 32],
+					[160, 0, 32, 32]
+				]
+			}
+		},
+		"useBackgroundImage": false
+	}
+}

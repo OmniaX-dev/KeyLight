@@ -77,6 +77,98 @@ VirtualPianoData::VirtualPianoData(void)
 	pressedVelocityMultiplier = 8.0f;
 }
 
+void VirtualPianoData::loadFromStyleJSON(JSONManager& styleJson)
+{
+	whiteKeyWidth = styleJson.get_float("style.dimensions.whiteKeyWidth");
+	float mul = styleJson.get_float("style.dimensions.whiteKeyHeightMultiplier");
+	whiteKeyHeight = whiteKeyWidth * mul;
+	blackKeyWidth = styleJson.get_float("style.dimensions.blackKeyWidth");
+	mul = styleJson.get_float("style.dimensions.blackKeyHeightMultiplier");
+	blackKeyHeight = blackKeyWidth * mul;
+	blackKeyOffset = styleJson.get_float("style.dimensions.blackKeyOffset");
+	virtualPiano_x = styleJson.get_float("style.dimensions.virtualPianoX");
+	glowMargins = styleJson.get_rect("style.dimensions.glowMargins");
+	whiteKeyShrinkFactor = styleJson.get_float("style.dimensions.whiteKeyShrinkFactor");
+	blackKeyShrinkFactor = styleJson.get_float("style.dimensions.blackKeyShrinkFactor");
+	fallingWhiteNoteOutlineWidth = styleJson.get_int("style.dimensions.fallingWhiteNoteOutlineWidth");
+	fallingWhiteNoteBorderRadius = styleJson.get_float("style.dimensions.fallingWhiteNoteBorderRadius");
+	fallingBlackNoteOutlineWidth = styleJson.get_int("style.dimensions.fallingBlackNoteOutlineWidth");
+	fallingBlackNoteBorderRadius = styleJson.get_float("style.dimensions.fallingBlackNoteBorderRadius");
+	texCoordsPos = styleJson.get_vec2("style.dimensions.textureCoordsPosition");
+	texCoordsScale = styleJson.get_vec2("style.dimensions.textureCoordsScale");
+	pixelsPerSecond = styleJson.get_float("style.dimensions.pixelsPerSecond");
+	whiteKeyWidth = styleJson.get_float("style.dimensions.whiteKeyWidth");
+	fallingTime_s = styleJson.get_float("style.dimensions.noteFallingTime_seconds");
+
+	usePerNoteColors = styleJson.get_bool("style.usePerNoteColors");
+
+	fallingWhiteNoteColor = styleJson.get_color("style.colors.fallingWhiteNote");
+	fallingWhiteNoteOutlineColor = styleJson.get_color("style.colors.fallingWhiteNoteOutline");
+	fallingWhiteNoteGlowColor = styleJson.get_color("style.colors.fallingWhiteNoteGlow");
+	fallingBlackNoteColor = styleJson.get_color("style.colors.fallingBlackNote");
+	fallingBlackNoteOutlineColor = styleJson.get_color("style.colors.fallingBlackNoteOutline");
+	fallingBlackNoteGlowColor = styleJson.get_color("style.colors.fallingBlackNoteGlow");
+	backgroundColor = styleJson.get_color("style.colors.background");
+	whiteKeyPressedColor = styleJson.get_color("style.colors.whiteKeyPressed");
+	blackKeyPressedColor = styleJson.get_color("style.colors.blackKeyPressed");
+	whiteKeyColor = styleJson.get_color("style.colors.whiteKey");
+	blackKeyColor = styleJson.get_color("style.colors.blackKey");
+	whiteKeySplitColor = styleJson.get_color("style.colors.whiteKeySeparator");
+	blackKeySplitColor = styleJson.get_color("style.colors.blackKeySeparator");
+	pianoLineColor1 = styleJson.get_color("style.colors.pianoLine1");
+	pianoLineColor2 = styleJson.get_color("style.colors.pianoLine2");
+
+	perNoteColors[(int32_t)eNoteColor::C_Main] = styleJson.get_color("style.colors.perNote.C.main");
+	perNoteColors[(int32_t)eNoteColor::C_Outline] = styleJson.get_color("style.colors.perNote.C.outline");
+	perNoteColors[(int32_t)eNoteColor::C_Glow] = styleJson.get_color("style.colors.perNote.C.glow");
+
+	perNoteColors[(int32_t)eNoteColor::Csharp_Main] = styleJson.get_color("style.colors.perNote.C#.main");
+	perNoteColors[(int32_t)eNoteColor::Csharp_Outline] = styleJson.get_color("style.colors.perNote.C#.outline");
+	perNoteColors[(int32_t)eNoteColor::Csharp_Glow] = styleJson.get_color("style.colors.perNote.C#.glow");
+
+	perNoteColors[(int32_t)eNoteColor::D_Main] = styleJson.get_color("style.colors.perNote.D.main");
+	perNoteColors[(int32_t)eNoteColor::D_Outline] = styleJson.get_color("style.colors.perNote.D.outline");
+	perNoteColors[(int32_t)eNoteColor::D_Glow] = styleJson.get_color("style.colors.perNote.D.glow");
+
+	perNoteColors[(int32_t)eNoteColor::Dsharp_Main] = styleJson.get_color("style.colors.perNote.D#.main");
+	perNoteColors[(int32_t)eNoteColor::Dsharp_Outline] = styleJson.get_color("style.colors.perNote.D#.outline");
+	perNoteColors[(int32_t)eNoteColor::Dsharp_Glow] = styleJson.get_color("style.colors.perNote.D#.glow");
+
+	perNoteColors[(int32_t)eNoteColor::E_Main] = styleJson.get_color("style.colors.perNote.E.main");
+	perNoteColors[(int32_t)eNoteColor::E_Outline] = styleJson.get_color("style.colors.perNote.E.outline");
+	perNoteColors[(int32_t)eNoteColor::E_Glow] = styleJson.get_color("style.colors.perNote.E.glow");
+
+	perNoteColors[(int32_t)eNoteColor::F_Main] = styleJson.get_color("style.colors.perNote.F.main");
+	perNoteColors[(int32_t)eNoteColor::F_Outline] = styleJson.get_color("style.colors.perNote.F.outline");
+	perNoteColors[(int32_t)eNoteColor::F_Glow] = styleJson.get_color("style.colors.perNote.F.glow");
+
+	perNoteColors[(int32_t)eNoteColor::Fsharp_Main] = styleJson.get_color("style.colors.perNote.F#.main");
+	perNoteColors[(int32_t)eNoteColor::Fsharp_Outline] = styleJson.get_color("style.colors.perNote.F#.outline");
+	perNoteColors[(int32_t)eNoteColor::Fsharp_Glow] = styleJson.get_color("style.colors.perNote.F#.glow");
+
+	perNoteColors[(int32_t)eNoteColor::G_Main] = styleJson.get_color("style.colors.perNote.G.main");
+	perNoteColors[(int32_t)eNoteColor::G_Outline] = styleJson.get_color("style.colors.perNote.G.outline");
+	perNoteColors[(int32_t)eNoteColor::G_Glow] = styleJson.get_color("style.colors.perNote.G.glow");
+
+	perNoteColors[(int32_t)eNoteColor::Gsharp_Main] = styleJson.get_color("style.colors.perNote.G#.main");
+	perNoteColors[(int32_t)eNoteColor::Gsharp_Outline] = styleJson.get_color("style.colors.perNote.G#.outline");
+	perNoteColors[(int32_t)eNoteColor::Gsharp_Glow] = styleJson.get_color("style.colors.perNote.G#.glow");
+
+	perNoteColors[(int32_t)eNoteColor::A_Main] = styleJson.get_color("style.colors.perNote.A.main");
+	perNoteColors[(int32_t)eNoteColor::A_Outline] = styleJson.get_color("style.colors.perNote.A.outline");
+	perNoteColors[(int32_t)eNoteColor::A_Glow] = styleJson.get_color("style.colors.perNote.A.glow");
+
+	perNoteColors[(int32_t)eNoteColor::Asharp_Main] = styleJson.get_color("style.colors.perNote.A#.main");
+	perNoteColors[(int32_t)eNoteColor::Asharp_Outline] = styleJson.get_color("style.colors.perNote.A#.outline");
+	perNoteColors[(int32_t)eNoteColor::Asharp_Glow] = styleJson.get_color("style.colors.perNote.A#.glow");
+
+	perNoteColors[(int32_t)eNoteColor::B_Main] = styleJson.get_color("style.colors.perNote.B.main");
+	perNoteColors[(int32_t)eNoteColor::B_Outline] = styleJson.get_color("style.colors.perNote.B.outline");
+	perNoteColors[(int32_t)eNoteColor::B_Glow] = styleJson.get_color("style.colors.perNote.B.glow");
+
+	recalculateKeyOffsets();
+}
+
 void VirtualPianoData::recalculateKeyOffsets(void)
 {
 	_keyOffsets.clear();

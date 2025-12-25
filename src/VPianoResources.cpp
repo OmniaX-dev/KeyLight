@@ -28,6 +28,11 @@ VPianoResources::VPianoResources(VirtualPiano& vpiano) : vpiano(vpiano)
 {
 }
 
+void VPianoResources::loadStyleFromJson(JSONManager& style, JSONManager& particles)
+{
+
+}
+
 bool VPianoResources::loadShaders(void)
 {
 	if (!noteShader.loadFromFile("shaders/basic.vert", "shaders/note.frag"))

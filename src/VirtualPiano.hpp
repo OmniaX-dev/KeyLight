@@ -20,17 +20,6 @@
 
 #pragma once
 
-#include <SFML/Graphics/Image.hpp>
-#include <SFML/Graphics/RenderTarget.hpp>
-#include <SFML/Graphics/RenderTexture.hpp>
-#include <functional>
-#include <optional>
-#include <ostd/BaseObject.hpp>
-#include <ostd/Signals.hpp>
-#include <ostd/Utils.hpp>
-#include <ostd/Geometry.hpp>
-#include <SFML/Audio.hpp>
-#include <SFML/Graphics.hpp>
 #include "VPianoData.hpp"
 #include "VideoRenderer.hpp"
 #include "JSONManager.hpp"
@@ -45,6 +34,7 @@ class VirtualPiano
 		// Core functionality
 		inline VirtualPiano(Window& parentWindow) : m_vPianoRes(*this), m_sigListener(*this), m_parentWindow(parentWindow), m_videoRenderer(*this), m_vKeyboard(*this) {  }
 		void init(void);
+		void loadProjectFile(const ostd::String& filePath);
 		void onWindowResized(uint32_t width, uint32_t height);
 
 		// Playback functionality
@@ -68,7 +58,10 @@ class VirtualPiano
 
 	private:
 		Window& m_parentWindow;
-		JSONManager m_config;
+		JSONManager m_configJson;
+		JSONManager m_projJson;
+		JSONManager m_styleJson;
+		JSONManager m_partJson;
 		VirtualPianoData m_vPianoData;
 		VPianoResources m_vPianoRes;
 		VideoRenderer m_videoRenderer;
@@ -79,7 +72,8 @@ class VirtualPiano
 		bool m_paused { false };
 		bool m_firstNotePlayed { false };
 		double m_startTimeOffset_ns { 0.0 };
-
+		uint16_t m_partPerFrame { 10 }
+;
 		sf::RenderTexture m_glowBuffer;
 		sf::RenderTexture m_blurBuff1;
 		sf::RenderTexture m_blurBuff2;
