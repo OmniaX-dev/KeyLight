@@ -44,7 +44,7 @@ Once you have the **MSYS2 UCRT64 terminal** open, run theese two commands to pre
 
 ```bash
 pacman -Syuu
-pacman -S --needed base-devel mingw-w64-ucrt-x86_64-clang mingw-w64-ucrt-x86_64-gdb mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-make mingw-w64-ucrt-x86_64-boost
+pacman -S --needed base-devel mingw-w64-ucrt-x86_64-clang mingw-w64-ucrt-x86_64-gdb mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-make mingw-w64-ucrt-x86_64-boost mingw-w64-ucrt-x86_64-gettext
 ```
 
 ##### Step 3: build SFML3 from source
@@ -127,8 +127,9 @@ Use your package manager to install git.
 sudo pacman -Syu
 sudo pacman -S --needed base-devel git clang gdb cmake \
 					    make boost sdl2 sdl2_mixer sdl2_image \
-						sdl2_ttf sdl2_gfx ninja gcc libvorbis \
-						flac libogg openal freetype2 libjpeg-turbo
+							sdl2_ttf sdl2_gfx ninja gcc libvorbis \
+							flac libogg openal freetype2 libjpeg-turbo \
+							gettext
 ```
 
 - **Debian** Based distros:
@@ -139,8 +140,8 @@ sudo apt install build-essential git dkms linux-headers-generic \
 	             clang gdb make cmake libssl-dev libboost-all-dev \
 	             libsdl2-dev libsdl2-mixer-dev libsdl2-image-dev \
 	             libsdl2-ttf-dev libsdl2-gfx-dev libxcb-randr0-dev libsfml-dev \
-		         ninja-build g++ libvorbis-dev libflac-dev libogg-dev libopenal-dev \
-		         libfreetype-dev libjpeg-dev
+		           ninja-build g++ libvorbis-dev libflac-dev libogg-dev libopenal-dev \
+		           libfreetype-dev libjpeg-dev gettext
 ```
 
 - **Fedora**
@@ -152,7 +153,8 @@ sudo dnf install clang gdb make cmake boost-devel SDL2-devel \
 				 libvorbis-devel flac-devel libogg-devel \
 				 openal-soft-devel freetype-devel libjpeg-turbo-devel \
 				 libX11-devel libXrandr-devel libXcursor-devel \
-				 libXi-devel systemd-devel ncurses-devel
+				 libXi-devel systemd-devel ncurses-devel \
+				 gettext gettext-devel
 ```
 
 ##### Step 2: build SFML3 from source

@@ -1,0 +1,58 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the KeyLight package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: KeyLight \n"
+"Report-Msgid-Bugs-To: \"syl4r39@gmail.com\"\n"
+"POT-Creation-Date: 2025-12-25 17:53+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: /home/sylar/GitRepos/KeyLight/src/Gui.cpp:361
+msgid "Rendering Video"
+msgstr ""
+
+#: /home/sylar/GitRepos/KeyLight/src/Gui.cpp:364
+msgid "Rendering Image Sequence"
+msgstr ""
+
+#: /home/sylar/GitRepos/KeyLight/src/Gui.cpp:392
+msgid "Frames: "
+msgstr ""
+
+#: /home/sylar/GitRepos/KeyLight/src/Gui.cpp:398
+msgid "FPS: "
+msgstr ""
+
+#: /home/sylar/GitRepos/KeyLight/src/Gui.cpp:423
+msgid "ETA: "
+msgstr ""
+
+#: /home/sylar/GitRepos/KeyLight/src/Gui.cpp:436
+msgid "File: "
+msgstr ""
+
+#: /home/sylar/GitRepos/KeyLight/src/Gui.cpp:447
+msgid "Resolution: "
+msgstr ""
+
+#: /home/sylar/GitRepos/KeyLight/src/Gui.cpp:454
+msgid "Target FPS: "
+msgstr ""
+
+#: /home/sylar/GitRepos/KeyLight/src/Gui.cpp:461
+msgid "Duration: "
+msgstr ""
+
+#: /home/sylar/GitRepos/KeyLight/src/main.cpp:46
+msgid "LANG INIT"
+msgstr ""

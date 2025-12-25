@@ -211,5 +211,6 @@ void SignalListener::handleSignal(ostd::tSignal& signal)
 			OX_DEBUG("Capturing SIGINT.");
 		}
 		Common::s_sigint_triggered = true;
+		exit(0); //TODO: Handle this better
 	}
 }

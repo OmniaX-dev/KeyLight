@@ -21,8 +21,12 @@
 #include <csignal>
 #include <ostd/Logger.hpp>
 
+#include "Common.hpp"
 #include "Window.hpp"
 #include "ffmpeg_helper.hpp"
+
+#include <libintl.h>
+#include <locale.h>
 
 ostd::ConsoleOutputHandler out;
 
@@ -36,6 +40,11 @@ void handleSigint(int signal)
 
 int main(int argc, char** argv)
 {
+	setlocale(LC_ALL, "");
+    bindtextdomain("KeyLight", "locale");
+    textdomain("KeyLight");
+    gettext("LANG INIT");
+
 	std::signal(SIGINT, handleSigint);
 
 	Window window;

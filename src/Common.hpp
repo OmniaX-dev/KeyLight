@@ -36,6 +36,13 @@
 
 class Common
 {
+	public: struct tLocaleInfo
+	{
+	    const uint32_t ID;
+	    ostd::String name;
+	    ostd::String locale;
+	};
+
 	public:
 		static double getCurrentTIme_ns(void);
 		static void ensureDirectory(const ostd::String& path);
@@ -52,6 +59,9 @@ class Common
 
 		static void RGBtoHSV(float r, float g, float b, float& h, float& s, float& v);
 		static void HSVtoRGB(float h, float s, float v, float& r, float& g, float& b);
+
+		static std::vector<tLocaleInfo> getAvailableLocales(const std::string& localeDir = "locale");
+		static ostd::String getFullLocale(const std::string& shortCode);
 
 	public:
 	    inline static float guiScaleX { 1.0f };

@@ -1,0 +1,9 @@
+
+# CREATE POT FILE
+xgettext --c++ -k_ -o po/KeyLight.pot src/*.cpp src/*.hpp
+
+# NEW LANGUAGE
+msginit --input=po/KeyLight.pot --locale=es_ES --output=po/es.po
+
+# UPDATE PO FILES
+msgmerge --update po/es.po po/KeyLight.pot

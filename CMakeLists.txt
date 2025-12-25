@@ -1,6 +1,6 @@
 #Variables
 #-----------------------------------------------------------------------------------------
-set(PROJ_NAME KeyLight)
+set(PROJECT_NAME KeyLight)
 set(MAJOR_VER 0)
 set(MINOR_VER 1)
 #-----------------------------------------------------------------------------------------
@@ -11,12 +11,12 @@ set(CMAKE_CXX_COMPILER "clang++")
 set(CMAKE_C_COMPILER "clang")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 cmake_minimum_required(VERSION 3.18)
-project(${PROJ_NAME} LANGUAGES C CXX)
+project(${PROJECT_NAME} LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 file(STRINGS "./other/build.nr" BUILD_NUMBER)
 #-----------------------------------------------------------------------------------------
 
-message(STATUS "Building ${PROJ_NAME} ${MAJOR_VER}.${MINOR_VER}.${BUILD_NUMBER}")
+message(STATUS "Building ${PROJECT_NAME} ${MAJOR_VER}.${MINOR_VER}.${BUILD_NUMBER}")
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 	message(STATUS "Debug Configuration")
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -102,3 +102,18 @@ endif (UNIX)
 target_link_libraries(${MAIN_EXECUTABLE} sfml-system sfml-window sfml-graphics sfml-audio tgui)
 target_link_libraries(${MAIN_EXECUTABLE} ostd)
 #-----------------------------------------------------------------------------------------
+
+
+# === Collect all translatable sources ===
+file(GLOB_RECURSE TRANSLATABLE_SOURCES
+				src/*.cpp
+				src/*.h
+)
+
+# === Include gettext module ===
+set(GETTEXT_SOURCES ${TRANSLATABLE_SOURCES})
+set(GETTEXT_LANGUAGES en es it)
+include(other/Gettext.cmake)
+
+# Link your target to translations
+add_dependencies(${MAIN_EXECUTABLE} translations)

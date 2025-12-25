@@ -29,10 +29,10 @@ Core
  ** figure out if adding -re to ffmpeg is worth the performance loss
  ** Implement Settings manager class
     Implement auto-download of ffmpeg
-    Handle SIGINT correctly
+ ** Handle SIGINT correctly
 
 
 GFX
-	Implement Particle System
+ ** Implement Particle System
 	Implement Better blur
 	Implement Emissive glow

@@ -358,10 +358,10 @@ void Gui::__draw_videoRenderGui(void)
 	switch (vrs.mode)
 	{
 		case VideoRenderModes::Video:
-			label = "Rendering Video";
+			label = gettext("Rendering Video");
 			break;
 		case VideoRenderModes::ImageSequence:
-			label = "Rendering Image Sequence";
+			label = gettext("Rendering Image Sequence");
 			break;
 	}
 	auto guiBounds = __get_center_bounds(m_renderingGuiSize);
@@ -389,13 +389,13 @@ void Gui::__draw_videoRenderGui(void)
 	color2 = { 250, 210, 10 };
 	fontSize = Common::scaleXY(24);
 
-	label = "Frames: ";
+	label = gettext("Frames: ");
 	Renderer::drawString(label, pos, color1, fontSize);
 	pos.x += padx(-5, label, fontSize);
 	label.clr().add(vrs.frameIndex - 1).add("/").add(vrs.totalFrames + vrs.extraFrames);
 	Renderer::drawString(label, pos, color2, fontSize);
 
-	label = "FPS: ";
+	label = gettext("FPS: ");
 	pos.x += Common::scaleX(250);
 	Renderer::drawString(label, pos, color1, fontSize);
 	pos.x += padx(-5, label, fontSize);
@@ -420,7 +420,7 @@ void Gui::__draw_videoRenderGui(void)
 	etaStrSize += Common::scaleX(2);
 	pos.x = pbpos.x + pbpos.w - etaStrSize;
 	Renderer::drawString(label, pos, color2, fontSize);
-	label = "ETA: ";
+	label = gettext("ETA: ");
 	pos.x -= Common::scaleX(Renderer::getStringSize(label, fontSize).x - 2);
 	Renderer::drawString(label, pos, color1, fontSize);
 
@@ -433,7 +433,7 @@ void Gui::__draw_videoRenderGui(void)
 	Renderer::fillRect({ pos.x, pos.y, guiBounds.w, 2 }, { 120, 120, 120, 120 });
 
 	fontSize = Common::scaleXY(22);
-	label = "File: ";
+	label = gettext("File: ");
 	pos.x = pbpos.x;
 	pos.y += Common::scaleY(20);
 	Renderer::drawString(label, pos, color1, fontSize);
@@ -444,21 +444,21 @@ void Gui::__draw_videoRenderGui(void)
 	fontSize = Common::scaleXY(24);
 	color2 = { 240, 28, 180 };
 	pos = { pbpos.x + previewSize.x + Common::scaleX(10), pos.y + Common::scaleY(50) };
-	label = "Resolution: ";
+	label = gettext("Resolution: ");
 	Renderer::drawString(label, pos, color1, fontSize);
 	pos.x += padx(-5, label, fontSize);
 	label.clr().add(vrs.resolution.x).add("x").add(vrs.resolution.y);
 	Renderer::drawString(label, pos, color2, fontSize);
 
 	pos = { pbpos.x + previewSize.x + Common::scaleX(10), pos.y += Common::scaleY(40) };
-	label = "Target FPS: ";
+	label = gettext("Target FPS: ");
 	Renderer::drawString(label, pos, color1, fontSize);
 	pos.x += padx(-5, label, fontSize);
 	label.clr().add(vrs.targetFPS);
 	Renderer::drawString(label, pos, color2, fontSize);
 
 	pos = { pbpos.x + previewSize.x + Common::scaleX(10), pos.y += Common::scaleY(40) };
-	label = "Duration: ";
+	label = gettext("Duration: ");
 	Renderer::drawString(label, pos, color1, fontSize);
 	pos.x += padx(-5, label, fontSize);
 	int32_t seconds = (int32_t)std::round(vrs.lastNoteEndTime + ((double)vrs.extraFrames / (double)vrs.targetFPS));

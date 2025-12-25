@@ -179,8 +179,8 @@ void VirtualPiano::update(void)
 		for (auto& pk : m_vKeyboard.m_pianoKeys)
 		{
 			pk.particles.update(pk.pressedForce);
-			if (pk.pressedForce.y != 0)
-				std::cout << pk.pressedForce << "\n";
+			// if (pk.pressedForce.y != 0)
+			// 	std::cout << pk.pressedForce << "\n";
 			if (pk.pressed)
 			{
 				pk.particles.emit(m_partPerFrame);
