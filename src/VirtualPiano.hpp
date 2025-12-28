@@ -72,6 +72,8 @@ class VirtualPiano
 		bool m_paused { false };
 		bool m_firstNotePlayed { false };
 		double m_startTimeOffset_ns { 0.0 };
+		double m_pausedOffset_ns { 0.0 };
+		double m_pausedTime_ns { 0.0 };
 		uint16_t m_partPerFrame { 10 }
 ;
 		sf::RenderTexture m_glowBuffer;

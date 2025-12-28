@@ -17,7 +17,7 @@ Gui
  ** Refresh values in export gui only every half a second
 
 VirtualPiano
-	Implement Pause/Stop functionality
+ ** Implement Pause/Stop functionality
 	Implement seekbar functionality
 
 Core

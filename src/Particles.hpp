@@ -280,6 +280,7 @@ class ParticleEmitter : public ostd::BaseObject
 		ParticleEmitter& create(ostd::Rectangle emissionRect, uint32_t maxParticles = 400);
 
 		void update(const ostd::Vec2& force = { 0.0f, 0.0f });
+		void reset(void);
 
 		void emit(tParticleInfo partInfo, int32_t count = 1);
 		void emit(int32_t count = 1);

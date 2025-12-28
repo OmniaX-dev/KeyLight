@@ -380,6 +380,15 @@ void ParticleEmitter::update(const ostd::Vec2& force)
 	}
 }
 
+void ParticleEmitter::reset(void)
+{
+	if (!isValid()) return;
+	for (auto& part : m_particles)
+		part.kill();
+	m_currentPathValue = 0.0f;
+	enablePath(false);
+}
+
 void ParticleEmitter::emit(tParticleInfo partInfo, int32_t count)
 {
 	if (isInvalid()) return;

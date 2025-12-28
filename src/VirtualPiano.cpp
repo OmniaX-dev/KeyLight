@@ -19,6 +19,7 @@
 */
 
 #include "VirtualPiano.hpp"
+#include "Common.hpp"
 #include "Window.hpp"
 #include "Renderer.hpp"
 #include <ostd/Logger.hpp>
@@ -129,6 +130,7 @@ void VirtualPiano::play(void)
 	{
 		m_playing = true;
 		m_paused = false;
+		m_vPianoRes.audioFile.play();
 		return;
 	}
 	stop();
@@ -138,6 +140,7 @@ void VirtualPiano::play(void)
 void VirtualPiano::pause(void)
 {
 	m_vPianoRes.audioFile.pause();
+	m_pausedTime_ns = Common::getCurrentTIme_ns();
 	m_playing = false;
 	m_paused = true;
 }
@@ -148,19 +151,23 @@ void VirtualPiano::stop(void)
 	m_paused = false;
 	m_firstNotePlayed = false;
 	m_startTimeOffset_ns = Common::getCurrentTIme_ns();
+	m_pausedTime_ns = 0.0;
+	m_pausedOffset_ns = 0.0;
 	m_vKeyboard.m_nextFallingNoteIndex = 0;
 	m_vKeyboard.m_activeFallingNotes.clear();
 	for (auto& pk : m_vKeyboard.m_pianoKeys)
 	{
 		pk.pressed = false;
+		pk.particles.reset();
+		pk.particles.update();
 	}
-	update();
+	m_vKeyboard.updateVisualization(getPlayTime_s());
 	m_playing = false;
 }
 
 double VirtualPiano::getPlayTime_s(void)
 {
-	double playTime = Common::getCurrentTIme_ns() - m_startTimeOffset_ns;
+	double playTime = Common::getCurrentTIme_ns() - m_pausedOffset_ns - m_startTimeOffset_ns;
 	return playTime * 1e-9;
 }
 
@@ -170,6 +177,11 @@ double VirtualPiano::getPlayTime_s(void)
 // Update and Render
 void VirtualPiano::update(void)
 {
+	if (m_paused)
+	{
+		m_pausedOffset_ns += (Common::getCurrentTIme_ns() - m_pausedTime_ns);
+		m_pausedTime_ns = Common::getCurrentTIme_ns();
+	}
 	if (m_playing)
 	{
 		m_vKeyboard.updateVisualization(getPlayTime_s());
