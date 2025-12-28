@@ -234,35 +234,37 @@ void VirtualPiano::renderFrame(std::optional<std::reference_wrapper<sf::RenderTa
 	sf::RenderTarget*  __target = nullptr;
 	if (target)
 		__target = &target->get();
-	Renderer::setRenderTarget(&m_glowBuffer);
-	Renderer::clear({ 0, 0, 0, 0 });
-	for (const auto& note : m_vKeyboard.m_fallingNoteGfx_w)
-	{
-		m_vKeyboard.drawFallingNoteGlow(note);
-	}
-	for (auto& note : m_vKeyboard.m_fallingNoteGfx_b)
-	{
-		m_vKeyboard.drawFallingNoteGlow(note);
-	}
-	m_glowBuffer.display();
-	Renderer::setRenderTarget(&m_blurBuff1);
-	Renderer::clear({ 0, 0, 0, 0 });
-	Renderer::useShader(&m_vPianoRes.blurShader);
-	m_vPianoRes.blurShader.setUniform("texture", m_glowBuffer.getTexture());
-	m_vPianoRes.blurShader.setUniform("direction", sf::Glsl::Vec2(1.f, 0.f));
-	m_vPianoRes.blurShader.setUniform("resolution", (float)m_glowBuffer.getSize().x);
-	m_vPianoRes.blurShader.setUniform("spread", 2.5f);
-	m_vPianoRes.blurShader.setUniform("intensity", 1.0f);
-	Renderer::drawTexture(m_glowBuffer.getTexture());
-	m_blurBuff1.display();
+	// Renderer::setRenderTarget(&m_glowBuffer);
+	// Renderer::useTexture(nullptr);
+	// Renderer::useShader(nullptr);
+	// Renderer::clear({ 0, 0, 0, 0 });
+	// for (const auto& note : m_vKeyboard.m_fallingNoteGfx_w)
+	// {
+	// 	m_vKeyboard.drawFallingNoteGlow(note);
+	// }
+	// for (auto& note : m_vKeyboard.m_fallingNoteGfx_b)
+	// {
+	// 	m_vKeyboard.drawFallingNoteGlow(note);
+	// }
+	// m_glowBuffer.display();
+	// Renderer::setRenderTarget(&m_blurBuff1);
+	// Renderer::clear({ 0, 0, 0, 0 });
+	// Renderer::useShader(&m_vPianoRes.blurShader);
+	// m_vPianoRes.blurShader.setUniform("texture", m_glowBuffer.getTexture());
+	// m_vPianoRes.blurShader.setUniform("direction", sf::Glsl::Vec2(1.f, 0.f));
+	// m_vPianoRes.blurShader.setUniform("resolution", (float)m_glowBuffer.getSize().x);
+	// m_vPianoRes.blurShader.setUniform("spread", 3.5f);
+	// m_vPianoRes.blurShader.setUniform("intensity", 1.1f);
+	// Renderer::drawTexture(m_glowBuffer.getTexture());
+	// m_blurBuff1.display();
 
-	Renderer::setRenderTarget(&m_blurBuff2);
-	Renderer::clear({ 0, 0, 0, 0 });
-	m_vPianoRes.blurShader.setUniform("texture", m_blurBuff1.getTexture());
-	m_vPianoRes.blurShader.setUniform("direction", sf::Glsl::Vec2(0.f, 1.f));
-	m_vPianoRes.blurShader.setUniform("resolution", (float)m_blurBuff2.getSize().y);
-	Renderer::drawTexture(m_blurBuff1.getTexture());
-	m_blurBuff2.display();
+	// Renderer::setRenderTarget(&m_blurBuff2);
+	// Renderer::clear({ 0, 0, 0, 0 });
+	// m_vPianoRes.blurShader.setUniform("texture", m_blurBuff1.getTexture());
+	// m_vPianoRes.blurShader.setUniform("direction", sf::Glsl::Vec2(0.f, 1.f));
+	// m_vPianoRes.blurShader.setUniform("resolution", (float)m_blurBuff2.getSize().y);
+	// Renderer::drawTexture(m_blurBuff1.getTexture());
+	// m_blurBuff2.display();
 
 	Renderer::setRenderTarget(__target);
 	Renderer::useTexture(nullptr);
@@ -272,28 +274,21 @@ void VirtualPiano::renderFrame(std::optional<std::reference_wrapper<sf::RenderTa
 	{
 		Renderer::drawSprite(*m_vPianoRes.backgroundSpr);
 	}
-	Renderer::useShader(&m_vPianoRes.particleShader);
-	auto& tex = std::any_cast<sf::Texture&>(m_vPianoRes.partTex);
-	m_vPianoRes.particleShader.setUniform("u_texture", tex);
-	Renderer::useTexture(&tex);
-	// Renderer::drawParticleSysten(m_snow);
-	Renderer::useShader(nullptr);
-	Renderer::useTexture(nullptr);
-	Renderer::drawTexture(m_blurBuff2.getTexture(), { 0, 0 }, 2);
+	Renderer::drawTexture(m_blurBuff2.getTexture(), { 0, 0 }, { 2.0f, 2.0f });
 
 	for (const auto& note : m_vKeyboard.m_fallingNoteGfx_w)
 	{
 		m_vPianoRes.noteShader.setUniform("u_texture", m_vPianoRes.noteTexture);
 		m_vPianoRes.noteShader.setUniform("u_color", color_to_glsl(note.fillColor));
-		m_vKeyboard.drawFallingNote(note);
 		m_vKeyboard.drawFallingNoteOutline(note);
+		m_vKeyboard.drawFallingNote(note);
 	}
 	for (auto& note : m_vKeyboard.m_fallingNoteGfx_b)
 	{
 		m_vPianoRes.noteShader.setUniform("u_texture", m_vPianoRes.noteTexture);
 		m_vPianoRes.noteShader.setUniform("u_color", color_to_glsl(note.fillColor));
-		m_vKeyboard.drawFallingNote(note);
 		m_vKeyboard.drawFallingNoteOutline(note);
+		m_vKeyboard.drawFallingNote(note);
 	}
 
 	m_vKeyboard.render(target);
