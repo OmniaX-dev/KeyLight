@@ -55,6 +55,11 @@ void Renderer::useFont(const ostd::String& fontFilePath)
 	}
 }
 
+void Renderer::useRenderStates(sf::RenderStates* states)
+{
+	m_renderStates = states;
+}
+
 void Renderer::useTexture(sf::Texture* texture, ostd::Rectangle textureRect)
 {
 	m_texture = texture;
@@ -228,8 +233,10 @@ void Renderer::__draw_call(const sf::Drawable* obj)
 	if (m_window == nullptr) return;
 	if (obj == nullptr) return;
 	sf::RenderTarget& target = (m_target == nullptr ? m_window->sfWindow() : *m_target);
-	if (m_shader == nullptr)
-		target.draw(*obj);
-	else
+	if (m_renderStates != nullptr)
+		target.draw(*obj, *m_renderStates);
+	else if (m_shader != nullptr)
 		target.draw(*obj, m_shader);
+	else
+		target.draw(*obj);
 }

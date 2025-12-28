@@ -33,10 +33,15 @@ class VirtualKeyboard
 		void loadFromStyleJSON(JSONManager& styleJson);
 		void calculateFallingNotes(double currentTime);
 		void updateVisualization(double currentTime);
-		void render(std::optional<std::reference_wrapper<sf::RenderTarget>> target = std::nullopt);
-		void drawFallingNote(const FallingNoteGraphicsData& noteData);
-		void drawFallingNoteOutline(const FallingNoteGraphicsData& noteData);
-		void drawFallingNoteGlow(const FallingNoteGraphicsData& noteData);
+		void renderKeyboard(std::optional<std::reference_wrapper<sf::RenderTarget>> target = std::nullopt);
+		void renderFallingNotes(std::optional<std::reference_wrapper<sf::RenderTarget>> target = std::nullopt);
+		void renderFallingNotesGlow(std::optional<std::reference_wrapper<sf::RenderTarget>> target = std::nullopt);
+		void renderHollowNoteNegative(std::optional<std::reference_wrapper<sf::RenderTarget>> target = std::nullopt);
+
+	private:
+		void __render_falling_notes(const std::vector<FallingNoteGraphicsData>& noteList);
+		void __render_falling_notes_glow(const std::vector<FallingNoteGraphicsData>& noteList);
+		void __render_hollow_note_negatives(const std::vector<FallingNoteGraphicsData>& noteList);
 
 	private:
 		VirtualPiano& m_vpiano;

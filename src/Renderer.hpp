@@ -21,6 +21,7 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
+#include <SFML/Graphics/RenderStates.hpp>
 #include <ostd/Color.hpp>
 #include "Particles.hpp"
 #include "SFMLWindow.hpp"
@@ -33,6 +34,7 @@ class Renderer
 		static void setRenderTarget(sf::RenderTarget* target);
 		static void useShader(sf::Shader* shader);
 		static void useFont(const ostd::String& fontFilePath);
+		static void useRenderStates(sf::RenderStates* states);
 		static void useTexture(sf::Texture* texture, ostd::Rectangle textureRect = { 0, 0, 0, 0 });
 		static void setTextureRect(ostd::Rectangle textureRect);
 		static void clear(const ostd::Color& color);
@@ -68,6 +70,7 @@ class Renderer
 		inline static WindowBase* m_window { nullptr };
 		inline static sf::Shader* m_shader { nullptr };
 		inline static sf::Texture* m_texture { nullptr };
+		inline static sf::RenderStates* m_renderStates { nullptr };
 
 		inline static sf::Font m_font;
 		inline static bool m_textCreated { false };

@@ -22,6 +22,8 @@
 #include "Common.hpp"
 #include "Window.hpp"
 #include "Renderer.hpp"
+#include <SFML/Graphics/RenderTexture.hpp>
+#include <SFML/Graphics/Texture.hpp>
 #include <ostd/Logger.hpp>
 
 // Core functionality
@@ -35,10 +37,11 @@ void VirtualPiano::init(void)
 	m_vKeyboard.init();
 
 	sf::Vector2u winSize = { m_parentWindow.sfWindow().getSize().x, m_parentWindow.sfWindow().getSize().y };
-	sf::Vector2u winHalfSize = { winSize.x / 2, winSize.y / 2 };
-	m_blurBuff1 = sf::RenderTexture(winHalfSize);
-	m_blurBuff2 = sf::RenderTexture(winHalfSize);
-	m_glowBuffer = sf::RenderTexture(winHalfSize);
+	sf::Vector2u winHalfSize = { winSize.x / m_vPianoData.blur.resolutionDivider, winSize.y / m_vPianoData.blur.resolutionDivider };
+	m_blurBuff1 = sf::RenderTexture(winSize);
+	m_blurBuff2 = sf::RenderTexture(winSize);
+	m_glowBuffer = sf::RenderTexture(winSize);
+	m_hollowBuff = sf::RenderTexture(winSize);
 	m_glowView.setSize({ (float)winSize.x, (float)winSize.y });
 	m_glowView.setCenter({ winSize.x / 2.f, winSize.y / 2.f });
 	m_glowBuffer.setView(m_glowView);
@@ -104,9 +107,10 @@ void VirtualPiano::loadProjectFile(const ostd::String& filePath)
 
 void VirtualPiano::onWindowResized(uint32_t width, uint32_t height)
 {
-	m_blurBuff1 = sf::RenderTexture({ width / 2, height / 2 });
-	m_blurBuff2 = sf::RenderTexture({ width / 2, height / 2 });
-	m_glowBuffer = sf::RenderTexture({ width / 2, height / 2 });
+	m_blurBuff1 = sf::RenderTexture({ width / m_vPianoData.blur.resolutionDivider, height / m_vPianoData.blur.resolutionDivider });
+	m_blurBuff1 = sf::RenderTexture({ width / m_vPianoData.blur.resolutionDivider, height / m_vPianoData.blur.resolutionDivider });
+	m_glowBuffer = sf::RenderTexture({ width / m_vPianoData.blur.resolutionDivider, height / m_vPianoData.blur.resolutionDivider });
+	m_hollowBuff = sf::RenderTexture({ width / m_vPianoData.blur.resolutionDivider, height / m_vPianoData.blur.resolutionDivider });
 
 	m_glowView.setSize({ (float)width, (float)height });
 	m_glowView.setCenter({ width / 2.f, height / 2.f });
@@ -130,7 +134,8 @@ void VirtualPiano::play(void)
 	{
 		m_playing = true;
 		m_paused = false;
-		m_vPianoRes.audioFile.play();
+		if (m_firstNotePlayed)
+			m_vPianoRes.audioFile.play();
 		return;
 	}
 	stop();
@@ -208,7 +213,7 @@ void VirtualPiano::render(std::optional<std::reference_wrapper<sf::RenderTarget>
 		ostd::Vec2 render_scale = m_vPianoData.getScale();
 		m_vPianoData.setScale(m_videoRenderer.m_videoRenderState.oldScale);
 		Renderer::clear(m_vPianoData.backgroundColor);
-		m_vKeyboard.render(std::nullopt);
+		m_vKeyboard.renderKeyboard(std::nullopt);
 		m_vPianoData.setScale(render_scale);
 		if (m_videoRenderer.m_videoRenderState.mode == VideoRenderModes::ImageSequence)
 		{
@@ -234,62 +239,103 @@ void VirtualPiano::renderFrame(std::optional<std::reference_wrapper<sf::RenderTa
 	sf::RenderTarget*  __target = nullptr;
 	if (target)
 		__target = &target->get();
-	// Renderer::setRenderTarget(&m_glowBuffer);
-	// Renderer::useTexture(nullptr);
-	// Renderer::useShader(nullptr);
-	// Renderer::clear({ 0, 0, 0, 0 });
-	// for (const auto& note : m_vKeyboard.m_fallingNoteGfx_w)
-	// {
-	// 	m_vKeyboard.drawFallingNoteGlow(note);
-	// }
-	// for (auto& note : m_vKeyboard.m_fallingNoteGfx_b)
-	// {
-	// 	m_vKeyboard.drawFallingNoteGlow(note);
-	// }
-	// m_glowBuffer.display();
-	// Renderer::setRenderTarget(&m_blurBuff1);
-	// Renderer::clear({ 0, 0, 0, 0 });
-	// Renderer::useShader(&m_vPianoRes.blurShader);
-	// m_vPianoRes.blurShader.setUniform("texture", m_glowBuffer.getTexture());
-	// m_vPianoRes.blurShader.setUniform("direction", sf::Glsl::Vec2(1.f, 0.f));
-	// m_vPianoRes.blurShader.setUniform("resolution", (float)m_glowBuffer.getSize().x);
-	// m_vPianoRes.blurShader.setUniform("spread", 3.5f);
-	// m_vPianoRes.blurShader.setUniform("intensity", 1.1f);
-	// Renderer::drawTexture(m_glowBuffer.getTexture());
-	// m_blurBuff1.display();
 
-	// Renderer::setRenderTarget(&m_blurBuff2);
-	// Renderer::clear({ 0, 0, 0, 0 });
-	// m_vPianoRes.blurShader.setUniform("texture", m_blurBuff1.getTexture());
-	// m_vPianoRes.blurShader.setUniform("direction", sf::Glsl::Vec2(0.f, 1.f));
-	// m_vPianoRes.blurShader.setUniform("resolution", (float)m_blurBuff2.getSize().y);
-	// Renderer::drawTexture(m_blurBuff1.getTexture());
-	// m_blurBuff2.display();
+	auto& blurBuffer = __apply_blur_pass(m_vPianoData.blur.passes,
+										 m_vPianoData.blur.intensity,
+										 m_vPianoData.blur.startOffset,
+										 m_vPianoData.blur.increment,
+										 m_vPianoData.blur.threshold);
+
+	m_hollowBuff.clear(sf::Color::Transparent);
+    m_vKeyboard.renderHollowNoteNegative(m_hollowBuff);
+    m_hollowBuff.display();
+
+    Renderer::setRenderTarget(&blurBuffer);
+    Renderer::useTexture(nullptr);
+	Renderer::useShader(nullptr);
+	Renderer::drawTexture(m_hollowBuff.getTexture(), { 0, 0 }, { (float)m_vPianoData.blur.resolutionDivider, (float)m_vPianoData.blur.resolutionDivider });  // Upscale
 
 	Renderer::setRenderTarget(__target);
 	Renderer::useTexture(nullptr);
 	Renderer::useShader(nullptr);
 	Renderer::clear(m_vPianoData.backgroundColor);
 	if (m_showBackground)
-	{
 		Renderer::drawSprite(*m_vPianoRes.backgroundSpr);
-	}
-	Renderer::drawTexture(m_blurBuff2.getTexture(), { 0, 0 }, { 2.0f, 2.0f });
 
-	for (const auto& note : m_vKeyboard.m_fallingNoteGfx_w)
-	{
-		m_vPianoRes.noteShader.setUniform("u_texture", m_vPianoRes.noteTexture);
-		m_vPianoRes.noteShader.setUniform("u_color", color_to_glsl(note.fillColor));
-		m_vKeyboard.drawFallingNoteOutline(note);
-		m_vKeyboard.drawFallingNote(note);
-	}
-	for (auto& note : m_vKeyboard.m_fallingNoteGfx_b)
-	{
-		m_vPianoRes.noteShader.setUniform("u_texture", m_vPianoRes.noteTexture);
-		m_vPianoRes.noteShader.setUniform("u_color", color_to_glsl(note.fillColor));
-		m_vKeyboard.drawFallingNoteOutline(note);
-		m_vKeyboard.drawFallingNote(note);
-	}
+	sf::RenderStates glowState;
+    glowState.blendMode = sf::BlendAdd;
+    Renderer::useRenderStates(&glowState);
+    Renderer::drawTexture(blurBuffer.getTexture(), { 0, 0 }, { (float)m_vPianoData.blur.resolutionDivider, (float)m_vPianoData.blur.resolutionDivider });  // Upscale
+    Renderer::useRenderStates(nullptr);
 
-	m_vKeyboard.render(target);
+    m_vKeyboard.renderFallingNotes(target);
+    m_vKeyboard.renderKeyboard(target);
+}
+
+sf::RenderTexture& VirtualPiano::__apply_blur_pass(uint8_t passes, float intensity, float start_offset, float increment, float threshold)
+{
+	m_glowBuffer.clear(sf::Color::Transparent);
+    m_vKeyboard.renderFallingNotesGlow(m_glowBuffer);
+    m_glowBuffer.display();
+
+	m_blurBuff1.clear(sf::Color::Transparent);
+	Renderer::setRenderTarget(&m_blurBuff1);
+	Renderer::useShader(&m_vPianoRes.thresholdShader);
+	m_vPianoRes.thresholdShader.setUniform("texture", m_glowBuffer.getTexture());
+	m_vPianoRes.thresholdShader.setUniform("threshold", threshold);
+	Renderer::drawTexture(m_glowBuffer.getTexture());
+	m_blurBuff1.display();
+
+	auto blurPass = [&](sf::RenderTexture& src, sf::RenderTexture& dst, float offset, float intensity) {
+        m_vPianoRes.kawaseBlurShader.setUniform("texture", src.getTexture());
+        m_vPianoRes.kawaseBlurShader.setUniform("resolution", sf::Vector2f(dst.getSize()));
+        m_vPianoRes.kawaseBlurShader.setUniform("offset", offset);
+        m_vPianoRes.kawaseBlurShader.setUniform("intensity", intensity);
+
+        dst.clear(sf::Color::Transparent);
+        Renderer::setRenderTarget(&dst);
+        Renderer::useShader(&m_vPianoRes.kawaseBlurShader);
+        Renderer::drawTexture(src.getTexture());
+        dst.display();
+    };
+    auto applyBlur = [&](sf::RenderTexture& buff1, sf::RenderTexture& buff2, uint8_t passes, float intensity, float increment) -> sf::RenderTexture& {
+		bool toggle = true;
+		float offset = start_offset;
+		for (int32_t i = 0; i < passes; i++)
+		{
+			if (toggle) blurPass(buff1, buff2, offset, intensity);
+			else blurPass(buff2, buff1, offset, intensity);
+			toggle = !toggle;
+			offset += increment;
+		}
+		return (toggle ? buff2 : buff1);
+    };
+
+    auto separableBlurPass = [&](sf::RenderTexture& src, sf::RenderTexture& dst, bool horizontal, float radius) {
+        m_vPianoRes.gaussianBlurShader.setUniform("texture", src.getTexture());
+        m_vPianoRes.gaussianBlurShader.setUniform("direction", horizontal ? sf::Glsl::Vec2(1.0f, 0.0f) : sf::Glsl::Vec2(0.0f, 1.0f));
+        m_vPianoRes.gaussianBlurShader.setUniform("resolution", horizontal ? (float)dst.getSize().x : (float)dst.getSize().y);
+        m_vPianoRes.gaussianBlurShader.setUniform("radius", radius);
+
+        dst.clear(sf::Color::Transparent);
+        Renderer::setRenderTarget(&dst);
+        Renderer::useShader(&m_vPianoRes.gaussianBlurShader);
+        Renderer::drawTexture(src.getTexture());
+        dst.display();
+    };
+
+    separableBlurPass(m_blurBuff1, m_blurBuff2, true,  2.0f);  // Horizontal
+    separableBlurPass(m_blurBuff2, m_blurBuff1, false, 2.0f);  // Vertical
+    separableBlurPass(m_blurBuff1, m_blurBuff2, true,  3.0f);
+    separableBlurPass(m_blurBuff2, m_blurBuff1, false, 3.0f);
+    separableBlurPass(m_blurBuff1, m_blurBuff2, true,  4.0f);
+    separableBlurPass(m_blurBuff2, m_blurBuff1, false, 4.0f);
+    separableBlurPass(m_blurBuff1, m_blurBuff2, true,  5.0f);
+    separableBlurPass(m_blurBuff2, m_blurBuff1, false, 5.0f);
+
+    // auto& finalBlurBuff = applyBlur(m_blurBuff1, m_blurBuff2, passes, intensity, increment);
+    Renderer::setRenderTarget(nullptr);
+    Renderer::useShader(nullptr);
+    Renderer::useTexture(nullptr);
+    return m_blurBuff1;
 }

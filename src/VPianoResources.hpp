@@ -68,7 +68,9 @@ class VPianoResources
 		double lastNoteEndTime { 0.0 };
 
 		sf::Shader noteShader;
-		sf::Shader blurShader;
+		sf::Shader kawaseBlurShader;
+		sf::Shader gaussianBlurShader;
+		sf::Shader thresholdShader;
 		sf::Shader flipShader;
 		sf::Shader particleShader;
 		sf::Texture noteTexture;

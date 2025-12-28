@@ -250,7 +250,7 @@ void VirtualKeyboard::updateVisualization(double currentTime)
 	calculateFallingNotes(currentTime);
 }
 
-void VirtualKeyboard::render(std::optional<std::reference_wrapper<sf::RenderTarget>> target)
+void VirtualKeyboard::renderKeyboard(std::optional<std::reference_wrapper<sf::RenderTarget>> target)
 {
 	sf::RenderTarget*  __target = nullptr;
 	if (target)
@@ -336,31 +336,86 @@ void VirtualKeyboard::render(std::optional<std::reference_wrapper<sf::RenderTarg
 	// }
 }
 
-void VirtualKeyboard::drawFallingNote(const FallingNoteGraphicsData& noteData)
+void VirtualKeyboard::renderFallingNotes(std::optional<std::reference_wrapper<sf::RenderTarget>> target)
 {
-	Renderer::useTexture(noteData.texture);
-	Renderer::setTextureRect({ m_vpiano.vPianoData().texCoordsPos.x, m_vpiano.vPianoData().texCoordsPos.y, (float)noteData.texture->getSize().x * m_vpiano.vPianoData().texCoordsScale.x, (float)noteData.texture->getSize().y * m_vpiano.vPianoData().texCoordsScale.y });
-	Renderer::useShader(&m_vpiano.vPianoRes().noteShader);
-	Renderer::outlineRoundedRect(noteData.rect, noteData.fillColor, noteData.outlineColor, { noteData.cornerRadius, noteData.cornerRadius, noteData.cornerRadius, noteData.cornerRadius }, noteData.outlineThickness);
+	sf::RenderTarget*  __target = nullptr;
+	if (target)
+		__target = &target->get();
+	Renderer::setRenderTarget(__target);
+	__render_falling_notes(m_fallingNoteGfx_w);
+	__render_falling_notes(m_fallingNoteGfx_b);
 }
 
-void VirtualKeyboard::drawFallingNoteGlow(const FallingNoteGraphicsData& noteData)
+void VirtualKeyboard::renderFallingNotesGlow(std::optional<std::reference_wrapper<sf::RenderTarget>> target)
 {
-	Renderer::useTexture(nullptr);
-	Renderer::useShader(nullptr);
-	auto margins = m_vpiano.vPianoData().getGlowMargins();
-	ostd::Rectangle bounds = {
-		noteData.rect.x - margins.x,
-		noteData.rect.y - margins.y,
-		noteData.rect.w + margins.x + margins.w,
-		noteData.rect.h + margins.y + margins.h
-	};
-	Renderer::fillRoundedRect(bounds, noteData.glowColor, { noteData.cornerRadius, noteData.cornerRadius, noteData.cornerRadius, noteData.cornerRadius });
+	sf::RenderTarget*  __target = nullptr;
+	if (target)
+		__target = &target->get();
+	Renderer::setRenderTarget(__target);
+	__render_falling_notes_glow(m_fallingNoteGfx_b);
+	__render_falling_notes_glow(m_fallingNoteGfx_w);
 }
 
-void VirtualKeyboard::drawFallingNoteOutline(const FallingNoteGraphicsData& noteData)
+void VirtualKeyboard::renderHollowNoteNegative(std::optional<std::reference_wrapper<sf::RenderTarget>> target)
 {
-	Renderer::useTexture(nullptr);
-	Renderer::useShader(nullptr);
-	Renderer::drawRoundedRect(noteData.rect, noteData.outlineColor, { noteData.cornerRadius, noteData.cornerRadius, noteData.cornerRadius, noteData.cornerRadius }, noteData.outlineThickness);
+	sf::RenderTarget*  __target = nullptr;
+	if (target)
+		__target = &target->get();
+	Renderer::setRenderTarget(__target);
+	__render_hollow_note_negatives(m_fallingNoteGfx_b);
+	__render_hollow_note_negatives(m_fallingNoteGfx_w);
+}
+
+void VirtualKeyboard::__render_falling_notes(const std::vector<FallingNoteGraphicsData>& noteList)
+{
+	for (auto& note : noteList)
+	{
+		m_vpiano.m_vPianoRes.noteShader.setUniform("u_texture", m_vpiano.m_vPianoRes.noteTexture);
+		m_vpiano.m_vPianoRes.noteShader.setUniform("u_color", color_to_glsl(note.fillColor));
+		Renderer::useShader(&m_vpiano.vPianoRes().noteShader);
+		Renderer::useTexture(note.texture);
+		Renderer::setTextureRect({ m_vpiano.vPianoData().texCoordsPos.x, m_vpiano.vPianoData().texCoordsPos.y, (float)note.texture->getSize().x * m_vpiano.vPianoData().texCoordsScale.x, (float)note.texture->getSize().y * m_vpiano.vPianoData().texCoordsScale.y });
+		Renderer::outlineRoundedRect(note.rect, note.fillColor, note.outlineColor, { note.cornerRadius, note.cornerRadius, note.cornerRadius, note.cornerRadius }, note.outlineThickness);
+		Renderer::useTexture(nullptr);
+		Renderer::useShader(nullptr);
+		Renderer::drawRoundedRect(note.rect, note.outlineColor, { note.cornerRadius, note.cornerRadius, note.cornerRadius, note.cornerRadius }, note.outlineThickness);
+	}
+}
+
+void VirtualKeyboard::__render_falling_notes_glow(const std::vector<FallingNoteGraphicsData>& noteList)
+{
+	for (auto& note : noteList)
+	{
+		Renderer::useTexture(nullptr);
+		Renderer::useShader(nullptr);
+		auto margins = m_vpiano.vPianoData().getGlowMargins();
+		ostd::Rectangle bounds = {
+			note.rect.x - margins.x,
+			note.rect.y - margins.y,
+			note.rect.w + margins.x + margins.w,
+			note.rect.h + margins.y + margins.h
+		};
+		Renderer::fillRoundedRect(bounds, note.glowColor, { note.cornerRadius, note.cornerRadius, note.cornerRadius, note.cornerRadius });
+	}
+}
+
+void VirtualKeyboard::__render_hollow_note_negatives(const std::vector<FallingNoteGraphicsData>& noteList)
+{
+	for (auto& note : noteList)
+	{
+		Renderer::useTexture(nullptr);
+		Renderer::useShader(nullptr);
+		auto margins = m_vpiano.vPianoData().getGlowMargins();
+		margins.x = -2;
+		margins.y = -2;
+		margins.w = -2;
+		margins.h = -2;
+		ostd::Rectangle bounds = {
+			note.rect.x - margins.x,
+			note.rect.y - margins.y,
+			note.rect.w + margins.x + margins.w,
+			note.rect.h + margins.y + margins.h
+		};
+		Renderer::fillRoundedRect(bounds, { 0, 0, 0, 255 }, { 10, 10, 10, 10 });
+	}
 }

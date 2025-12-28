@@ -25,6 +25,7 @@
 #include "JSONManager.hpp"
 #include "VPianoResources.hpp"
 #include "VirtualKeyboard.hpp"
+#include <SFML/Graphics/RenderTexture.hpp>
 
 class Window;
 class VirtualPiano
@@ -57,6 +58,9 @@ class VirtualPiano
 		inline Window& getParentWindow(void) { return m_parentWindow; }
 
 	private:
+		inline sf::RenderTexture& __apply_blur_pass(uint8_t passes = 6, float intensity = 1.0f, float start_offset = 1.0f, float increment = 1.0f, float threshold = 0.1f);
+
+	private:
 		Window& m_parentWindow;
 		JSONManager m_configJson;
 		JSONManager m_projJson;
@@ -79,6 +83,7 @@ class VirtualPiano
 		sf::RenderTexture m_glowBuffer;
 		sf::RenderTexture m_blurBuff1;
 		sf::RenderTexture m_blurBuff2;
+		sf::RenderTexture m_hollowBuff;
 		sf::View m_glowView;
 		bool m_showBackground { true };
 

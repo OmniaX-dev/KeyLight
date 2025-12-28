@@ -52,6 +52,16 @@ struct PianoKey
 };
 struct VirtualPianoData
 {
+	public: struct BlurData
+	{
+		uint8_t resolutionDivider { 1 };
+		uint8_t passes { 8 };
+		float intensity { 1.0f };
+		float startOffset { 1.0f };
+		float increment { 1.0f };
+		float threshold { 0.1f };
+	};
+
 	private:
 		float pixelsPerSecond { 0 };
 		float virtualPiano_x { 0.0f };
@@ -123,6 +133,8 @@ struct VirtualPianoData
 			{ 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 },
 			{ 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }
 		};
+
+		BlurData blur;
 
 		enum class eNoteColor {
 			C_Main = 0, Csharp_Main, D_Main, Dsharp_Main,

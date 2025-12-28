@@ -1,13 +1,13 @@
 {
 	"style": {
 		"colors": {
-			"fallingWhiteNote": "#FFB0F7FF",
-			"fallingWhiteNoteOutline": "#FFB0F7FF",
-			"fallingWhiteNoteGlow": "#FFB0F7FF",
-			"fallingBlackNote": "#63132EFF",
-			"fallingBlackNoteOutline": "#63132EFF",
-			"fallingBlackNoteGlow": "#63132EFF",
-			"background": "#0A0205FF",
+			"fallingWhiteNote": "#00E01AFF",
+			"fallingWhiteNoteOutline": "#00E01AFF",
+			"fallingWhiteNoteGlow": "#00E01AFF",
+			"fallingBlackNote": "#00B9E3FF",
+			"fallingBlackNoteOutline": "#00B9E3FF",
+			"fallingBlackNoteGlow": "#00B9E3FF",
+			"background": "#000000FF",
 			"whiteKeyPressed": "#FF7ACEFF",
 			"blackKeyPressed": "#873568FF",
 			"whiteKey": [200, 200, 200],
@@ -86,17 +86,25 @@
 			"blackKeyHeightMultiplier": 9.0,
 			"blackKeyOffset": 4.0,
 			"virtualPianoX": 0.0,
-			"glowMargins": [2, 2, 2, 2],
+			"glowMargins": [5, 10, 5, 10],
 			"whiteKeyShrinkFactor": 8.0,
 			"blackKeyShrinkFactor": 0.0,
-			"fallingWhiteNoteOutlineWidth": 1,
+			"fallingWhiteNoteOutlineWidth": 4,
 			"fallingWhiteNoteBorderRadius": 5.0,
-			"fallingBlackNoteOutlineWidth": 1,
+			"fallingBlackNoteOutlineWidth": 4,
 			"fallingBlackNoteBorderRadius": 5.0,
 			"textureCoordsPosition": [0.0, 0.0],
 			"textureCoordsScale": [1.0, 1.0],
 			"pixelsPerSecond": 250.0,
 			"noteFallingTime_seconds": 4.5
+		},
+		"blur": {
+			"passes": 12,
+			"intensity": 1.02,
+			"startOffset": 1.0,
+			"increment": 0.25,
+			"threshold": 0.1,
+			"resolutionSubdivider": 1
 		},
 		"usePerNoteColors": false
 	}

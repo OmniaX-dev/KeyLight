@@ -75,6 +75,13 @@ VirtualPianoData::VirtualPianoData(void)
 	backgroundColor = { 20, 20, 20 };
 
 	pressedVelocityMultiplier = 8.0f;
+
+	blur.increment = 1.0f;
+	blur.intensity = 1.0f;
+	blur.passes = 8;
+	blur.resolutionDivider = 1;
+	blur.startOffset = 1.0f;
+	blur.threshold = 0.1f;
 }
 
 void VirtualPianoData::loadFromStyleJSON(JSONManager& styleJson)
@@ -165,6 +172,13 @@ void VirtualPianoData::loadFromStyleJSON(JSONManager& styleJson)
 	perNoteColors[(int32_t)eNoteColor::B_Main] = styleJson.get_color("style.colors.perNote.B.main");
 	perNoteColors[(int32_t)eNoteColor::B_Outline] = styleJson.get_color("style.colors.perNote.B.outline");
 	perNoteColors[(int32_t)eNoteColor::B_Glow] = styleJson.get_color("style.colors.perNote.B.glow");
+
+	blur.passes = styleJson.get_int("style.blur.passes");
+	blur.intensity = styleJson.get_float("style.blur.intensity");
+	blur.startOffset = styleJson.get_float("style.blur.startOffset");
+	blur.increment = styleJson.get_float("style.blur.increment");
+	blur.threshold = styleJson.get_int("style.blur.threshold");
+	blur.resolutionDivider = styleJson.get_int("style.blur.resolutionSubdivider");
 
 	recalculateKeyOffsets();
 }
