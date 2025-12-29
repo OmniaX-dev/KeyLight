@@ -86,7 +86,7 @@
 			"blackKeyHeightMultiplier": 9.0,
 			"blackKeyOffset": 4.0,
 			"virtualPianoX": 0.0,
-			"glowMargins": [5, 10, 5, 10],
+			"glowMargins": [10, 10, 10, 10],
 			"whiteKeyShrinkFactor": 8.0,
 			"blackKeyShrinkFactor": 0.0,
 			"fallingWhiteNoteOutlineWidth": 4,
@@ -99,11 +99,12 @@
 			"noteFallingTime_seconds": 4.5
 		},
 		"blur": {
-			"passes": 12,
-			"intensity": 1.02,
-			"startOffset": 1.0,
-			"increment": 0.25,
-			"threshold": 0.1,
+			"type": "gaussian",
+			"passes": 4,
+			"startRadius": 4.0,
+			"increment": 2.8,
+			"threshold": 0.8,
+			"bloomIntensity": 1.08,
 			"resolutionSubdivider": 1
 		},
 		"usePerNoteColors": false

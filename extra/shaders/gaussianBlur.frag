@@ -4,6 +4,7 @@ uniform sampler2D texture;
 uniform vec2 direction; // (1,0) = horizontal, (0,1) = vertical
 uniform float resolution; // width for horizontal, height for vertical
 uniform float radius = 4.0; // blur strength
+uniform float bloomIntensity = 1.0;
 
 const float weights[5] = float[](0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);
 
@@ -22,5 +23,5 @@ void main() {
     }
 
     gl_FragColor = color;
-    gl_FragColor *= 1.08;
+    gl_FragColor *= bloomIntensity;
 }

@@ -25,7 +25,9 @@
 #include "JSONManager.hpp"
 #include "VPianoResources.hpp"
 #include "VirtualKeyboard.hpp"
+#include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/RenderTexture.hpp>
+
 
 class Window;
 class VirtualPiano
@@ -58,7 +60,9 @@ class VirtualPiano
 		inline Window& getParentWindow(void) { return m_parentWindow; }
 
 	private:
-		inline sf::RenderTexture& __apply_blur_pass(uint8_t passes = 6, float intensity = 1.0f, float start_offset = 1.0f, float increment = 1.0f, float threshold = 0.1f);
+		inline sf::RenderTexture& __apply_blur(uint8_t passes = 6, float intensity = 1.0f, float start_offset = 1.0f, float increment = 1.0f, float threshold = 0.1f);
+		inline sf::RenderTexture& __apply_kawase_blur(uint8_t passes = 6, float intensity = 1.0f, float start_offset = 1.0f, float increment = 1.0f, float threshold = 0.1f);
+		inline sf::RenderTexture& __apply_gaussian_blur(uint8_t passes = 6, float intensity = 1.0, float start_radius = 1.0f, float increment = 1.0f, float threshold = 0.1f);
 
 	private:
 		Window& m_parentWindow;

@@ -20,8 +20,10 @@
 
 #include "VirtualPiano.hpp"
 #include "Common.hpp"
+#include "VPianoData.hpp"
 #include "Window.hpp"
 #include "Renderer.hpp"
+#include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/RenderTexture.hpp>
 #include <SFML/Graphics/Texture.hpp>
 #include <ostd/Logger.hpp>
@@ -240,9 +242,9 @@ void VirtualPiano::renderFrame(std::optional<std::reference_wrapper<sf::RenderTa
 	if (target)
 		__target = &target->get();
 
-	auto& blurBuffer = __apply_blur_pass(m_vPianoData.blur.passes,
-										 m_vPianoData.blur.intensity,
-										 m_vPianoData.blur.startOffset,
+	auto& blurBuffer = __apply_blur(m_vPianoData.blur.passes,
+										 m_vPianoData.blur.bloomIntensity,
+										 m_vPianoData.blur.startRadius,
 										 m_vPianoData.blur.increment,
 										 m_vPianoData.blur.threshold);
 
@@ -272,7 +274,21 @@ void VirtualPiano::renderFrame(std::optional<std::reference_wrapper<sf::RenderTa
     m_vKeyboard.renderKeyboard(target);
 }
 
-sf::RenderTexture& VirtualPiano::__apply_blur_pass(uint8_t passes, float intensity, float start_offset, float increment, float threshold)
+sf::RenderTexture& VirtualPiano::__apply_blur(uint8_t passes, float intensity, float start_offset, float increment, float threshold)
+{
+	switch (m_vPianoData.blur.type)
+	{
+		case VirtualPianoData::eBlurType::Gaussian:
+			return __apply_gaussian_blur(passes, intensity, start_offset, increment, threshold);
+		case VirtualPianoData::eBlurType::Kawase:
+			return __apply_kawase_blur(passes, intensity, start_offset, increment, threshold);
+		default: break;
+	}
+	OX_ERROR("Invalid blur type");
+	return m_glowBuffer;
+}
+
+sf::RenderTexture& VirtualPiano::__apply_kawase_blur(uint8_t passes, float intensity, float start_offset, float increment, float threshold)
 {
 	m_glowBuffer.clear(sf::Color::Transparent);
     m_vKeyboard.renderFallingNotesGlow(m_glowBuffer);
@@ -286,15 +302,15 @@ sf::RenderTexture& VirtualPiano::__apply_blur_pass(uint8_t passes, float intensi
 	Renderer::drawTexture(m_glowBuffer.getTexture());
 	m_blurBuff1.display();
 
-	auto blurPass = [&](sf::RenderTexture& src, sf::RenderTexture& dst, float offset, float intensity) {
-        m_vPianoRes.kawaseBlurShader.setUniform("texture", src.getTexture());
-        m_vPianoRes.kawaseBlurShader.setUniform("resolution", sf::Vector2f(dst.getSize()));
-        m_vPianoRes.kawaseBlurShader.setUniform("offset", offset);
-        m_vPianoRes.kawaseBlurShader.setUniform("intensity", intensity);
+	auto blurPass = [&](sf::RenderTexture& src, sf::RenderTexture& dst, sf::Shader& shader, float offset, float intensity) {
+        shader.setUniform("texture", src.getTexture());
+        shader.setUniform("resolution", sf::Vector2f({ 1.0f / dst.getSize().x, 1.0f / dst.getSize().y }));
+        shader.setUniform("offset", offset);
+        shader.setUniform("bloomStrength", intensity);
 
         dst.clear(sf::Color::Transparent);
         Renderer::setRenderTarget(&dst);
-        Renderer::useShader(&m_vPianoRes.kawaseBlurShader);
+        Renderer::useShader(&shader);
         Renderer::drawTexture(src.getTexture());
         dst.display();
     };
@@ -303,19 +319,52 @@ sf::RenderTexture& VirtualPiano::__apply_blur_pass(uint8_t passes, float intensi
 		float offset = start_offset;
 		for (int32_t i = 0; i < passes; i++)
 		{
-			if (toggle) blurPass(buff1, buff2, offset, intensity);
-			else blurPass(buff2, buff1, offset, intensity);
+			if (toggle) blurPass(buff1, buff2, m_vPianoRes.kawaseDownShader, offset, intensity);
+			else blurPass(buff2, buff1, m_vPianoRes.kawaseDownShader, offset, intensity);
+			toggle = !toggle;
+			offset += increment;
+		}
+		auto& _buff1 = (toggle ? buff2 : buff1);
+		auto& _buff2 = (toggle ? buff1 : buff2);
+		toggle = true;
+		offset = start_offset;
+		for (int32_t i = 0; i < passes; i++)
+		{
+			if (toggle) blurPass(_buff1, _buff2, m_vPianoRes.kawaseUpShader, offset, intensity);
+			else blurPass(_buff2, _buff1, m_vPianoRes.kawaseUpShader, offset, intensity);
 			toggle = !toggle;
 			offset += increment;
 		}
 		return (toggle ? buff2 : buff1);
     };
 
-    auto separableBlurPass = [&](sf::RenderTexture& src, sf::RenderTexture& dst, bool horizontal, float radius) {
+    auto& finalBlurBuff = applyBlur(m_blurBuff1, m_blurBuff2, passes, intensity, increment);
+    Renderer::setRenderTarget(nullptr);
+    Renderer::useShader(nullptr);
+    Renderer::useTexture(nullptr);
+    return finalBlurBuff;
+}
+
+sf::RenderTexture& VirtualPiano::__apply_gaussian_blur(uint8_t passes, float intensity, float start_radius, float increment, float threshold)
+{
+	m_glowBuffer.clear(sf::Color::Transparent);
+    m_vKeyboard.renderFallingNotesGlow(m_glowBuffer);
+    m_glowBuffer.display();
+
+	m_blurBuff1.clear(sf::Color::Transparent);
+	Renderer::setRenderTarget(&m_blurBuff1);
+	Renderer::useShader(&m_vPianoRes.thresholdShader);
+	m_vPianoRes.thresholdShader.setUniform("texture", m_glowBuffer.getTexture());
+	m_vPianoRes.thresholdShader.setUniform("threshold", threshold);
+	Renderer::drawTexture(m_glowBuffer.getTexture());
+	m_blurBuff1.display();
+
+	auto blurPass = [&](sf::RenderTexture& src, sf::RenderTexture& dst, bool horizontal, float radius, float intensity) {
         m_vPianoRes.gaussianBlurShader.setUniform("texture", src.getTexture());
         m_vPianoRes.gaussianBlurShader.setUniform("direction", horizontal ? sf::Glsl::Vec2(1.0f, 0.0f) : sf::Glsl::Vec2(0.0f, 1.0f));
-        m_vPianoRes.gaussianBlurShader.setUniform("resolution", horizontal ? (float)dst.getSize().x : (float)dst.getSize().y);
+        m_vPianoRes.gaussianBlurShader.setUniform("resolution", (horizontal ? (float)dst.getSize().x : (float)dst.getSize().y));
         m_vPianoRes.gaussianBlurShader.setUniform("radius", radius);
+        m_vPianoRes.gaussianBlurShader.setUniform("bloomIntensity", intensity);
 
         dst.clear(sf::Color::Transparent);
         Renderer::setRenderTarget(&dst);
@@ -323,19 +372,19 @@ sf::RenderTexture& VirtualPiano::__apply_blur_pass(uint8_t passes, float intensi
         Renderer::drawTexture(src.getTexture());
         dst.display();
     };
-
-    separableBlurPass(m_blurBuff1, m_blurBuff2, true,  2.0f);  // Horizontal
-    separableBlurPass(m_blurBuff2, m_blurBuff1, false, 2.0f);  // Vertical
-    separableBlurPass(m_blurBuff1, m_blurBuff2, true,  3.0f);
-    separableBlurPass(m_blurBuff2, m_blurBuff1, false, 3.0f);
-    separableBlurPass(m_blurBuff1, m_blurBuff2, true,  4.0f);
-    separableBlurPass(m_blurBuff2, m_blurBuff1, false, 4.0f);
-    separableBlurPass(m_blurBuff1, m_blurBuff2, true,  5.0f);
-    separableBlurPass(m_blurBuff2, m_blurBuff1, false, 5.0f);
-
-    // auto& finalBlurBuff = applyBlur(m_blurBuff1, m_blurBuff2, passes, intensity, increment);
+    auto applyBlur = [&](sf::RenderTexture& buff1, sf::RenderTexture& buff2, uint8_t passes, float radius, float intensity, float increment) -> sf::RenderTexture& {
+		float offset = radius;
+		for (int32_t i = 0; i < passes; i++)
+		{
+			blurPass(buff1, buff2, true, offset, intensity);
+			blurPass(buff2, buff1, false, offset, intensity);
+			offset += increment;
+		}
+		return buff1;
+    };
+    auto& finalBlurBuff = applyBlur(m_blurBuff1, m_blurBuff2, passes, start_radius, intensity, increment);
     Renderer::setRenderTarget(nullptr);
     Renderer::useShader(nullptr);
     Renderer::useTexture(nullptr);
-    return m_blurBuff1;
+    return finalBlurBuff;
 }

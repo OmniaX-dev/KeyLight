@@ -52,14 +52,16 @@ struct PianoKey
 };
 struct VirtualPianoData
 {
+	public: enum class eBlurType { Gaussian, Kawase };
 	public: struct BlurData
 	{
-		uint8_t resolutionDivider { 1 };
 		uint8_t passes { 8 };
-		float intensity { 1.0f };
-		float startOffset { 1.0f };
+		float startRadius { 1.0f };
 		float increment { 1.0f };
 		float threshold { 0.1f };
+		uint8_t resolutionDivider { 1 };
+		float bloomIntensity { 1.0f };
+		eBlurType type { eBlurType::Gaussian };
 	};
 
 	private:

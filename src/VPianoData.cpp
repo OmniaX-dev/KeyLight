@@ -77,11 +77,12 @@ VirtualPianoData::VirtualPianoData(void)
 	pressedVelocityMultiplier = 8.0f;
 
 	blur.increment = 1.0f;
-	blur.intensity = 1.0f;
+	blur.bloomIntensity = 1.0f;
 	blur.passes = 8;
 	blur.resolutionDivider = 1;
-	blur.startOffset = 1.0f;
+	blur.startRadius = 1.0f;
 	blur.threshold = 0.1f;
+	blur.type = eBlurType::Gaussian;
 }
 
 void VirtualPianoData::loadFromStyleJSON(JSONManager& styleJson)
@@ -174,11 +175,21 @@ void VirtualPianoData::loadFromStyleJSON(JSONManager& styleJson)
 	perNoteColors[(int32_t)eNoteColor::B_Glow] = styleJson.get_color("style.colors.perNote.B.glow");
 
 	blur.passes = styleJson.get_int("style.blur.passes");
-	blur.intensity = styleJson.get_float("style.blur.intensity");
-	blur.startOffset = styleJson.get_float("style.blur.startOffset");
+	blur.startRadius = styleJson.get_float("style.blur.startRadius");
 	blur.increment = styleJson.get_float("style.blur.increment");
+
+	blur.bloomIntensity = styleJson.get_float("style.blur.bloomIntensity");
 	blur.threshold = styleJson.get_int("style.blur.threshold");
 	blur.resolutionDivider = styleJson.get_int("style.blur.resolutionSubdivider");
+
+	ostd::String type = styleJson.get_string("style.blur.type").new_trim();
+	if (type == "gaussian") blur.type = eBlurType::Gaussian;
+	else if (type == "kawase") blur.type = eBlurType::Kawase;
+	else
+	{
+		OX_ERROR("Invalid blur type in JSON file.");
+		blur.type = eBlurType::Gaussian;
+	}
 
 	recalculateKeyOffsets();
 }

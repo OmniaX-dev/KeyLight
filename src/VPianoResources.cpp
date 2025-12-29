@@ -45,12 +45,17 @@ bool VPianoResources::loadShaders(void)
 		OX_ERROR("Failed to load shader");
 		return false;
 	}
-	if (!kawaseBlurShader.loadFromFile("shaders/basic.vert", "shaders/kawase_blur.frag"))
+	if (!kawaseUpShader.loadFromFile("shaders/basic.vert", "shaders/dualKawaseUp.frag"))
 	{
 		OX_ERROR("Failed to load shader");
 		return false;
 	}
-	if (!gaussianBlurShader.loadFromFile("shaders/basic.vert", "shaders/gaussian_blur.frag"))
+	if (!kawaseDownShader.loadFromFile("shaders/basic.vert", "shaders/dualKawaseDown.frag"))
+	{
+		OX_ERROR("Failed to load shader");
+		return false;
+	}
+	if (!gaussianBlurShader.loadFromFile("shaders/basic.vert", "shaders/gaussianBlur.frag"))
 	{
 		OX_ERROR("Failed to load shader");
 		return false;
