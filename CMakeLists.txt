@@ -27,7 +27,9 @@ endif()
 #-----------------------------------------------------------------------------------------
 list(APPEND INCLUDE_DIRS
 	${CMAKE_CURRENT_LIST_DIR}/src
-	${CMAKE_CURRENT_LIST_DIR}/vendor/midifile
+	${CMAKE_CURRENT_LIST_DIR}/src/vendor
+	${CMAKE_CURRENT_LIST_DIR}/src/vendor/midifile
+	${CMAKE_CURRENT_LIST_DIR}/src/vendor/nlohmann
 )
 list(APPEND SOURCE_FILES
 	# MidiFile
