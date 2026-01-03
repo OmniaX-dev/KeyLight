@@ -35,41 +35,21 @@ void VPianoResources::loadStyleFromJson(JSONManager& style, JSONManager& particl
 
 bool VPianoResources::loadShaders(void)
 {
-	if (!noteShader.loadFromFile("shaders/basic.vert", "shaders/note.frag"))
-	{
-		OX_ERROR("Failed to load shader");
-		return false;
-	}
-	if (!thresholdShader.loadFromFile("shaders/basic.vert", "shaders/threshold.frag"))
-	{
-		OX_ERROR("Failed to load shader");
-		return false;
-	}
-	if (!kawaseUpShader.loadFromFile("shaders/basic.vert", "shaders/dualKawaseUp.frag"))
-	{
-		OX_ERROR("Failed to load shader");
-		return false;
-	}
-	if (!kawaseDownShader.loadFromFile("shaders/basic.vert", "shaders/dualKawaseDown.frag"))
-	{
-		OX_ERROR("Failed to load shader");
-		return false;
-	}
-	if (!gaussianBlurShader.loadFromFile("shaders/basic.vert", "shaders/gaussianBlur.frag"))
-	{
-		OX_ERROR("Failed to load shader");
-		return false;
-	}
-	if (!flipShader.loadFromFile("shaders/basic.vert", "shaders/flip.frag"))
-	{
-		OX_ERROR("Failed to load shader");
-		return false;
-	}
-	if (!particleShader.loadFromFile("shaders/basic.vert", "shaders/particle.frag"))
-	{
-		OX_ERROR("Failed to load shader");
-		return false;
-	}
+	auto load_shader = [&](sf::Shader& shaderRef, const ostd::String& fragName, const ostd::String& vertName = "basic", const ostd::String& folder = "shaders") -> bool {
+		if (!shaderRef.loadFromFile(folder + "/" + vertName + ".vert", folder + "/" + fragName + ".frag"))
+		{
+			OX_ERROR("Failed to load shader: %s", (folder + "/" + fragName).c_str());
+			return false;
+		}
+		return true;
+	};
+	if (!load_shader(noteShader, "note")) return false;
+	if (!load_shader(thresholdShader, "threshold")) return false;
+	if (!load_shader(kawaseUpShader, "dualKawaseUp")) return false;
+	if (!load_shader(kawaseDownShader, "dualKawaseDown")) return false;
+	if (!load_shader(gaussianBlurShader, "gaussianBlur")) return false;
+	if (!load_shader(flipShader, "flip")) return false;
+	if (!load_shader(particleShader, "particle")) return false;
 	return true;
 }
 

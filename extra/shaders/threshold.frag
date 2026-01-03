@@ -1,8 +1,8 @@
 // threshold.frag
-#version 130
+
 
 uniform sampler2D texture;
-uniform float threshold = 0.8; // Only glow >80% brightness
+uniform float threshold; // Only glow >80% brightness
 
 void main() {
     vec4 color = texture2D(texture, gl_TexCoord[0].xy);

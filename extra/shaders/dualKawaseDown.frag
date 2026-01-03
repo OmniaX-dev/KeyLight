@@ -1,4 +1,4 @@
-#version 130
+
 // precision highp float;
 
 uniform vec2 resolution; /* Resolution Reciprocal */

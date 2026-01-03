@@ -126,10 +126,10 @@ Use your package manager to install git.
 ```bash
 sudo pacman -Syu
 sudo pacman -S --needed base-devel git clang gdb cmake \
-					    make boost sdl2 sdl2_mixer sdl2_image \
-							sdl2_ttf sdl2_gfx ninja gcc libvorbis \
-							flac libogg openal freetype2 libjpeg-turbo \
-							gettext
+                        make boost sdl2 sdl2_mixer sdl2_image \
+                            sdl2_ttf sdl2_gfx ninja gcc libvorbis \
+                            flac libogg openal freetype2 libjpeg-turbo \
+                            gettext
 ```
 
 - **Debian** Based distros:
@@ -137,24 +137,24 @@ sudo pacman -S --needed base-devel git clang gdb cmake \
 ```bash
 sudo apt update
 sudo apt install build-essential git dkms linux-headers-generic \
-	             clang gdb make cmake libssl-dev libboost-all-dev \
-	             libsdl2-dev libsdl2-mixer-dev libsdl2-image-dev \
-	             libsdl2-ttf-dev libsdl2-gfx-dev libxcb-randr0-dev libsfml-dev \
-		           ninja-build g++ libvorbis-dev libflac-dev libogg-dev libopenal-dev \
-		           libfreetype-dev libjpeg-dev gettext
+                 clang gdb make cmake libssl-dev libboost-all-dev \
+                 libsdl2-dev libsdl2-mixer-dev libsdl2-image-dev \
+                 libsdl2-ttf-dev libsdl2-gfx-dev libxcb-randr0-dev libsfml-dev \
+                   ninja-build g++ libvorbis-dev libflac-dev libogg-dev libopenal-dev \
+                   libfreetype-dev libjpeg-dev gettext
 ```
 
 - **Fedora**
 
 ```bash
 sudo dnf install clang gdb make cmake boost-devel SDL2-devel \
-				 SDL2_mixer-devel SDL2_image-devel SDL2_ttf-devel \
-				 SDL2_gfx-devel libxcb-devel ninja-build gcc-c++ \
-				 libvorbis-devel flac-devel libogg-devel \
-				 openal-soft-devel freetype-devel libjpeg-turbo-devel \
-				 libX11-devel libXrandr-devel libXcursor-devel \
-				 libXi-devel systemd-devel ncurses-devel \
-				 gettext gettext-devel
+                 SDL2_mixer-devel SDL2_image-devel SDL2_ttf-devel \
+                 SDL2_gfx-devel libxcb-devel ninja-build gcc-c++ \
+                 libvorbis-devel flac-devel libogg-devel \
+                 openal-soft-devel freetype-devel libjpeg-turbo-devel \
+                 libX11-devel libXrandr-devel libXcursor-devel \
+                 libXi-devel systemd-devel ncurses-devel \
+                 gettext gettext-devel
 ```
 
 ##### Step 2: build SFML3 from source
@@ -163,9 +163,9 @@ sudo dnf install clang gdb make cmake boost-devel SDL2-devel \
 git clone --branch 3.0.1 https://github.com/SFML/SFML.git sfml3
 cd sfml3
 cmake -S . -B build-shared -G Ninja \
-	  -DCMAKE_BUILD_TYPE=Release \
-	  -DCMAKE_INSTALL_PREFIX=/usr \
-	  -DBUILD_SHARED_LIBS=ON
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_PREFIX=/usr \
+      -DBUILD_SHARED_LIBS=ON
 cmake --build build-shared
 sudo cmake --install build-shared
 ```
@@ -197,6 +197,94 @@ cd ..
 ---
 
 ##### Step 5: build KeyLight
+
+```bash
+git clone https://github.com/OmniaX-Dev/KeyLight
+cd KeyLight
+./build release
+```
+
+---
+
+### <u>Build instructions - MacOS</u>
+
+This project is officially tested only on. an M1 MacBook air running macOS Tahoe 26, but in theory it should run on newer models as well as older (intel chip) models.
+
+##### Step 1: Install HomeBrew
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+##### Step 2: Add HomeBrew to PATH
+
+After installing HomeBrew, it should automatically tell you how to add it to path, in general it should loo something. like this:
+
+- **For Apple Silicon**
+
+```bash
+echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+eval "$(/opt/homebrew/bin/brew shellenv)"
+```
+
+- **For Intel Mac**
+
+```bash
+echo 'eval "$(/usr/local/bin/brew shellenv)"' >> ~/.zprofile
+eval "$(/usr/local/bin/brew shellenv)"Use your package manager to install git.
+```
+
+##### Step 3: Install dependencies
+
+```bash
+brew install llvm gdb cmake make boost sdl2 sdl2_mixer sdl2_image sdl2_ttf \
+                 sdl2_gfx ninja gcc libvorbis flac libogg openal-soft freetype \
+                 jpeg-turbo glm gettext
+```
+
+##### Step 4: build SFML3 from source
+
+```bash
+git clone --branch 3.0.1 https://github.com/SFML/SFML.git sfml3
+cd sfml3
+mkdir build
+cmake -S . -B build -G Ninja \
+     -DCMAKE_BUILD_TYPE=Release \
+     -DCMAKE_INSTALL_PREFIX=/usr/local \
+     -DBUILD_SHARED_LIBS=ON
+cmake --build build
+sudo cmake --install build
+```
+
+##### Step 5: build TGUI from source
+
+```bash
+git clone https://github.com/texus/TGUI.git
+cd TGUI
+mkdir build
+cmake -B build -S . \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DTGUI_BACKEND=SFML_GRAPHICS \
+    -DTGUI_BUILD_FRAMEWORK=OFF \
+    -DCMAKE_INSTALL_PREFIX=/usr/local
+cmake --build build
+sudo cmake --install build
+```
+
+---
+
+##### Step 6: build OmniaFramework from source
+
+```bash
+git clone https://github.com/OmniaX-dev/OmniaFramework.git
+cd OmniaFramework
+./build release
+./build install
+```
+
+---
+
+##### Step 7: build KeyLight
 
 ```bash
 git clone https://github.com/OmniaX-Dev/KeyLight

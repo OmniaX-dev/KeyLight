@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \"syl4r39@gmail.com\"\n"
-"POT-Creation-Date: 2025-12-25 17:42+0100\n"
+"POT-Creation-Date: 2026-01-02 23:49+0100\n"
 "PO-Revision-Date: 2025-12-25 15:16+0100\n"
 "Last-Translator: sylar <syl4r39@gmail.com>\n"
 "Language-Team: English\n"
@@ -17,42 +17,42 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: /home/sylar/GitRepos/KeyLight/src/Gui.cpp:361
+#: /Users/sylar/GitRepos/KeyLight/src/Gui.cpp:381
 msgid "Rendering Video"
 msgstr ""
 
-#: /home/sylar/GitRepos/KeyLight/src/Gui.cpp:364
+#: /Users/sylar/GitRepos/KeyLight/src/Gui.cpp:384
 msgid "Rendering Image Sequence"
 msgstr ""
 
-#: /home/sylar/GitRepos/KeyLight/src/Gui.cpp:392
+#: /Users/sylar/GitRepos/KeyLight/src/Gui.cpp:412
 msgid "Frames: "
 msgstr ""
 
-#: /home/sylar/GitRepos/KeyLight/src/Gui.cpp:398
+#: /Users/sylar/GitRepos/KeyLight/src/Gui.cpp:418
 msgid "FPS: "
 msgstr ""
 
-#: /home/sylar/GitRepos/KeyLight/src/Gui.cpp:423
+#: /Users/sylar/GitRepos/KeyLight/src/Gui.cpp:443
 msgid "ETA: "
 msgstr ""
 
-#: /home/sylar/GitRepos/KeyLight/src/Gui.cpp:436
+#: /Users/sylar/GitRepos/KeyLight/src/Gui.cpp:456
 msgid "File: "
 msgstr ""
 
-#: /home/sylar/GitRepos/KeyLight/src/Gui.cpp:447
+#: /Users/sylar/GitRepos/KeyLight/src/Gui.cpp:467
 msgid "Resolution: "
 msgstr ""
 
-#: /home/sylar/GitRepos/KeyLight/src/Gui.cpp:454
+#: /Users/sylar/GitRepos/KeyLight/src/Gui.cpp:474
 msgid "Target FPS: "
 msgstr ""
 
-#: /home/sylar/GitRepos/KeyLight/src/Gui.cpp:461
+#: /Users/sylar/GitRepos/KeyLight/src/Gui.cpp:481
 msgid "Duration: "
 msgstr ""
 
-#: /home/sylar/GitRepos/KeyLight/src/main.cpp:46
+#: /Users/sylar/GitRepos/KeyLight/src/main.cpp:46
 msgid "LANG INIT"
 msgstr ""

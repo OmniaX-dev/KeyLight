@@ -14,6 +14,17 @@ cmake_minimum_required(VERSION 3.18)
 project(${PROJECT_NAME} LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 file(STRINGS "./other/build.nr" BUILD_NUMBER)
+
+if (APPLE)
+	execute_process(
+	    COMMAND brew --prefix
+	    OUTPUT_VARIABLE HOMEBREW_PREFIX
+	    OUTPUT_STRIP_TRAILING_WHITESPACE
+	)
+	
+	set(CMAKE_INSTALL_RPATH "${HOMEBREW_PREFIX}/lib;/usr/local/lib")
+	set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+endif(APPLE)
 #-----------------------------------------------------------------------------------------
 
 message(STATUS "Building ${PROJECT_NAME} ${MAJOR_VER}.${MINOR_VER}.${BUILD_NUMBER}")
@@ -93,13 +104,29 @@ if (WIN32)
 	target_link_libraries(${MAIN_EXECUTABLE} mingw32)
 endif (WIN32)
 
-if (UNIX)
+if (APPLE)
+	find_package(glm CONFIG REQUIRED)
+	target_link_libraries(${MAIN_EXECUTABLE} glm::glm)
+	find_path(GETTEXT_INCLUDE_DIR libintl.h
+	    PATHS
+	        /usr/local/include
+	        /opt/homebrew/include
+	        /usr/local/opt/gettext/include
+	        /opt/homebrew/opt/gettext/include
+	)
+	find_library(GETTEXT_LIBRARY intl
+	    PATHS
+	        /usr/local/lib
+	        /opt/homebrew/lib
+	        /usr/local/opt/gettext/lib
+	        /opt/homebrew/opt/gettext/lib
+	)
+	target_include_directories(${MAIN_EXECUTABLE} PUBLIC ${GETTEXT_INCLUDE_DIR})
+	target_link_libraries(${MAIN_EXECUTABLE} ${GETTEXT_LIBRARY})
+elseif (UNIX)
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,'$ORIGIN',-rpath,/usr/lib,-rpath,/usr/local/lib")
 	target_link_libraries(${MAIN_EXECUTABLE} xcb xcb-randr boost_regex)
-endif (UNIX)
-
-# find_package(Boost REQUIRED COMPONENTS process)
-# target_link_libraries(${MAIN_EXECUTABLE} Boost::process)
+endif ()
 
 target_link_libraries(${MAIN_EXECUTABLE} sfml-system sfml-window sfml-graphics sfml-audio tgui)
 target_link_libraries(${MAIN_EXECUTABLE} ostd)

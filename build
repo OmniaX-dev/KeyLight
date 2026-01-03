@@ -5,7 +5,13 @@ set -e
 MAKE_COMMAND=make
 MAKEFILE_TYPE="Unix Makefiles"
 
-if [ "$(expr substr $(uname -s) 1 10)" == "MINGW64_NT" ]; then
+if [[ "$(uname)" == "Darwin" ]]; then
+	NJOBS=-j"$(sysctl -n hw.ncpu)"
+else
+	NJOBS=-j$(nproc)
+fi
+
+if [[ "$(uname -s)" == MINGW64_NT* ]]; then
     MAKE_COMMAND=mingw32-make.exe
     MAKEFILE_TYPE="MinGW Makefiles"
 fi
@@ -14,10 +20,10 @@ if [[ "$1" == "debug" || "$1" == "release" ]]; then
     BUILD_TYPE="$(tr '[:lower:]' '[:upper:]' <<< ${1:0:1})${1:1}"
     rm -rf bin
     cmake -B bin -S ./ -G "$MAKEFILE_TYPE" -DCMAKE_BUILD_TYPE=$BUILD_TYPE
-    $MAKE_COMMAND -C bin -j$(nproc) --no-print-directory
+    $MAKE_COMMAND -C bin $NJOBS --no-print-directory
     cp -r extra/* bin/
-    typeset -i build_number=$(cat other/build.nr)
-    ((build_number++))
+    build_number=$(cat other/build.nr)
+    build_number=$((build_number + 1))
     truncate -s 0 other/build.nr
     echo $build_number >> other/build.nr
 elif [[ "$1" == "windows_release" ]]; then
@@ -38,7 +44,7 @@ elif [[ "$1" == "dependencies" ]]; then
 else
     cp -r extra/* bin/
     printf "\n\033[0;32mBuilding Changes...\n\n\033[0m"
-    $MAKE_COMMAND -C bin -j$(nproc) --no-print-directory
+    $MAKE_COMMAND -C bin $NJOBS --no-print-directory
     if [[ "$1" == "run" ]]; then
         printf "\n\033[0;32mRunning Application...\n\n\033[0m"
         cd bin

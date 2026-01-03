@@ -51,10 +51,48 @@ install_manual_dependencies_linux() {
     cd ../..
 }
 
+install_manual_dependencies_macos() {
+	# Build SFML3
+	git clone --branch 3.0.1 https://github.com/SFML/SFML.git sfml3
+	cd sfml3
+	
+	mkdir build
+	cmake -S . -B build -G Ninja \
+	    -DCMAKE_BUILD_TYPE=Release \
+	    -DCMAKE_INSTALL_PREFIX=/usr/local \
+	    -DBUILD_SHARED_LIBS=ON
+	
+	cmake --build build
+	sudo cmake --install build
+	cd ..
+
+    # Build TGUI
+    git clone https://github.com/texus/TGUI.git
+    cd TGUI
+    
+	mkdir build
+    cmake -B build -S . \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DTGUI_BACKEND=SFML_GRAPHICS \
+        -DTGUI_BUILD_FRAMEWORK=OFF \
+        -DCMAKE_INSTALL_PREFIX=/usr/local
+    
+    cmake --build build
+    sudo cmake --install build
+    cd ..
+    
+    # Build OmniaFramework
+	git clone https://github.com/OmniaX-dev/OmniaFramework.git
+    cd OmniaFramework
+    ./build release
+    ./build install
+    cd ../..
+}
+
 set -e
 mkdir ../dependencies && cd ../dependencies
 
-if [ "$(expr substr $(uname -s) 1 10)" == "MINGW64_NT" ]; then
+if [[ "$(uname -s)" == MINGW64_NT* ]]; then
     # Setup environment
     pacman -Syuu --noconfirm
     pacman -S --noconfirm --needed base-devel mingw-w64-ucrt-x86_64-clang mingw-w64-ucrt-x86_64-gdb \
@@ -97,7 +135,7 @@ if [ "$(expr substr $(uname -s) 1 10)" == "MINGW64_NT" ]; then
     ./build release
     ./build install
     cd ../..
-elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
+elif [[ "$(uname -s)" == Linux* ]]; then
 	pkgmgr=$(detect_package_manager)
 	case "$pkgmgr" in
 	  pacman) # Arch Based ==================================================================================================
@@ -133,4 +171,9 @@ elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
 	    ;;
 	esac
 	install_manual_dependencies_linux
+elif [[ "$(uname)" == "Darwin" ]]; then
+	brew install llvm gdb cmake make boost sdl2 sdl2_mixer sdl2_image sdl2_ttf \
+				 sdl2_gfx ninja gcc libvorbis flac libogg openal-soft freetype \
+				 jpeg-turbo glm gettext
+	install_manual_dependencies_macos
 fi

@@ -35,6 +35,7 @@
 #include "SFMLWindow.hpp"
 #include "VPianoData.hpp"
 #include "VirtualPiano.hpp"
+#include <libintl.h>
 
 
 
@@ -171,15 +172,34 @@ void Gui::showFileDialog(const ostd::String& title, const Gui::FileDialogFilterL
 	m_fileDialog->setVisible(true);
 	m_fileDialog->setMultiSelect(multiselect);
 	m_fileDialog->onFileSelect([this, callback](const tgui::Filesystem::Path& path) {
-		if (!this->isValid()) return;  //This should never happen
-		auto files = this->m_fileDialog->getSelectedPaths();
-		std::vector<ostd::String> _files;
-		_files.reserve(files.size());
-		std::transform(files.begin(), files.end(), std::back_inserter(_files), [](const std::filesystem::path& p) {
-			return ostd::String(p.string());
-		});
-		callback(_files, false);
+    if (!this->isValid()) return;
+
+    auto files = this->m_fileDialog->getSelectedPaths();
+	    std::vector<ostd::String> _files;
+	    _files.reserve(files.size());
+	
+	    std::transform(
+	        files.begin(),
+	        files.end(),
+	        std::back_inserter(_files),
+	        [](const tgui::Filesystem::Path& p) {
+	            return ostd::String(std::string(p.asString()));
+	        }
+	    );
+	
+	    callback(_files, false);
 	});
+
+	// m_fileDialog->onFileSelect([this, callback](const tgui::Filesystem::Path& path) {
+	// 	if (!this->isValid()) return;  //This should never happen
+	// 	auto files = this->m_fileDialog->getSelectedPaths();
+	// 	std::vector<ostd::String> _files;
+	// 	_files.reserve(files.size());
+	// 	std::transform(files.begin(), files.end(), std::back_inserter(_files), [](const std::filesystem::path& p) {
+	// 		return ostd::String(p.string());
+	// 	});
+	// 	callback(_files, false);
+	// });
 	m_fileDialog->onCancel([this, callback](void) {
 		if (!this->isValid()) return;  //This should never happen
 		callback({  }, true);

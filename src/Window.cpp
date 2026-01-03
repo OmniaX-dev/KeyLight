@@ -47,13 +47,14 @@ void Window::onInitialize(void)
 
 	m_windowSizeBeforeFullscreen	 = { (float)getWindowWidth(), (float)getWindowHeight() };
 	m_windowPositionBeforeFullscreen = { (float)m_window.getPosition().x, (float)m_window.getPosition().y };
-	// enableFullscreen(true);
 	m_vpiano.init();
 	setClearColor(m_vpiano.vPianoData().backgroundColor);
 
 	m_gui.init(*this, m_vpiano.getVideoRenderer().getVideoRenderState(), "themes/ui/cursor.png", "themes/ui/icon.png", "themes/Dark.txt", true);
 	m_gui.showFPS(true);
-	// setSize(1920, 1080);
+	// setSize(1280, 720);
+	enableFullscreen(true);
+	enableFullscreen(false);
 
 	m_gui.toggleVisibility();
 
