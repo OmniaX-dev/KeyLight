@@ -52,9 +52,7 @@ void Window::onInitialize(void)
 
 	m_gui.init(*this, m_vpiano.getVideoRenderer().getVideoRenderState(), "themes/ui/cursor.png", "themes/ui/icon.png", "themes/Dark.txt", true);
 	m_gui.showFPS(true);
-	// setSize(1280, 720);
-	enableFullscreen(true);
-	enableFullscreen(false);
+	setSize(1280, 720);
 
 	m_gui.toggleVisibility();
 
