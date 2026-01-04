@@ -168,6 +168,32 @@ bool FFMPEG::__list_contains_name(const ostd::String& output, const ostd::String
     return false;
 }
 
+#ifdef _WIN32
+inline std::string utf16_to_utf8(const std::wstring& w)
+{
+    if (w.empty())
+        return {};
+
+    int size_needed = WideCharToMultiByte(
+        CP_UTF8, 0,
+        w.data(), static_cast<int>(w.size()),
+        nullptr, 0,
+        nullptr, nullptr
+    );
+
+    std::string result(size_needed, 0);
+
+    WideCharToMultiByte(
+        CP_UTF8, 0,
+        w.data(), static_cast<int>(w.size()),
+        result.data(), size_needed,
+        nullptr, nullptr
+    );
+
+    return result;
+}
+#endif
+
 // ---------------------------------------------------------------------
 // Main function
 // ---------------------------------------------------------------------
@@ -206,7 +232,7 @@ ostd::String FFMPEG::getExecutablePath()
     if (GetModuleFileNameW(nullptr, modulePath, MAX_PATH)) {
         PathRemoveFileSpecW(modulePath);               // strip exe name
         std::wstring wlocal = std::wstring(modulePath) + L"\\ffmpeg\\ffmpeg.exe";
-        candidates.emplace_back(ostd::String(wlocal.c_str()));
+        candidates.emplace_back(ostd::String(utf16_to_utf8(wlocal));
     }
 
 #else

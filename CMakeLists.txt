@@ -102,6 +102,9 @@ endif()
 #-----------------------------------------------------------------------------------------
 if (WIN32)
 	target_link_libraries(${MAIN_EXECUTABLE} mingw32)
+	target_link_libraries(${MAIN_EXECUTABLE} intl iconv)
+	target_link_libraries(${MAIN_EXECUTABLE} ws2_32 shlwapi)
+	target_link_libraries(${MAIN_EXECUTABLE} boost_filesystem-mt)
 endif (WIN32)
 
 if (APPLE)

@@ -81,7 +81,7 @@ bool VideoRenderer::configFFMPEGVideoRender(const ostd::String& filePath, const 
 	while (tmp.startsWith("./") || tmp.startsWith(".\\"))
 		tmp.substr(2).trim();
 	m_videoRenderState.folderPath = tmp;
-	m_videoRenderState.absolutePath = ostd::String(std::filesystem::absolute(m_videoRenderState.folderPath)).add(".").add(profile.Container);
+	m_videoRenderState.absolutePath = ostd::String(std::filesystem::absolute(m_videoRenderState.folderPath).string()).add(".").add(profile.Container);
 	m_videoRenderState.targetFPS = fps;
 	m_videoRenderState.lastNoteEndTime = m_vpiano.vPianoRes().lastNoteEndTime;
 	m_videoRenderState.totalFrames = (int32_t)std::ceil(m_videoRenderState.lastNoteEndTime * fps);
@@ -275,7 +275,13 @@ FILE* VideoRenderer::__open_ffmpeg_pipe(const ostd::String& filePath, const ostd
         return nullptr;
     }
     // Convert opstream to FILE* for your fwrite()
-    int fd = m_videoRenderState.ffmpeg_stdin.pipe().native_sink();
+    // int fd = m_videoRenderState.ffmpeg_stdin.pipe().native_sink();
+    auto native = m_videoRenderState.ffmpeg_stdin.pipe().native_sink();
+#ifdef _WIN32
+    int fd = _open_osfhandle(reinterpret_cast<intptr_t>(native), 0);
+#else
+    int fd = native;
+#endif
     FILE* pipe_file = fdopen(fd, "wb");
     if (!pipe_file)
     {
