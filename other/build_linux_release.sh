@@ -14,4 +14,6 @@ cp bin/KeyLight bin/KeyLight_linux64
 cp -r licences bin/KeyLight_linux64
 cp LICENSE bin/KeyLight_linux64/licences/KeyLight-LICENCE.txt
 
+cp -r bin/locale bin/KeyLight_linux64
+
 printf "\n\033[0;32mLinux release ready in bin/KeyLight_linux64!\n\033[0m"
