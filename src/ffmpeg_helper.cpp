@@ -232,7 +232,7 @@ ostd::String FFMPEG::getExecutablePath()
     if (GetModuleFileNameW(nullptr, modulePath, MAX_PATH)) {
         PathRemoveFileSpecW(modulePath);               // strip exe name
         std::wstring wlocal = std::wstring(modulePath) + L"\\ffmpeg\\ffmpeg.exe";
-        candidates.emplace_back(ostd::String(utf16_to_utf8(wlocal));
+        candidates.emplace_back(ostd::String(utf16_to_utf8(wlocal)));
     }
 
 #else
