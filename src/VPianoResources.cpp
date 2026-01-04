@@ -28,7 +28,7 @@ VPianoResources::VPianoResources(VirtualPiano& vpiano) : vpiano(vpiano)
 {
 }
 
-void VPianoResources::loadStyleFromJson(JSONManager& style, JSONManager& particles)
+void VPianoResources::loadStyleFromJson(ostd::JsonFile& style, ostd::JsonFile& particles)
 {
 
 }
@@ -126,7 +126,7 @@ bool VPianoResources::loadMidiFile(const ostd::String& filePath)
 	try
 	{
 		midiNotes.clear();
-		midiNotes = MidiParser::parseFile(filePath);
+		midiNotes = ostd::MidiParser::parseFile(filePath);
 		for (auto& note : midiNotes)
 		{
 			note.startTime += vpiano.m_vPianoData.fallingTime_s;

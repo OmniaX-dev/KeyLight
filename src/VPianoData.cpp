@@ -85,7 +85,7 @@ VirtualPianoData::VirtualPianoData(void)
 	blur.type = eBlurType::Gaussian;
 }
 
-void VirtualPianoData::loadFromStyleJSON(JSONManager& styleJson)
+void VirtualPianoData::loadFromStyleJSON(ostd::JsonFile& styleJson)
 {
 	whiteKeyWidth = styleJson.get_float("style.dimensions.whiteKeyWidth");
 	float mul = styleJson.get_float("style.dimensions.whiteKeyHeightMultiplier");
@@ -202,7 +202,7 @@ void VirtualPianoData::recalculateKeyOffsets(void)
 	{
 		int noteInOctave = midiNote % 12;
 		int keyIndex = midiNote - 21;
-		if (MidiParser::NoteInfo::isWhiteKey(noteInOctave))
+		if (ostd::MidiParser::NoteInfo::isWhiteKey(noteInOctave))
 		{
 			float x = vpx() + (whiteKeyCount * whiteKey_w());
 			_keyOffsets[keyIndex] = x;

@@ -33,13 +33,13 @@ void VirtualKeyboard::init(void)
 }
 
 
-void VirtualKeyboard::loadFromStyleJSON(JSONManager& styleJson)
+void VirtualKeyboard::loadFromStyleJSON(ostd::JsonFile& styleJson)
 {
 	m_pianoKeys.clear();
 	for (int midiNote = 21; midiNote <= 108; ++midiNote)
 	{
 		PianoKey pk;
-		pk.noteInfo = MidiParser::getNoteInfo(midiNote);
+		pk.noteInfo = ostd::MidiParser::getNoteInfo(midiNote);
 		pk.pressed = false;
 
 		uint32_t tileIndex = styleJson.get_int("particles.tileIndex");
@@ -105,7 +105,7 @@ void VirtualKeyboard::calculateFallingNotes(double currentTime)
 	m_fallingNoteGfx_b.clear();
 	for (auto& note : m_activeFallingNotes)
 	{
-		auto noteInfo = MidiParser::getNoteInfo(note.pitch);
+		auto noteInfo = ostd::MidiParser::getNoteInfo(note.pitch);
 		if (noteInfo.isBlackKey()) continue;
 
 		double h = note.duration * m_vpiano.vPianoData().pps();
@@ -163,7 +163,7 @@ void VirtualKeyboard::calculateFallingNotes(double currentTime)
 
 	for (auto& note : m_activeFallingNotes)
 	{
-		auto noteInfo = MidiParser::getNoteInfo(note.pitch);
+		auto noteInfo = ostd::MidiParser::getNoteInfo(note.pitch);
 		if (noteInfo.isWhiteKey()) continue;
 
 		double h = note.duration * m_vpiano.vPianoData().pps();
@@ -226,7 +226,7 @@ void VirtualKeyboard::updateVisualization(double currentTime)
 	while (!m_activeFallingNotes.empty() && currentTime > (m_activeFallingNotes.front().endTime + 0.05))
 	{
 		auto note = m_activeFallingNotes.front();
-		auto info = MidiParser::getNoteInfo(note.pitch);
+		auto info = ostd::MidiParser::getNoteInfo(note.pitch);
 		m_pianoKeys[info.keyIndex].pressed = false;
 		m_pianoKeys[info.keyIndex].pressedForce = { 0.0f, 0.0f };
 		if (note.last)
@@ -243,7 +243,7 @@ void VirtualKeyboard::updateVisualization(double currentTime)
 	// Add new notes that are starting now
 	while (m_nextFallingNoteIndex < m_vpiano.vPianoRes().midiNotes.size() && currentTime >= m_vpiano.vPianoRes().midiNotes[m_nextFallingNoteIndex].startTime - m_vpiano.vPianoData().fallingTime_s)
 	{
-		// auto info = MidiParser::getNoteInfo(m_midiNotes[m_nextFallingNoteIndex].pitch);
+		// auto info = ostd::MidiParser::getNoteInfo(m_midiNotes[m_nextFallingNoteIndex].pitch);
 		m_activeFallingNotes.push_back(m_vpiano.vPianoRes().midiNotes[m_nextFallingNoteIndex]);
 		++m_nextFallingNoteIndex;
 	}
@@ -271,9 +271,9 @@ void VirtualKeyboard::renderKeyboard(std::optional<std::reference_wrapper<sf::Re
 	for (int midiNote = 21; midiNote <= 108; ++midiNote)
 	{
 		int noteInOctave = midiNote % 12;
-		if (MidiParser::NoteInfo::isWhiteKey(noteInOctave)) // Draw white key
+		if (ostd::MidiParser::NoteInfo::isWhiteKey(noteInOctave)) // Draw white key
 		{
-			auto info = MidiParser::getNoteInfo(midiNote);
+			auto info = ostd::MidiParser::getNoteInfo(midiNote);
 			PianoKey& pk = m_pianoKeys[info.keyIndex];
 			ostd::Color keyColor = (pk.pressed ? vpd.whiteKeyPressedColor : vpd.whiteKeyColor);
 			float x = vpd.vpx() + (whiteKeyCount * vpd.whiteKey_w());
@@ -289,13 +289,13 @@ void VirtualKeyboard::renderKeyboard(std::optional<std::reference_wrapper<sf::Re
 	for (int midiNote = 21; midiNote <= 108; ++midiNote)
 	{
 		int noteInOctave = midiNote % 12;
-		if (MidiParser::NoteInfo::isWhiteKey(noteInOctave))
+		if (ostd::MidiParser::NoteInfo::isWhiteKey(noteInOctave))
 		{
 			whiteKeyCount++;
 		}
 		else // Draw black key
 		{
-			auto info = MidiParser::getNoteInfo(midiNote);
+			auto info = ostd::MidiParser::getNoteInfo(midiNote);
 			PianoKey& pk = m_pianoKeys[info.keyIndex];
 			ostd::Color keyColor = (pk.pressed ? vpd.blackKeyPressedColor : vpd.blackKeyColor);
 			float x = vpd.vpx() + ((whiteKeyCount - 1) * vpd.whiteKey_w() + (vpd.whiteKey_w() - vpd.blackKey_w() / 2.0f)) - vpd.blackKey_offset();
@@ -311,7 +311,7 @@ void VirtualKeyboard::renderKeyboard(std::optional<std::reference_wrapper<sf::Re
 	// for (int midiNote = 21; midiNote <= 108; ++midiNote)
 	// {
 	// 	int noteInOctave = midiNote % 12;
-	// 	if (MidiParser::NoteInfo::isWhiteKey(noteInOctave))
+	// 	if (ostd::MidiParser::NoteInfo::isWhiteKey(noteInOctave))
 	// 	{
 	// 		float x = vpd.vpx() + (whiteKeyCount * vpd.whiteKey_w());
 	// 		float y = vpd.vpy();
@@ -323,7 +323,7 @@ void VirtualKeyboard::renderKeyboard(std::optional<std::reference_wrapper<sf::Re
 	// for (int midiNote = 21; midiNote <= 108; ++midiNote)
 	// {
 	// 	int noteInOctave = midiNote % 12;
-	// 	if (MidiParser::NoteInfo::isWhiteKey(noteInOctave))
+	// 	if (ostd::MidiParser::NoteInfo::isWhiteKey(noteInOctave))
 	// 	{
 	// 		whiteKeyCount++;
 	// 	}

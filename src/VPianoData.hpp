@@ -20,8 +20,8 @@
 
 #pragma once
 
-#include "JSONManager.hpp"
-#include "MidiParser.hpp"
+#include <ostd/Json.hpp>
+#include <ostd/Midi.hpp>
 #include <SFML/Graphics/RenderTexture.hpp>
 #include <boost/process/v1/pipe.hpp>
 #include <ostd/String.hpp>
@@ -45,7 +45,7 @@ enum class ImageType { PNG = 0, BMP = 1, JPG = 2 };
 
 struct PianoKey
 {
-	MidiParser::NoteInfo noteInfo;
+	ostd::MidiParser::NoteInfo noteInfo;
 	ParticleEmitter particles;
 	bool pressed { false };
 	ostd::Vec2 pressedForce { 0.0f, 0.0f };
@@ -155,7 +155,7 @@ struct VirtualPianoData
 
 	public:
 		VirtualPianoData(void);
-		void loadFromStyleJSON(JSONManager& styleJson);
+		void loadFromStyleJSON(ostd::JsonFile& styleJson);
 		void recalculateKeyOffsets(void);
 		void updateScale(int32_t width, int32_t height);
 
@@ -181,7 +181,7 @@ class NoteEventData : public ostd::BaseObject
 	public:
 		NoteEventData(PianoKey& key) : vPianoKey(key) { setTypeName("VirtualPiano::NoteEventData"); validate(); }
 		PianoKey& vPianoKey;
-		MidiParser::NoteEvent note;
+		ostd::MidiParser::NoteEvent note;
 		eEventType eventType;
 };
 struct FallingNoteGraphicsData

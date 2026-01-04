@@ -26,7 +26,7 @@
 #include <ostd/Signals.hpp>
 #include <ostd/String.hpp>
 #include <ostd/Defines.hpp>
-#include "vendor/nlohmann/json.hpp" // IWYU pragma: keep
+#include <ostd/Json.hpp>
 
 #define sf_color(ostd_color) sf::Color { ostd_color.r, ostd_color.g, ostd_color.b, ostd_color.a }
 #define tgui_color(ostd_color) tgui::Color { ostd_color.r, ostd_color.g, ostd_color.b, ostd_color.a }
@@ -45,20 +45,14 @@ class Common
 
 	public:
 		static double getCurrentTIme_ns(void);
-		static void ensureDirectory(const ostd::String& path);
-		static void deleteDirectory(const ostd::String& path);
 		static double percentage(double n, double max);
 		sf::VertexArray getMusicWaveForm(const ostd::String& filePath, int32_t windowHeight);
-		static ostd::String secondsToFormattedString(int32_t totalSeconds);
 
 		inline static const sf::Clock& getAppClock(void) { return s_appClock; }
 		inline static bool wasSIGINTTriggered(void) { return s_sigint_triggered; }
 		inline static float scaleX(float value) { return value * guiScaleX; }
 		inline static float scaleY(float value) { return value * guiScaleY; }
 		inline static float scaleXY(float value) { return value * 0.5f * (guiScaleX + guiScaleY); }
-
-		static void RGBtoHSV(float r, float g, float b, float& h, float& s, float& v);
-		static void HSVtoRGB(float h, float s, float v, float& r, float& g, float& b);
 
 		static std::vector<tLocaleInfo> getAvailableLocales(const std::string& localeDir = "locale");
 		static ostd::String getFullLocale(const std::string& shortCode);
@@ -69,7 +63,7 @@ class Common
 
 		inline static double deltaTime { 1 };
 
-		inline static const nlohmann::json DefaultSettingsJSON = R"({
+		inline static const ostd::json DefaultSettingsJSON = R"({
 						"settings": {
 							"useSystenFFMPEG": true,
 							"ffmpegPath": "./ffmpeg/"

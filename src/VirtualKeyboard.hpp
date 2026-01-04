@@ -22,7 +22,7 @@
 
 #include "VPianoData.hpp"
 #include <deque>
-#include "MidiParser.hpp"
+#include <ostd/Midi.hpp>
 #include <vector>
 
 class VirtualKeyboard
@@ -30,7 +30,7 @@ class VirtualKeyboard
 	public:
 		VirtualKeyboard(VirtualPiano& vpiano);
 		void init(void);
-		void loadFromStyleJSON(JSONManager& styleJson);
+		void loadFromStyleJSON(ostd::JsonFile& styleJson);
 		void calculateFallingNotes(double currentTime);
 		void updateVisualization(double currentTime);
 		void renderKeyboard(std::optional<std::reference_wrapper<sf::RenderTarget>> target = std::nullopt);
@@ -47,7 +47,7 @@ class VirtualKeyboard
 		VirtualPiano& m_vpiano;
 
 		std::vector<PianoKey> m_pianoKeys;
-		std::deque<MidiParser::NoteEvent> m_activeFallingNotes;
+		std::deque<ostd::MidiParser::NoteEvent> m_activeFallingNotes;
 		std::vector<FallingNoteGraphicsData> m_fallingNoteGfx_w;
 		std::vector<FallingNoteGraphicsData> m_fallingNoteGfx_b;
 		int32_t m_nextFallingNoteIndex { 0 };

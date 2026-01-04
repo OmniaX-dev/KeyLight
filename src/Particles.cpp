@@ -530,7 +530,7 @@ void ParticleFactory::createColorGradient(tParticleInfo& partInfo, const ostd::C
 
     // Convert to HSV
     float h, s, v;
-    Common::RGBtoHSV(startColor.r / 255.0f, startColor.g / 255.0f, startColor.b / 255.0f, h, s, v);
+    ostd::Color::RGBtoHSV(startColor.r / 255.0f, startColor.g / 255.0f, startColor.b / 255.0f, h, s, v);
 
     for (uint8_t i = 0; i < nColors - 1; ++i)
     {
@@ -552,8 +552,8 @@ void ParticleFactory::createColorGradient(tParticleInfo& partInfo, const ostd::C
         saturationNext = std::min(saturationNext, 1.0f);
 
         float r1, g1, b1, r2, g2, b2;
-        Common::HSVtoRGB(h, saturation,     brightness,     r1, g1, b1);
-        Common::HSVtoRGB(h, saturationNext, brightnessNext, r2, g2, b2);
+        ostd::Color::HSVtoRGB(h, saturation,     brightness,     r1, g1, b1);
+        ostd::Color::HSVtoRGB(h, saturationNext, brightnessNext, r2, g2, b2);
 
         ostd::Color current (static_cast<uint8_t>(r1 * 255), static_cast<uint8_t>(g1 * 255),
                              static_cast<uint8_t>(b1 * 255), 255);

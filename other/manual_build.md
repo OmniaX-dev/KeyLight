@@ -18,11 +18,7 @@ KeyLight depends on the following libraries:
 
 - [**SFML 3**](https://www.sfml-dev.org/): rendering, audio playback, and input handling.
 
-- [**midifile**](https://github.com/craigsapp/midifile): for MIDI parsing and manipulation
-
 These libraries can be built manually from source (instructions down below).
-
-> **<u>NOTE</u>**: the midifile library is included directly as part of the source tree of KeyLight, therefore it doesn't need to be built manually.
 
 ---
 
@@ -118,8 +114,6 @@ This project is officially tested only on the following Linux Distros:
 If you are using any other distro, you will have to install the dependencies manually using your package manager.
 
 ##### Step 1: Install dependencies
-
-Use your package manager to install git.
 
 - **Arch** Based distros:
 
@@ -231,7 +225,7 @@ eval "$(/opt/homebrew/bin/brew shellenv)"
 
 ```bash
 echo 'eval "$(/usr/local/bin/brew shellenv)"' >> ~/.zprofile
-eval "$(/usr/local/bin/brew shellenv)"Use your package manager to install git.
+eval "$(/usr/local/bin/brew shellenv)"
 ```
 
 ##### Step 3: Install dependencies

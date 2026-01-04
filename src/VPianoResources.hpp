@@ -26,15 +26,15 @@
 #include <ostd/String.hpp>
 #include <any>
 #include "Particles.hpp"
-#include "MidiParser.hpp"
-#include "JSONManager.hpp"
+#include <ostd/Midi.hpp>
+#include <ostd/Json.hpp>
 
 class VirtualPiano;
 class VPianoResources
 {
 	public:
 		VPianoResources(VirtualPiano& vpiano);
-		void loadStyleFromJson(JSONManager& style, JSONManager& particles);
+		void loadStyleFromJson(ostd::JsonFile& style, ostd::JsonFile& particles);
 		bool loadShaders(void);
 		bool loadBackgroundImage(const ostd::String& filePath);
 		bool loadParticleTexture(const ostd::String& filePath, const std::vector<ostd::Rectangle>& tiles);
@@ -63,7 +63,7 @@ class VPianoResources
 		TextureRef partTexRef;
 		std::vector<TextureRef::TextureAtlasIndex> partTiles;
 
-		std::vector<MidiParser::NoteEvent> midiNotes;
+		std::vector<ostd::MidiParser::NoteEvent> midiNotes;
 		double firstNoteStartTime { 0.0 };
 		double lastNoteEndTime { 0.0 };
 

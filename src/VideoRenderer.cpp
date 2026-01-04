@@ -54,7 +54,7 @@ bool VideoRenderer::configImageSequenceRender(const ostd::String& folderPath, co
 	m_videoRenderState.renderFPS = 1;
 
 	__preallocate_file_names_for_rendering(m_videoRenderState.totalFrames, m_videoRenderState.baseFileName, m_videoRenderState.folderPath, m_videoRenderState.imageType);
-	Common::ensureDirectory(folderPath);
+	ostd::Utils::ensureDirectory(folderPath);
 	m_vpiano.vPianoData().updateScale(resolution.x, resolution.y);
 	m_vpiano.onWindowResized(resolution.x, resolution.y);
 	m_vpiano.getParentWindow().lockFullscreenStatus();

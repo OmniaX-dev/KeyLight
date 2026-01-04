@@ -431,7 +431,7 @@ void Gui::__draw_videoRenderGui(void)
 	int32_t totalSeconds = 0;
 	if (vrs.renderFPS > 0)
 		totalSeconds = static_cast<int32_t>(((vrs.totalFrames + vrs.extraFrames) - vrs.frameIndex) / vrs.renderFPS);
-	label.clr().add(Common::secondsToFormattedString(totalSeconds));
+	label.clr().add(ostd::Utils::secondsToFormattedString(totalSeconds));
 	if (!updateLabels || totalSeconds > m_oldETASeconds)
 		label = m_oldETALabel;
 	else
@@ -482,7 +482,7 @@ void Gui::__draw_videoRenderGui(void)
 	Renderer::drawString(label, pos, color1, fontSize);
 	pos.x += padx(-5, label, fontSize);
 	int32_t seconds = (int32_t)std::round(vrs.lastNoteEndTime + ((double)vrs.extraFrames / (double)vrs.targetFPS));
-	label.clr().add(Common::secondsToFormattedString(seconds));
+	label.clr().add(ostd::Utils::secondsToFormattedString(seconds));
 	Renderer::drawString(label, pos, color2, fontSize);
 
 	if (updateLabels)

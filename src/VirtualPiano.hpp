@@ -22,7 +22,7 @@
 
 #include "VPianoData.hpp"
 #include "VideoRenderer.hpp"
-#include "JSONManager.hpp"
+#include <ostd/Json.hpp>
 #include "VPianoResources.hpp"
 #include "VirtualKeyboard.hpp"
 #include <SFML/Graphics/RenderTarget.hpp>
@@ -66,10 +66,10 @@ class VirtualPiano
 
 	private:
 		Window& m_parentWindow;
-		JSONManager m_configJson;
-		JSONManager m_projJson;
-		JSONManager m_styleJson;
-		JSONManager m_partJson;
+		ostd::JsonFile m_configJson;
+		ostd::JsonFile m_projJson;
+		ostd::JsonFile m_styleJson;
+		ostd::JsonFile m_partJson;
 		VirtualPianoData m_vPianoData;
 		VPianoResources m_vPianoRes;
 		VideoRenderer m_videoRenderer;

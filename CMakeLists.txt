@@ -17,11 +17,11 @@ file(STRINGS "./other/build.nr" BUILD_NUMBER)
 
 if (APPLE)
 	execute_process(
-	    COMMAND brew --prefix
-	    OUTPUT_VARIABLE HOMEBREW_PREFIX
-	    OUTPUT_STRIP_TRAILING_WHITESPACE
+					COMMAND brew --prefix
+					OUTPUT_VARIABLE HOMEBREW_PREFIX
+					OUTPUT_STRIP_TRAILING_WHITESPACE
 	)
-	
+
 	set(CMAKE_INSTALL_RPATH "${HOMEBREW_PREFIX}/lib;/usr/local/lib")
 	set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 endif(APPLE)
@@ -38,22 +38,10 @@ endif()
 #-----------------------------------------------------------------------------------------
 list(APPEND INCLUDE_DIRS
 	${CMAKE_CURRENT_LIST_DIR}/src
-	${CMAKE_CURRENT_LIST_DIR}/src/vendor
-	${CMAKE_CURRENT_LIST_DIR}/src/vendor/midifile
-	${CMAKE_CURRENT_LIST_DIR}/src/vendor/nlohmann
 )
 list(APPEND SOURCE_FILES
-	# MidiFile
-	${CMAKE_CURRENT_LIST_DIR}/src/vendor/midifile/Binasc.cpp
-	${CMAKE_CURRENT_LIST_DIR}/src/vendor/midifile/MidiEvent.cpp
-	${CMAKE_CURRENT_LIST_DIR}/src/vendor/midifile/MidiEventList.cpp
-	${CMAKE_CURRENT_LIST_DIR}/src/vendor/midifile/MidiFile.cpp
-	${CMAKE_CURRENT_LIST_DIR}/src/vendor/midifile/MidiMessage.cpp
-	${CMAKE_CURRENT_LIST_DIR}/src/vendor/midifile/Options.cpp
-
 	# ========================================== Main Code ==========================================
 	${CMAKE_CURRENT_LIST_DIR}/src/main.cpp
-	${CMAKE_CURRENT_LIST_DIR}/src/MidiParser.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/Window.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/SFMLWindow.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/Common.cpp
@@ -61,7 +49,6 @@ list(APPEND SOURCE_FILES
 	${CMAKE_CURRENT_LIST_DIR}/src/Renderer.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/Gui.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/ffmpeg_helper.cpp
-	${CMAKE_CURRENT_LIST_DIR}/src/JSONManager.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/Particles.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/VPianoResources.cpp
 	${CMAKE_CURRENT_LIST_DIR}/src/VideoRenderer.cpp
@@ -111,18 +98,18 @@ if (APPLE)
 	find_package(glm CONFIG REQUIRED)
 	target_link_libraries(${MAIN_EXECUTABLE} glm::glm)
 	find_path(GETTEXT_INCLUDE_DIR libintl.h
-	    PATHS
-	        /usr/local/include
-	        /opt/homebrew/include
-	        /usr/local/opt/gettext/include
-	        /opt/homebrew/opt/gettext/include
+					PATHS
+									/usr/local/include
+									/opt/homebrew/include
+									/usr/local/opt/gettext/include
+									/opt/homebrew/opt/gettext/include
 	)
 	find_library(GETTEXT_LIBRARY intl
-	    PATHS
-	        /usr/local/lib
-	        /opt/homebrew/lib
-	        /usr/local/opt/gettext/lib
-	        /opt/homebrew/opt/gettext/lib
+					PATHS
+									/usr/local/lib
+									/opt/homebrew/lib
+									/usr/local/opt/gettext/lib
+									/opt/homebrew/opt/gettext/lib
 	)
 	target_include_directories(${MAIN_EXECUTABLE} PUBLIC ${GETTEXT_INCLUDE_DIR})
 	target_link_libraries(${MAIN_EXECUTABLE} ${GETTEXT_LIBRARY})
